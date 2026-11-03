@@ -905,7 +905,7 @@ function tone(f,t0,dur,type='sine',vol=.18){const a=ac();if(!a)return;const o=a.
   g.gain.setValueAtTime(0,a.currentTime+t0);g.gain.linearRampToValueAtTime(vol,a.currentTime+t0+.02);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+t0+dur);
   o.connect(g).connect(a.destination);o.start(a.currentTime+t0);o.stop(a.currentTime+t0+dur+.05)}
 const sfx={
-  good(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.25,'triangle'))},
+  good(){[523,659,784,1047].forEach((f,i)=>tone(f,i*.09,.25,'triangle',.38))},
   /* «проигрыш», как в играх: грустный тромбон «вау-вау-вау-ваааа» (4 нисходящих ноты, последняя с вибрато). Возвращает длительность в мс */
   bad(){if(S.badSnd==='off')return 0;
     if(S.badSnd==='soft'){tone(220,0,.18,'sine',.12);tone(196,.15,.25,'sine',.12);return 400}
@@ -922,10 +922,10 @@ const sfx={
     return 1700},
   pop(){const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*.15,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
     const s=a.createBufferSource(),g=a.createGain();g.gain.value=.5;s.buffer=b;s.connect(g).connect(a.destination);s.start();tone(900,0,.08,'square',.06)},
-  chomp(){[0,.18,.36].forEach(t=>tone(160,t,.1,'square',.08))},
-  up(){[392,523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.07,.3,'triangle',.15))},
+  chomp(){[0,.18,.36].forEach(t=>tone(160,t,.1,'square',.25))},
+  up(){[392,523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.07,.3,'triangle',.3))},
   drum(){tone(95,0,.28,'sine',.5);tone(150,0,.08,'triangle',.25);const a=ac();if(!a)return;const b=a.createBuffer(1,a.sampleRate*.08,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4);const s=a.createBufferSource(),g=a.createGain();g.gain.value=.25;s.buffer=b;s.connect(g).connect(a.destination);s.start()},
-  click(){tone(880,0,.06,'triangle',.18);tone(1320,.05,.08,'triangle',.12)}
+  click(){tone(880,0,.06,'triangle',.45);tone(1320,.05,.08,'triangle',.3)}
 };
 /* v8: только настоящие записи; если записи нет — животное «не говорит» голосом телефона (только чавканье в «Покорми») */
 const hasSnd=n=>!!(window.SND||{})[n];
@@ -2636,10 +2636,10 @@ function openMaze(){
 /* ---------- звук «щёлк» (кусочек пазла встал на место) */
 sfx.snap=()=>{const a=ac();if(!a)return;const t=a.currentTime;
   const b=a.createBuffer(1,a.sampleRate*.03,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,6);
-  const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();f.type='bandpass';f.frequency.value=3200;f.Q.value=1.2;g.gain.value=.55;s.buffer=b;s.connect(f).connect(g).connect(a.destination);s.start(t);
+  const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();f.type='bandpass';f.frequency.value=3200;f.Q.value=1.2;g.gain.value=.85;s.buffer=b;s.connect(f).connect(g).connect(a.destination);s.start(t);
   const o=a.createOscillator(),og=a.createGain();o.type='sine';o.frequency.setValueAtTime(420,t+.01);o.frequency.exponentialRampToValueAtTime(140,t+.12);
-  og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(.32,t+.015);og.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(og).connect(a.destination);o.start(t);o.stop(t+.18);
-  tone(1650,.05,.05,'triangle',.06)};
+  og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(.5,t+.015);og.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(og).connect(a.destination);o.start(t);o.stop(t+.18);
+  tone(1650,.05,.05,'triangle',.1)};
 
 /* ---------- глянцевые шарики: блик, объём, иногда звёздочки, сердечки или зверёк */
 let BALN=0;
@@ -3413,7 +3413,7 @@ $('#btn-finish-home').onclick=renderHome;
 v24init();mig24();mig25();wbInit();v21Wire();vidLoad();wbLoad();micProbe().then(applyV21Home);
 loadPhotos();
 renderHome();
-window.__rechka={numFindAll,numHidden,numPeek,balAni,balCount,pgSolve2,openReward,posFix,IBS,W24T,WANT24,PZP,VG_ANI:()=>VG_ANI,VM,VMC,chooseTip,mkTask,get TIP(){return TIP},showTip,openWB,recordVideo,get VIDK(){return VIDK},sayIt,segDetector,peakDetector,get MICX(){return MICX},dgSolve,rhSolve,pgSolve,brSolve,brState,dgCells,get G(){return G},handSvg,ROUNDS,RHY,rpic,S,D,PZ_LIST,SYL,ONO_L,MDB,openPuzzle,openAlbum,startMix,get PH(){return PH}};
+window.__rechka={sfx,numFindAll,numHidden,numPeek,balAni,balCount,pgSolve2,openReward,posFix,IBS,W24T,WANT24,PZP,VG_ANI:()=>VG_ANI,VM,VMC,chooseTip,mkTask,get TIP(){return TIP},showTip,openWB,recordVideo,get VIDK(){return VIDK},sayIt,segDetector,peakDetector,get MICX(){return MICX},dgSolve,rhSolve,pgSolve,brSolve,brState,dgCells,get G(){return G},handSvg,ROUNDS,RHY,rpic,S,D,PZ_LIST,SYL,ONO_L,MDB,openPuzzle,openAlbum,startMix,get PH(){return PH}};
 })();
 </script>
 <script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
