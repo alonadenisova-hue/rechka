@@ -362,6 +362,7 @@ JS_CANDIDATES = r"""
 JS_LAYOUT = r"""
 ([tapMin, up, over]) => {
   const dpr = devicePixelRatio, out = {overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+    overflowY: document.documentElement.scrollHeight > innerHeight + 1 ? document.documentElement.scrollHeight - innerHeight : 0,
     offscreen: [], smallTap: [], upscaled: [], overscaled: [], smallText: []};
   const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05; };
@@ -758,7 +759,8 @@ def report(out, audio, med, images, ui):
         hl = ui["home"].get("layout", {})
         L.append(f"Главный экран: загрузка {ui['home'].get('load_ms')} мс, плиток {len(ui['home'].get('tiles', []))}, "
                  f"ошибок консоли {len(ui['home'].get('console', []))}"
-                 + (", ЕСТЬ горизонтальная прокрутка" if hl.get("overflowX") else ""))
+                 + (", ЕСТЬ горизонтальная прокрутка" if hl.get("overflowX") else "")
+                 + (f", экран выше телефона на {hl['overflowY']} px (низ обрезан)" if hl.get("overflowY") else ""))
         L += ["", "| № | Игра | Вход, мс | Отклик (медиана), мс | Без реакции | Перетаскивание | Консоль | Вёрстка | Сбой |",
               "|---|---|---|---|---|---|---|---|---|"]
         for g in ui["games"]:
@@ -766,6 +768,8 @@ def report(out, audio, med, images, ui):
             lay_s = ", ".join(f"{k} {len(v)}" for k, v in lay.items() if isinstance(v, list) and v)
             if lay.get("overflowX"):
                 lay_s = "прокрутка вбок; " + lay_s
+            if lay.get("overflowY"):
+                lay_s = f"экран выше телефона на {lay['overflowY']} px; " + lay_s
             r = g.get("reaction_med_ms")
             r_s = f"{r}" + (" ⚠" if r and r > TH["react_max"] else "")
             dg = g.get("drag")
