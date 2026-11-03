@@ -856,7 +856,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- storage */
 const KEY='rechka-v1';
-const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'game',sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1},streak:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},errs:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
+const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1},streak:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},errs:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
 let S;
 try{S=Object.assign(structuredClone(defaults),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(defaults)}
 for(const k of ['lvl','streak','errs','pz'])S[k]=Object.assign({},defaults[k],S[k]);
@@ -2848,6 +2848,8 @@ function catchFx(o,box,bk){const r=o.el.getBoundingClientRect(),br=box.getBoundi
 /* ---------- переходы: каждое задание карточки появляются по-новому */
 const CARD_ANIM=['pop','up','flip','side','zoom'];
 function stageAnim(){const st=$('#stage');if(st)st.dataset.anim=CARD_ANIM[rnd(CARD_ANIM.length)]}
+/* v26: звук при ошибке по умолчанию «тихий» (вместо грустного тромбона); выбор можно вернуть в разделе для взрослых */
+function mig26(){if((S.ver||0)>=26)return;if((S.badSnd||'game')==='game')S.badSnd='soft';S.ver=26;save()}
 function mig25(){if((S.ver||0)>=25)return;S.tipOn=false;S.pzL=S.pzL||{};S.pzL.pg=0;S.pz.maze=false;S.lvl.dog=Math.min(S.lvl.dog||1,3);S.ver=25;save()}
 
 async function balRound(lvl){const m=rmode('bal',5);return [balOnly,balInside,balSyl,balAni,balCount][m](lvl)}
@@ -3294,7 +3296,7 @@ function renderParent(){
   $('#pet-voices').innerHTML=PV.map((n,k)=>`<button class="small-btn" data-pv="${k}"${hasSnd(n)?'':' style="opacity:.45"'}>${hasSnd(n)?'♪ ':''}${n}</button>`).join('');
   document.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{ac();const n=PV[+b.dataset.pv];hasSnd(n)?animalSound({n}):say(cap(n)+'. Записи голоса пока нет.')});
   $('#set-sayit').value=S.sayit;$('#set-ask').checked=S.askFirst;$('#set-name').value=S.name||'';$('#set-myvoice').checked=S.myVoice;renderVoice();renderPhotos();renderLev();renderV21Parent();$('#pz-info').textContent=`Собрано пазлов: ${(S.pz.ph||[]).length}. Лабиринтов: ${S.mzN||0}.${S.pz.ready?' Пазл ждёт.':''}${S.pz.maze?' Лабиринт ждёт.':''}`;
-  $('#set-voice').checked=S.voice;$('#set-bad').value=S.badSnd||'game';$('#set-anim').checked=S.anim;$('#set-next').checked=S.nextBtn!==false;$('#set-rate').value=S.rate;$('#rate-out').textContent=S.rate.toFixed(2);$('#rounds-out').textContent=S.rounds;
+  $('#set-voice').checked=S.voice;$('#set-bad').value=S.badSnd||'soft';$('#set-anim').checked=S.anim;$('#set-next').checked=S.nextBtn!==false;$('#set-rate').value=S.rate;$('#rate-out').textContent=S.rate.toFixed(2);$('#rounds-out').textContent=S.rounds;
   $('#levels').innerHTML=Object.keys(GN).map(g=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><label><b>${GN[g]}</b><br><span class="note">${LVLDESC[g][S.lvl[g]-1]}</span></label>
     <div class="stepper"><button data-ld="${g}" data-d="-1" aria-label="Ниже">−</button><output>${S.lvl[g]} из ${MAXL[g]}</output><button data-ld="${g}" data-d="1" aria-label="Выше">+</button></div></div>`).join('');
   document.querySelectorAll('[data-ld]').forEach(b=>b.onclick=()=>{const g=b.dataset.ld;S.lvl[g]=Math.min(MAXL[g],Math.max(1,S.lvl[g]+ +b.dataset.d));S.streak[g]=0;S.errs[g]=0;save();renderParent()});
@@ -3410,7 +3412,7 @@ $('#btn-home').onclick=()=>{stopVoice();VM.stop();$('#sayit').hidden=true;$('#ne
 $('#btn-say').onclick=()=>{if(G&&G.round&&G.round.replay){G.round.replay();return}if(G&&G.round&&G.round.prompt)say(G.round.prompt==='Лопни шарик!'?'Лопни шарик!':G.round.prompt)};
 $('#btn-again').onclick=()=>G&&G.plan?startMix():startGame(G.game);
 $('#btn-finish-home').onclick=renderHome;
-v24init();mig24();mig25();wbInit();v21Wire();vidLoad();wbLoad();micProbe().then(applyV21Home);
+v24init();mig24();mig25();mig26();wbInit();v21Wire();vidLoad();wbLoad();micProbe().then(applyV21Home);
 loadPhotos();
 renderHome();
 window.__rechka={sfx,numFindAll,numHidden,numPeek,balAni,balCount,pgSolve2,openReward,posFix,IBS,W24T,WANT24,PZP,VG_ANI:()=>VG_ANI,VM,VMC,chooseTip,mkTask,get TIP(){return TIP},showTip,openWB,recordVideo,get VIDK(){return VIDK},sayIt,segDetector,peakDetector,get MICX(){return MICX},dgSolve,rhSolve,pgSolve,brSolve,brState,dgCells,get G(){return G},handSvg,ROUNDS,RHY,rpic,S,D,PZ_LIST,SYL,ONO_L,MDB,openPuzzle,openAlbum,startMix,get PH(){return PH}};
