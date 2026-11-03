@@ -372,7 +372,11 @@ JS_LAYOUT = r"""
     if (s.position !== 'fixed' && (r.right > innerWidth + 2 || r.left < -2) && r.width < innerWidth * 1.5 && r.top < innerHeight)
       out.offscreen.push(name(e));
     const clickable = e.matches('button,a,[onclick],[role=button]') || s.cursor === 'pointer';
-    if (clickable && (r.width < tapMin || r.height < tapMin) && r.top < innerHeight)
+    // иконка или подпись внутри большой кнопки — не отдельная зона нажатия
+    const host = e.parentElement && e.parentElement.closest('button,a,[onclick],[role=button]');
+    const hr = host && host.getBoundingClientRect();
+    const inBig = hr && hr.width >= tapMin && hr.height >= tapMin;
+    if (clickable && !inBig && !(e.ownerSVGElement) && (r.width < tapMin || r.height < tapMin) && r.top < innerHeight)
       out.smallTap.push(`${name(e)} ${Math.round(r.width)}×${Math.round(r.height)}`);
     if (e.tagName === 'IMG' && e.naturalWidth && r.top < innerHeight) {
       const need = r.width * dpr, nm = (e.currentSrc || e.src || '').slice(0, 80).replace(/^data:([^;]+);base64,.*/, 'data:$1');
@@ -535,10 +539,10 @@ def measure_reaction(page, x, y, limit_ms=600):
         if _png_diff(before, page.screenshot()):
             changed = True
             break
-    if not changed:
-        return None
     ms = page.evaluate(JS_READ)
-    return ms if ms is not None else round((time.perf_counter() - t0) * 1000)
+    if ms is not None:
+        return ms  # изменение было (даже если короткое и скриншот его не поймал)
+    return round((time.perf_counter() - t0) * 1000) if changed else None
 
 
 def slug(s):
@@ -810,7 +814,7 @@ def main():
     if args.only in (None, "ui"):
         ui = run_ui(args, out)
     report(out, audio, med or {}, images, ui)
-    log(f"\nГотово: {out.relative_to(REPO)}/report.md")
+    log(f"\nГотово: {out}/report.md")
 
 
 if __name__ == "__main__":
