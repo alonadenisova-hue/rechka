@@ -21,7 +21,7 @@
   --body:"Rubik","Segoe UI",Roboto,system-ui,sans-serif;
   color-scheme:light;
 }
-html,body{height:100%}
+html,body{height:100%;margin:0} /* v26: без отступа 8px экраны были на 32px выше телефона — низ карточек обрезался */
 body{background:var(--sky);color:var(--ink);font-family:var(--body);overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
@@ -29,7 +29,7 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:radial-gradient(circle at 12% 88%,var(--sky-deep) 0 14%,transparent 15%),radial-gradient(circle at 92% 18%,#fff6 0 10%,transparent 11%),radial-gradient(circle at 70% 95%,#fff5 0 8%,transparent 9%)}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 button:focus-visible{outline:4px solid var(--plum);outline-offset:3px}
-.screen{height:100%;display:flex;flex-direction:column;gap:12px;padding-block:12px}
+.screen{height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding-block:12px}
 .screen[hidden]{display:none!important}
 
 /* ---------- home */
