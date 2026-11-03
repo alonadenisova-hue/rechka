@@ -266,10 +266,12 @@ def serve(root: Path):
 
 # ---------------------------------------------------------------- игры
 JS_CANDIDATES = r"""
-([sel, minSize]) => {
+([sel, minSize, all]) => {
+  // all=true: включая элементы ниже экрана (во внутренней прокрутке) — для плиток главного экрана
   const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
-    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' &&
-      +s.opacity > 0.05 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth; };
+    if (!(r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05)) return false;
+    if (all) return r.right > 0 && r.left < innerWidth;
+    return r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth; };
   let els;
   if (sel) els = [...document.querySelectorAll(sel)];
   else els = [...document.querySelectorAll('button,a,[onclick],[role=button],[data-game],[data-id],[draggable=true],.tile,.card,.btn,img,div,span')]
@@ -278,6 +280,8 @@ JS_CANDIDATES = r"""
              typeof e.onclick === 'function' || typeof e.onpointerdown === 'function' || typeof e.ontouchstart === 'function'; });
   els = els.filter(vis).filter(e => { const r = e.getBoundingClientRect(); return r.width >= minSize && r.height >= minSize; });
   els = els.filter(e => !els.some(o => o !== e && o.contains(e)));   // только самые внешние
+  document.querySelectorAll('[data-audit-idx]').forEach(e => e.removeAttribute('data-audit-idx'));
+  els.forEach((e, i) => e.setAttribute('data-audit-idx', i));
   return els.map((e, i) => { const r = e.getBoundingClientRect();
     return {i, x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height,
             text: (e.innerText || e.getAttribute('aria-label') || e.title || e.alt || '').trim().replace(/\s+/g, ' ').slice(0, 40),
@@ -386,7 +390,7 @@ def run_ui(args, out: Path):
         result["home"]["load_ms"] = round((time.perf_counter() - t0) * 1000)
         page.screenshot(path=str(uidir / "00-home.png"))
         page.screenshot(path=str(uidir / "00-home-full.png"), full_page=True)
-        tiles = page.evaluate(JS_CANDIDATES, [args.tile_selector, 56])
+        tiles = page.evaluate(JS_CANDIDATES, [args.tile_selector, 56, True])
         tiles = [t for t in tiles if t["w"] * t["h"] < w * h * 0.6]
         result["home"].update(layout=page.evaluate(JS_LAYOUT, [TH["tap_min"], TH["upscale"], TH["overscale"]]),
                               console=logs, tiles=[{k: t[k] for k in ("text", "id", "cls", "w", "h")} for t in tiles])
@@ -416,17 +420,16 @@ def run_ui(args, out: Path):
             try:
                 page.goto(url, wait_until="load")
                 page.wait_for_timeout(args.wait)
-                cur = page.evaluate(JS_CANDIDATES, [args.tile_selector, 56])
+                cur = page.evaluate(JS_CANDIDATES, [args.tile_selector, 56, True])
                 cur = [t for t in cur if t["w"] * t["h"] < w * h * 0.6]
                 if n - 1 >= len(cur):
                     raise RuntimeError("плитка пропала при повторной загрузке")
-                t = cur[n - 1]
-                if t["y"] > h - 10:
-                    page.mouse.wheel(0, t["y"] - h / 2)
-                    page.wait_for_timeout(400)
-                    cur = page.evaluate(JS_CANDIDATES, [args.tile_selector, 56])
-                    cur = [c for c in cur if c["w"] * c["h"] < w * h * 0.6]
-                    t = cur[n - 1]
+                # прокрутить к плитке (и в документе, и во внутреннем контейнере)
+                idx = cur[n - 1]["i"]
+                t = page.evaluate("""(i) => { const e = document.querySelector(`[data-audit-idx="${i}"]`);
+                    e.scrollIntoView({block: 'center', behavior: 'instant'}); const r = e.getBoundingClientRect();
+                    return {x: r.left + r.width / 2, y: r.top + r.height / 2}; }""", idx)
+                page.wait_for_timeout(500)
                 g["enter_reaction_ms"] = measure_reaction(page, t["x"], t["y"])
                 for ms, tag in ((300, "a"), (1200, "b"), (3000, "c")):
                     page.wait_for_timeout(ms if tag == "a" else ms - prev)
@@ -435,7 +438,7 @@ def run_ui(args, out: Path):
                 g["layout"] = page.evaluate(JS_LAYOUT, [TH["tap_min"], TH["upscale"], TH["overscale"]])
                 # несколько нажатий по карточкам
                 for s in range(args.steps):
-                    cands = page.evaluate(JS_CANDIDATES, [args.card_selector, 40])
+                    cands = page.evaluate(JS_CANDIDATES, [args.card_selector, 40, False])
                     # верхняя полоса (назад, шестерёнка) — мелкие кнопки выше 60 px не трогаем
                     cands = [c for c in cands if (c["y"] > 60 or c["h"] > 80) and c["w"] * c["h"] < w * h * 0.5]
                     if not cands:
