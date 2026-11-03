@@ -329,6 +329,7 @@ def serve(root: Path):
     handler = functools.partial(Q, directory=str(root))
     srv = socketserver.ThreadingTCPServer(("127.0.0.1", 0), handler)
     srv.daemon_threads = True
+    srv.handle_error = lambda *a: None  # браузер закрыт посреди загрузки — не засорять вывод BrokenPipe
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{srv.server_address[1]}/"
 
