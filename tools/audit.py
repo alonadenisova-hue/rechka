@@ -5,7 +5,7 @@
 Результат: audit-out/ (report.md, audio.csv, images.csv, ui.json, contact-sheet.png, ui/NN-*/)
 Подробности — в AUDIT.md. Это отправная точка: пороги и эвристики можно подстраивать.
 """
-import argparse, base64, csv, functools, hashlib, http.server, io, json, os, random, re
+import argparse, base64, csv, functools, hashlib, http.server, io, json, math, os, random, re
 import shutil, socketserver, statistics, subprocess, sys, threading, time
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def collect_media(out: Path):
     emb.mkdir(parents=True, exist_ok=True)
     items, seen = [], set()
     for root, dirs, files in os.walk(REPO):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith("audit-out")]
         for f in files:
             p = Path(root) / f
             ext = p.suffix.lower()
@@ -129,8 +129,10 @@ def audio_info(p: Path):
     return d
 
 
-def audio_group(name: str, dur):
+def audio_group(name: str, dur, src=""):
     n = name.lower()
+    if re.search(r"sounds\d*\.js$", src):  # window.SND — голоса животных
+        return "голос животного"
     if any(k in n for k in ("praise", "molod", "умни", "молод", "good", "win", "yes", "ok", "correct")):
         return "похвала"
     if any(k in n for k in ("click", "tap", "pop", "клик", "щелч", "click", "snap", "whoosh", "boing")):
@@ -143,7 +145,7 @@ def audio_group(name: str, dur):
 def check_audio(items):
     rows = [dict(name=i["name"], src=i["src"], **audio_info(i["path"])) for i in items]
     for r in rows:
-        r["group"] = audio_group(r["name"], r["duration"])
+        r["group"] = audio_group(r["name"], r["duration"], r["src"])
     groups = {}
     for r in rows:
         if r["lufs"] is not None:
@@ -318,6 +320,116 @@ JS_LAYOUT = r"""
 """
 
 
+# Перетаскиваемые элементы: обработчик pointerdown захватывает указатель (setPointerCapture),
+# так устроены «Съедобное», «Летит, едет, плывёт», «Повтори!», пазл и др.
+JS_DRAGGABLES = r"""
+() => {
+  const scr = [...document.querySelectorAll('.screen,#sayit,#vrec')].filter(s => !s.hidden && getComputedStyle(s).display !== 'none');
+  const root = scr.length ? scr : [document.body];
+  const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05 &&
+      r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; };
+  const isDrag = e => typeof e.onpointerdown === 'function' && /setPointerCapture/.test(String(e.onpointerdown))
+    && (typeof e.onpointermove === 'function' || typeof e.onpointerup === 'function');
+  const drags = [], targets = [];
+  for (const sc of root) for (const e of sc.querySelectorAll('*')) {
+    if (!vis(e)) continue;
+    const r = e.getBoundingClientRect();
+    if (isDrag(e)) { if (r.width * r.height < innerWidth * innerHeight * 0.4) drags.push(e); continue; }
+  }
+  for (const sc of root) for (const e of sc.querySelectorAll('*')) {
+    if (!vis(e) || drags.some(d => d === e || d.contains(e) || e.contains(d))) continue;
+    const r = e.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40 || r.top < 60 || r.width * r.height > innerWidth * innerHeight * 0.45) continue;
+    if (e.closest('.bar,#nextbar')) continue;
+    targets.push(e);
+  }
+  document.querySelectorAll('[data-audit-drag],[data-audit-tgt]').forEach(e => { e.removeAttribute('data-audit-drag'); e.removeAttribute('data-audit-tgt'); });
+  const box = e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height,
+    text: (e.getAttribute('aria-label') || e.innerText || e.alt || '').trim().replace(/\s+/g, ' ').slice(0, 30),
+    cls: (typeof e.className === 'string' ? e.className : (e.className && e.className.baseVal) || '').slice(0, 40)}; };
+  // цели: самые «листовые» и разные по месту
+  const tg = []; for (const e of targets) { const b = box(e);
+    if (!tg.some(t => Math.hypot(t.x - b.x, t.y - b.y) < 30)) tg.push(b); }
+  return {drags: drags.map((e, i) => { e.setAttribute('data-audit-drag', i); return {i, ...box(e)}; }), targets: tg.slice(0, 25)};
+}
+"""
+
+JS_DRAG_STATE = r"""
+(i) => { const e = document.querySelector(`[data-audit-drag="${i}"]`);
+  const pr = (document.querySelector('.screen:not([hidden]) .prompt') || {}).innerText || '';
+  const dots = document.querySelectorAll('#dots .on,#dots .miss').length;
+  if (!e || !e.isConnected) return {gone: true, pr, dots};
+  const r = e.getBoundingClientRect(); const c = typeof e.className === 'string' ? e.className : '';
+  return {gone: false, x: r.left + r.width / 2, y: r.top + r.height / 2, cls: c, pr, dots}; }
+"""
+
+
+def drag_test(page, rnd, gdir, step, limit=5):
+    """Перетащить предмет на несколько целей. Возвращает словарь с итогом шага или None, если тащить нечего."""
+    info = page.evaluate(JS_DRAGGABLES)
+    info["drags"] = [x for x in info["drags"] if not re.search(r"\b(lock|placed|done)\b", x["cls"])]
+    if not info["drags"]:
+        return None
+    d = rnd.choice(info["drags"])
+    tgts = [t for t in info["targets"] if math.hypot(t["x"] - d["x"], t["y"] - d["y"]) > max(d["w"], d["h"]) * 0.7]
+    rnd.shuffle(tgts)
+    vw, vh = page.viewport_size["width"], page.viewport_size["height"]
+    grid = [dict(x=vw * (i + .5) / 3, y=120 + (vh - 160) * (j + .5) / 4, text=f"точка {i},{j}", cls="")
+            for i in range(3) for j in range(4)]
+    rnd.shuffle(grid)
+    tgts += [p for p in grid if math.hypot(p["x"] - d["x"], p["y"] - d["y"]) > max(d["w"], d["h"]) * 0.7]
+    res = dict(step=step, kind="drag", item=d["text"] or d["cls"], drags=len(info["drags"]), tries=0,
+               follows=None, accepted=False, reaction_ms=None)
+    for t in tgts[:limit]:
+        st0 = page.evaluate(JS_DRAG_STATE, d["i"])
+        if st0.get("gone"):
+            break
+        res["tries"] += 1
+        page.mouse.move(st0["x"], st0["y"])
+        page.mouse.down()
+        mx, my = (st0["x"] + t["x"]) / 2, (st0["y"] + t["y"]) / 2
+        page.mouse.move(mx, my, steps=6)
+        mid = page.evaluate(JS_DRAG_STATE, d["i"])
+        if not mid.get("gone"):
+            # предмет должен ехать за пальцем (допуск — половина пути)
+            moved = math.hypot(mid["x"] - st0["x"], mid["y"] - st0["y"])
+            need = math.hypot(mx - st0["x"], my - st0["y"])
+            res["follows"] = bool(res["follows"] or moved > need * 0.5)
+        page.mouse.move(t["x"], t["y"], steps=6)
+        before = page.screenshot()
+        page.evaluate(JS_ARM, "pointerup")
+        t0 = time.perf_counter()
+        page.mouse.up()
+        react = None
+        while (time.perf_counter() - t0) * 1000 < 600:
+            if _png_diff(before, page.screenshot()):
+                react = page.evaluate(JS_READ) or round((time.perf_counter() - t0) * 1000)
+                break
+        if react and res["reaction_ms"] is None:
+            res["reaction_ms"] = react
+        # неверный ответ показывается 1–3 с (с озвучкой) и уезжает обратно; верный — задание сменяется
+        ok, t1 = False, time.perf_counter()
+        while time.perf_counter() - t1 < 4.5:
+            page.wait_for_timeout(300)
+            st1 = page.evaluate(JS_DRAG_STATE, d["i"])
+            if st1.get("gone") or st1["pr"] != st0["pr"] or st1["dots"] != st0["dots"]:
+                ok = True
+                break
+            if math.hypot(st1["x"] - st0["x"], st1["y"] - st0["y"]) < 25:
+                break  # вернулся домой — не принято
+        else:
+            ok = True  # так и остался на новом месте
+        if ok:
+            res["accepted"] = True
+            res["target"] = t["text"] or t["cls"]
+            page.screenshot(path=str(gdir / f"step{step}-drag-ok.png"))
+            break
+    if not res["accepted"]:
+        page.screenshot(path=str(gdir / f"step{step}-drag-none.png"))
+    return res
+
+
 def _png_diff(a: bytes, b: bytes):
     from PIL import Image, ImageChops
     ia, ib = Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB")
@@ -330,14 +442,35 @@ def _png_diff(a: bytes, b: bytes):
     return sum(d.histogram()[255:]) > 150  # не просто мигание курсора
 
 
+# Точный отклик меряется внутри страницы: от события нажатия (pointerdown/pointerup) до первого
+# изменения DOM/стилей и следующего за ним кадра. Скриншоты слишком медленные (150–250 мс каждый)
+# и годятся только для проверки «экран вообще изменился».
+JS_ARM = r"""
+(ev) => { const A = window.__audit = {t0: null, tm: null, tf: null};
+  addEventListener(ev, () => { if (A.t0 === null) A.t0 = performance.now(); }, {capture: true, once: true});
+  const mo = new MutationObserver(() => { if (A.t0 !== null && A.tm === null) { A.tm = performance.now();
+      requestAnimationFrame(() => requestAnimationFrame(() => { A.tf = performance.now(); })); mo.disconnect(); } });
+  mo.observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'src']});
+}
+"""
+JS_READ = "() => { const A = window.__audit || {}; return A.t0 == null || A.tm == null ? null : " \
+          "Math.round(((A.tf || A.tm) - A.t0)); }"
+
+
 def measure_reaction(page, x, y, limit_ms=600):
     before = page.screenshot()
+    page.evaluate(JS_ARM, "pointerdown")
     t0 = time.perf_counter()
     page.touchscreen.tap(x, y)
+    changed = False
     while (time.perf_counter() - t0) * 1000 < limit_ms:
         if _png_diff(before, page.screenshot()):
-            return round((time.perf_counter() - t0) * 1000)
-    return None
+            changed = True
+            break
+    if not changed:
+        return None
+    ms = page.evaluate(JS_READ)
+    return ms if ms is not None else round((time.perf_counter() - t0) * 1000)
 
 
 def slug(s):
@@ -438,6 +571,13 @@ def run_ui(args, out: Path):
                 g["layout"] = page.evaluate(JS_LAYOUT, [TH["tap_min"], TH["upscale"], TH["overscale"]])
                 # несколько нажатий по карточкам
                 for s in range(args.steps):
+                    # игры с перетаскиванием: тащим предмет, а не нажимаем
+                    if not args.card_selector:
+                        dr = drag_test(page, rnd, gdir, s + 1)
+                        if dr:
+                            g["steps"].append(dr)
+                            page.wait_for_timeout(1200)
+                            continue
                     cands = page.evaluate(JS_CANDIDATES, [args.card_selector, 40, False])
                     # верхняя полоса (назад, шестерёнка) — мелкие кнопки выше 60 px не трогаем
                     cands = [c for c in cands if (c["y"] > 60 or c["h"] > 80) and c["w"] * c["h"] < w * h * 0.5]
@@ -472,9 +612,15 @@ def run_ui(args, out: Path):
             shutil.rmtree(vdir, ignore_errors=True)
             rs = [x["reaction_ms"] for x in g["steps"] if x.get("reaction_ms")]
             g["reaction_med_ms"] = round(statistics.median(rs)) if rs else None
-            g["no_reaction"] = sum(1 for x in g["steps"] if "reaction_ms" in x and x["reaction_ms"] is None)
+            g["no_reaction"] = sum(1 for x in g["steps"] if x.get("kind") != "drag" and "reaction_ms" in x and x["reaction_ms"] is None)
+            ds = [x for x in g["steps"] if x.get("kind") == "drag"]
+            if ds:
+                g["drag"] = dict(steps=len(ds), accepted=sum(x["accepted"] for x in ds),
+                                 follows=all(x["follows"] for x in ds if x["follows"] is not None),
+                                 no_reaction=sum(1 for x in ds if x["reaction_ms"] is None))
             result["games"].append(g)
             log(f"  {n:02d} {g['tile'][:30]:30} отклик {g['reaction_med_ms']} мс, ошибок консоли {len(logs)}"
+                + (f", перетаскивание {g['drag']['accepted']}/{g['drag']['steps']}" if g.get("drag") else "")
                 + (f", СБОЙ: {g['error'][:60]}" if g.get("error") else ""))
         browser.close()
     srv.shutdown()
@@ -541,8 +687,8 @@ def report(out, audio, med, images, ui):
         L.append(f"Главный экран: загрузка {ui['home'].get('load_ms')} мс, плиток {len(ui['home'].get('tiles', []))}, "
                  f"ошибок консоли {len(ui['home'].get('console', []))}"
                  + (", ЕСТЬ горизонтальная прокрутка" if hl.get("overflowX") else ""))
-        L += ["", "| № | Игра | Вход, мс | Отклик (медиана), мс | Без реакции | Консоль | Вёрстка | Сбой |",
-              "|---|---|---|---|---|---|---|---|"]
+        L += ["", "| № | Игра | Вход, мс | Отклик (медиана), мс | Без реакции | Перетаскивание | Консоль | Вёрстка | Сбой |",
+              "|---|---|---|---|---|---|---|---|---|"]
         for g in ui["games"]:
             lay = g.get("layout", {})
             lay_s = ", ".join(f"{k} {len(v)}" for k, v in lay.items() if isinstance(v, list) and v)
@@ -550,10 +696,14 @@ def report(out, audio, med, images, ui):
                 lay_s = "прокрутка вбок; " + lay_s
             r = g.get("reaction_med_ms")
             r_s = f"{r}" + (" ⚠" if r and r > TH["react_max"] else "")
-            L.append(f"| {g['n']} | {g['tile'][:28]} | {g.get('enter_reaction_ms')} | {r_s} | {g.get('no_reaction')} | "
+            dg = g.get("drag")
+            dg_s = (f"принято {dg['accepted']}/{dg['steps']}" + ("" if dg["follows"] else ", НЕ едет за пальцем")) if dg else "—"
+            L.append(f"| {g['n']} | {g['tile'][:28]} | {g.get('enter_reaction_ms')} | {r_s} | {g.get('no_reaction')} | {dg_s} | "
                      f"{len(g['console'])} | {lay_s or '—'} | {g.get('error', '')[:50]} |")
         L += ["", "Подробности: `ui.json` (списки элементов, тексты ошибок консоли), скриншоты и видео — `ui/NN-*/`.",
-              "Отклик меряется по изменению экрана после нажатия; «Без реакции» — экран не изменился за 600 мс.", ""]
+              "Отклик меряется по изменению экрана после нажатия; «Без реакции» — экран не изменился за 600 мс.",
+              "«Перетаскивание» — в играх, где предметы тащат пальцем: скрипт тащит предмет на разные места; "
+              "«принято» — предмет остался на месте или задание сменилось (нашёлся верный ответ).", ""]
     (out / "report.md").write_text("\n".join(L), encoding="utf-8")
 
 

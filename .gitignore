@@ -1,5 +1,5 @@
 # результаты аудита — каждый раз создаются заново
-audit-out/
+audit-out*/
 frames/
 __pycache__/
 *.pyc
