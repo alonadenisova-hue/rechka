@@ -718,10 +718,17 @@ def contact_sheet(uidir: Path, dst: Path, thumb_w=180):
     th = max(i.size[1] for _, i in ims) + 18
     sheet = Image.new("RGB", (cols * (thumb_w + 8) + 8, ((len(ims) + cols - 1) // cols) * (th + 8) + 8), "white")
     dr = ImageDraw.Draw(sheet)
+    from PIL import ImageFont
+    font = None
+    for fp in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+               "/Library/Fonts/Arial Unicode.ttf", "C:/Windows/Fonts/arial.ttf"):
+        if os.path.exists(fp):
+            font = ImageFont.truetype(fp, 11)  # стандартный шрифт PIL не знает русских букв
+            break
     for k, (lab, im) in enumerate(ims):
         x, y = 8 + (k % cols) * (thumb_w + 8), 8 + (k // cols) * (th + 8)
         sheet.paste(im, (x, y + 16))
-        dr.text((x, y), lab[:28], fill="black")
+        dr.text((x, y), lab[:28], fill="black", font=font)
     sheet.save(dst)
 
 
