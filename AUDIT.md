@@ -140,8 +140,14 @@ python3 tools/audit.py --size 412x915     # другой экран
 
 Особенности «Речки»:
 - плитки игр на главном экране — 32, часть ниже экрана; скрипт к ним прокручивает;
-- в играх с перетаскиванием («Съедобное», «Летит, едет, плывёт», пазл, «Повтори!») нажатие ничего
-  не делает — «без реакции» там не ошибка; проверять перетаскивание отдельно (`page.mouse` down/move/up);
+- в играх с перетаскиванием («Съедобное», «Летит, едет, плывёт», пазл, «Повтори!», «Час пик», «Пингвины»)
+  скрипт сам находит предметы, которые тащат пальцем (обработчик с `setPointerCapture`), тащит их
+  на разные места и пишет в отчёт: едет ли предмет за пальцем и принят ли ответ (колонка «Перетаскивание»);
+- «Повторяй за Шариком» без микрофона идёт сама (карточки подсвечиваются по очереди) — «нет карточек» там не ошибка;
+- отклик меряется внутри страницы: от нажатия до первого изменения экрана (раньше — скриншотами,
+  и цифры были завышены на 200–500 мс);
+- звуки, которые приложение синтезирует (похвала, «неверно», щелчок — объект `sfx`), скрипт
+  рендерит в браузере и проверяет вместе с файлами (`sfx.good`, `sfx.bad` … в `audio.csv`);
 - игра может открыться прокрученной, если главный экран был прокручен, — проверить, бывает ли так у Льва.
 
 Скрипт — отправная точка, не истина. Пороги и эвристики можно подстраивать.
@@ -183,10 +189,24 @@ python3 tools/audit.py --size 412x915     # другой экран
 ```bash
 #!/bin/bash
 set -e
-apt-get update -qq && apt-get install -y -qq ffmpeg
-pip install --break-system-packages -q playwright pillow numpy
-python3 -m playwright install --with-deps chromium
+command -v ffmpeg >/dev/null || (apt-get update -qq && apt-get install -y -qq ffmpeg)
+pip install --break-system-packages -q pillow numpy
+# В облаке Claude браузер Chromium уже установлен (/opt/pw-browsers) вместе с Playwright для Node.
+# Python-Playwright нужен ТОЙ ЖЕ версии, иначе он ищет другой браузер и не запускается
+# («Executable doesn't exist … chromium_headless_shell-NNNN»). Свежий `playwright install` там не нужен.
+if [ -d /opt/pw-browsers ] && node -e "require('playwright')" 2>/dev/null; then
+  pip install --break-system-packages -q "playwright==$(node -p "require('playwright/package.json').version")"
+else
+  pip install --break-system-packages -q playwright
+  python3 -m playwright install --with-deps chromium
+fi
 ```
+
+Проверка, что всё работает (около минуты): `python3 tools/audit.py --only ui --games 1,2 --steps 2`.
+
+Время: полный `tools/audit.py` идёт около часа (32 игры, в играх с перетаскиванием скрипт
+пробует несколько мест и ждёт ответа игры). Два размера экрана можно гонять параллельно
+с разными `--out` (например `--out audit-out-412`).
 
 Доступ к сети: **Trusted** хватает. Если понадобится скачивать новые голоса/картинки —
 **Custom** + `*.wikimedia.org`, `upload.wikimedia.org` + стандартный список пакетных менеджеров.

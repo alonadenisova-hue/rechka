@@ -5,7 +5,7 @@
 Результат: audit-out/ (report.md, audio.csv, images.csv, ui.json, contact-sheet.png, ui/NN-*/)
 Подробности — в AUDIT.md. Это отправная точка: пороги и эвристики можно подстраивать.
 """
-import argparse, base64, csv, functools, hashlib, http.server, io, json, os, random, re
+import argparse, base64, csv, functools, hashlib, http.server, io, json, math, os, random, re
 import shutil, socketserver, statistics, subprocess, sys, threading, time
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def collect_media(out: Path):
     emb.mkdir(parents=True, exist_ok=True)
     items, seen = [], set()
     for root, dirs, files in os.walk(REPO):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.startswith("audit-out")]
         for f in files:
             p = Path(root) / f
             ext = p.suffix.lower()
@@ -129,8 +129,12 @@ def audio_info(p: Path):
     return d
 
 
-def audio_group(name: str, dur):
+def audio_group(name: str, dur, src=""):
     n = name.lower()
+    if re.search(r"sounds\d*\.js$", src):  # window.SND — голоса животных
+        return "голос животного"
+    if src.endswith("(синтез)"):
+        return "похвала" if re.search(r"\.(good|up)$", n) else "эффект"
     if any(k in n for k in ("praise", "molod", "умни", "молод", "good", "win", "yes", "ok", "correct")):
         return "похвала"
     if any(k in n for k in ("click", "tap", "pop", "клик", "щелч", "click", "snap", "whoosh", "boing")):
@@ -143,7 +147,7 @@ def audio_group(name: str, dur):
 def check_audio(items):
     rows = [dict(name=i["name"], src=i["src"], **audio_info(i["path"])) for i in items]
     for r in rows:
-        r["group"] = audio_group(r["name"], r["duration"])
+        r["group"] = audio_group(r["name"], r["duration"], r["src"])
     groups = {}
     for r in rows:
         if r["lufs"] is not None:
@@ -186,6 +190,71 @@ def check_audio(items):
             f.append("возможен щелчок на краю (нет fade)")
         r["flags"] = "; ".join(f)
     return rows, med
+
+
+# Звуки, которые приложение синтезирует на лету (Web Audio, объект sfx — доступен через window.__rechka.sfx).
+# До загрузки страницы AudioContext подменяется «прокси» на OfflineAudioContext: каждый звук рендерится отдельно.
+JS_SFX_INIT = r"""
+(() => { const sr = 44100; window.__offNew = () => { window.__off = new OfflineAudioContext(1, sr * 3, sr); }; window.__offNew();
+  const P = new Proxy({}, {get(_, k) { if (k === 'state') return 'running'; if (k === 'resume' || k === 'suspend') return () => Promise.resolve();
+    const t = window.__off, v = t[k]; return typeof v === 'function' ? v.bind(t) : v; }});
+  window.AudioContext = window.webkitAudioContext = function () { return P; }; })();
+"""
+JS_SFX = r"""
+async () => {
+  const S = (window.__rechka || {}).sfx; if (!S) return [];
+  const out = [], sr = 44100;
+  const wav = f => { const n = f.length, b = new DataView(new ArrayBuffer(44 + n * 2));
+    const w = (o, s) => [...s].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true);
+    b.setUint16(22, 1, true); b.setUint32(24, sr, true); b.setUint32(28, sr * 2, true); b.setUint16(32, 2, true);
+    b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f[i])) * 32767, true);
+    let s = ''; const u = new Uint8Array(b.buffer); for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192));
+    return btoa(s); };
+  for (const k of Object.keys(S)) {
+    if (typeof S[k] !== 'function') continue;
+    try {
+      window.__offNew(); S[k]();
+      const d = (await window.__off.startRendering()).getChannelData(0);
+      let last = d.length - 1; while (last > 0 && Math.abs(d[last]) < 1e-4) last--;
+      if (last > 0) out.push({name: k, b64: wav(d.subarray(0, Math.min(d.length, last + 1 + sr * 0.05)))});
+    } catch (e) { out.push({name: k, error: String(e)}); }
+  }
+  return out;
+}
+"""
+
+
+def render_sfx(out: Path):
+    """Синтезированные звуки (объект sfx в index.html) — в WAV, чтобы померить, как и файлы."""
+    root = find_root(None)
+    if not root:
+        return []
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return []
+    d = out / "embedded"
+    d.mkdir(parents=True, exist_ok=True)
+    srv, url = serve(root)
+    items = []
+    try:
+        with sync_playwright() as pw:
+            b = pw.chromium.launch()
+            pg = b.new_page()
+            pg.add_init_script(JS_SFX_INIT)
+            pg.goto(url, wait_until="load")
+            pg.wait_for_timeout(1500)
+            for r in pg.evaluate(JS_SFX):
+                if r.get("b64"):
+                    fp = d / f"sfx-{r['name']}.wav"
+                    fp.write_bytes(base64.b64decode(r["b64"]))
+                    items.append(dict(kind="audio", path=fp, name=f"sfx.{r['name']}", src="index.html (синтез)"))
+            b.close()
+    finally:
+        srv.shutdown()
+    return items
 
 
 # ---------------------------------------------------------------- картинки
@@ -260,6 +329,7 @@ def serve(root: Path):
     handler = functools.partial(Q, directory=str(root))
     srv = socketserver.ThreadingTCPServer(("127.0.0.1", 0), handler)
     srv.daemon_threads = True
+    srv.handle_error = lambda *a: None  # браузер закрыт посреди загрузки — не засорять вывод BrokenPipe
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f"http://127.0.0.1:{srv.server_address[1]}/"
 
@@ -292,6 +362,7 @@ JS_CANDIDATES = r"""
 JS_LAYOUT = r"""
 ([tapMin, up, over]) => {
   const dpr = devicePixelRatio, out = {overflowX: document.documentElement.scrollWidth > innerWidth + 1,
+    overflowY: document.documentElement.scrollHeight > innerHeight + 1 ? document.documentElement.scrollHeight - innerHeight : 0,
     offscreen: [], smallTap: [], upscaled: [], overscaled: [], smallText: []};
   const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
     return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05; };
@@ -302,7 +373,11 @@ JS_LAYOUT = r"""
     if (s.position !== 'fixed' && (r.right > innerWidth + 2 || r.left < -2) && r.width < innerWidth * 1.5 && r.top < innerHeight)
       out.offscreen.push(name(e));
     const clickable = e.matches('button,a,[onclick],[role=button]') || s.cursor === 'pointer';
-    if (clickable && (r.width < tapMin || r.height < tapMin) && r.top < innerHeight)
+    // иконка или подпись внутри большой кнопки — не отдельная зона нажатия
+    const host = e.parentElement && e.parentElement.closest('button,a,[onclick],[role=button]');
+    const hr = host && host.getBoundingClientRect();
+    const inBig = hr && hr.width >= tapMin && hr.height >= tapMin;
+    if (clickable && !inBig && !(e.ownerSVGElement) && (r.width < tapMin || r.height < tapMin) && r.top < innerHeight)
       out.smallTap.push(`${name(e)} ${Math.round(r.width)}×${Math.round(r.height)}`);
     if (e.tagName === 'IMG' && e.naturalWidth && r.top < innerHeight) {
       const need = r.width * dpr, nm = (e.currentSrc || e.src || '').slice(0, 80).replace(/^data:([^;]+);base64,.*/, 'data:$1');
@@ -318,6 +393,116 @@ JS_LAYOUT = r"""
 """
 
 
+# Перетаскиваемые элементы: обработчик pointerdown захватывает указатель (setPointerCapture),
+# так устроены «Съедобное», «Летит, едет, плывёт», «Повтори!», пазл и др.
+JS_DRAGGABLES = r"""
+() => {
+  const scr = [...document.querySelectorAll('.screen,#sayit,#vrec')].filter(s => !s.hidden && getComputedStyle(s).display !== 'none');
+  const root = scr.length ? scr : [document.body];
+  const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05 &&
+      r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; };
+  const isDrag = e => typeof e.onpointerdown === 'function' && /setPointerCapture/.test(String(e.onpointerdown))
+    && (typeof e.onpointermove === 'function' || typeof e.onpointerup === 'function');
+  const drags = [], targets = [];
+  for (const sc of root) for (const e of sc.querySelectorAll('*')) {
+    if (!vis(e)) continue;
+    const r = e.getBoundingClientRect();
+    if (isDrag(e)) { if (r.width * r.height < innerWidth * innerHeight * 0.4) drags.push(e); continue; }
+  }
+  for (const sc of root) for (const e of sc.querySelectorAll('*')) {
+    if (!vis(e) || drags.some(d => d === e || d.contains(e) || e.contains(d))) continue;
+    const r = e.getBoundingClientRect();
+    if (r.width < 40 || r.height < 40 || r.top < 60 || r.width * r.height > innerWidth * innerHeight * 0.45) continue;
+    if (e.closest('.bar,#nextbar')) continue;
+    targets.push(e);
+  }
+  document.querySelectorAll('[data-audit-drag],[data-audit-tgt]').forEach(e => { e.removeAttribute('data-audit-drag'); e.removeAttribute('data-audit-tgt'); });
+  const box = e => { const r = e.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height,
+    text: (e.getAttribute('aria-label') || e.innerText || e.alt || '').trim().replace(/\s+/g, ' ').slice(0, 30),
+    cls: (typeof e.className === 'string' ? e.className : (e.className && e.className.baseVal) || '').slice(0, 40)}; };
+  // цели: самые «листовые» и разные по месту
+  const tg = []; for (const e of targets) { const b = box(e);
+    if (!tg.some(t => Math.hypot(t.x - b.x, t.y - b.y) < 30)) tg.push(b); }
+  return {drags: drags.map((e, i) => { e.setAttribute('data-audit-drag', i); return {i, ...box(e)}; }), targets: tg.slice(0, 25)};
+}
+"""
+
+JS_DRAG_STATE = r"""
+(i) => { const e = document.querySelector(`[data-audit-drag="${i}"]`);
+  const pr = (document.querySelector('.screen:not([hidden]) .prompt') || {}).innerText || '';
+  const dots = document.querySelectorAll('#dots .on,#dots .miss').length;
+  if (!e || !e.isConnected) return {gone: true, pr, dots};
+  const r = e.getBoundingClientRect(); const c = typeof e.className === 'string' ? e.className : '';
+  return {gone: false, x: r.left + r.width / 2, y: r.top + r.height / 2, cls: c, pr, dots}; }
+"""
+
+
+def drag_test(page, rnd, gdir, step, limit=5):
+    """Перетащить предмет на несколько целей. Возвращает словарь с итогом шага или None, если тащить нечего."""
+    info = page.evaluate(JS_DRAGGABLES)
+    info["drags"] = [x for x in info["drags"] if not re.search(r"\b(lock|placed|done)\b", x["cls"])]
+    if not info["drags"]:
+        return None
+    d = rnd.choice(info["drags"])
+    tgts = [t for t in info["targets"] if math.hypot(t["x"] - d["x"], t["y"] - d["y"]) > max(d["w"], d["h"]) * 0.7]
+    rnd.shuffle(tgts)
+    vw, vh = page.viewport_size["width"], page.viewport_size["height"]
+    grid = [dict(x=vw * (i + .5) / 3, y=120 + (vh - 160) * (j + .5) / 4, text=f"точка {i},{j}", cls="")
+            for i in range(3) for j in range(4)]
+    rnd.shuffle(grid)
+    tgts += [p for p in grid if math.hypot(p["x"] - d["x"], p["y"] - d["y"]) > max(d["w"], d["h"]) * 0.7]
+    res = dict(step=step, kind="drag", item=d["text"] or d["cls"], drags=len(info["drags"]), tries=0,
+               follows=None, accepted=False, reaction_ms=None)
+    for t in tgts[:limit]:
+        st0 = page.evaluate(JS_DRAG_STATE, d["i"])
+        if st0.get("gone"):
+            break
+        res["tries"] += 1
+        page.mouse.move(st0["x"], st0["y"])
+        page.mouse.down()
+        mx, my = (st0["x"] + t["x"]) / 2, (st0["y"] + t["y"]) / 2
+        page.mouse.move(mx, my, steps=6)
+        mid = page.evaluate(JS_DRAG_STATE, d["i"])
+        if not mid.get("gone"):
+            # предмет должен ехать за пальцем (допуск — половина пути)
+            moved = math.hypot(mid["x"] - st0["x"], mid["y"] - st0["y"])
+            need = math.hypot(mx - st0["x"], my - st0["y"])
+            res["follows"] = bool(res["follows"] or moved > need * 0.5)
+        page.mouse.move(t["x"], t["y"], steps=6)
+        before = page.screenshot()
+        page.evaluate(JS_ARM, "pointerup")
+        t0 = time.perf_counter()
+        page.mouse.up()
+        react = None
+        while (time.perf_counter() - t0) * 1000 < 600:
+            if _png_diff(before, page.screenshot()):
+                react = page.evaluate(JS_READ) or round((time.perf_counter() - t0) * 1000)
+                break
+        if react and res["reaction_ms"] is None:
+            res["reaction_ms"] = react
+        # неверный ответ показывается 1–3 с (с озвучкой) и уезжает обратно; верный — задание сменяется
+        ok, t1 = False, time.perf_counter()
+        while time.perf_counter() - t1 < 4.5:
+            page.wait_for_timeout(300)
+            st1 = page.evaluate(JS_DRAG_STATE, d["i"])
+            if st1.get("gone") or st1["pr"] != st0["pr"] or st1["dots"] != st0["dots"]:
+                ok = True
+                break
+            if math.hypot(st1["x"] - st0["x"], st1["y"] - st0["y"]) < 25:
+                break  # вернулся домой — не принято
+        else:
+            ok = True  # так и остался на новом месте
+        if ok:
+            res["accepted"] = True
+            res["target"] = t["text"] or t["cls"]
+            page.screenshot(path=str(gdir / f"step{step}-drag-ok.png"))
+            break
+    if not res["accepted"]:
+        page.screenshot(path=str(gdir / f"step{step}-drag-none.png"))
+    return res
+
+
 def _png_diff(a: bytes, b: bytes):
     from PIL import Image, ImageChops
     ia, ib = Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(b)).convert("RGB")
@@ -330,14 +515,35 @@ def _png_diff(a: bytes, b: bytes):
     return sum(d.histogram()[255:]) > 150  # не просто мигание курсора
 
 
+# Точный отклик меряется внутри страницы: от события нажатия (pointerdown/pointerup) до первого
+# изменения DOM/стилей и следующего за ним кадра. Скриншоты слишком медленные (150–250 мс каждый)
+# и годятся только для проверки «экран вообще изменился».
+JS_ARM = r"""
+(ev) => { const A = window.__audit = {t0: null, tm: null, tf: null};
+  addEventListener(ev, () => { if (A.t0 === null) A.t0 = performance.now(); }, {capture: true, once: true});
+  const mo = new MutationObserver(() => { if (A.t0 !== null && A.tm === null) { A.tm = performance.now();
+      requestAnimationFrame(() => requestAnimationFrame(() => { A.tf = performance.now(); })); mo.disconnect(); } });
+  mo.observe(document.body, {subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'src']});
+}
+"""
+JS_READ = "() => { const A = window.__audit || {}; return A.t0 == null || A.tm == null ? null : " \
+          "Math.round(((A.tf || A.tm) - A.t0)); }"
+
+
 def measure_reaction(page, x, y, limit_ms=600):
     before = page.screenshot()
+    page.evaluate(JS_ARM, "pointerdown")
     t0 = time.perf_counter()
     page.touchscreen.tap(x, y)
+    changed = False
     while (time.perf_counter() - t0) * 1000 < limit_ms:
         if _png_diff(before, page.screenshot()):
-            return round((time.perf_counter() - t0) * 1000)
-    return None
+            changed = True
+            break
+    ms = page.evaluate(JS_READ)
+    if ms is not None:
+        return ms  # изменение было (даже если короткое и скриншот его не поймал)
+    return round((time.perf_counter() - t0) * 1000) if changed else None
 
 
 def slug(s):
@@ -438,6 +644,13 @@ def run_ui(args, out: Path):
                 g["layout"] = page.evaluate(JS_LAYOUT, [TH["tap_min"], TH["upscale"], TH["overscale"]])
                 # несколько нажатий по карточкам
                 for s in range(args.steps):
+                    # игры с перетаскиванием: тащим предмет, а не нажимаем
+                    if not args.card_selector:
+                        dr = drag_test(page, rnd, gdir, s + 1)
+                        if dr:
+                            g["steps"].append(dr)
+                            page.wait_for_timeout(1200)
+                            continue
                     cands = page.evaluate(JS_CANDIDATES, [args.card_selector, 40, False])
                     # верхняя полоса (назад, шестерёнка) — мелкие кнопки выше 60 px не трогаем
                     cands = [c for c in cands if (c["y"] > 60 or c["h"] > 80) and c["w"] * c["h"] < w * h * 0.5]
@@ -472,9 +685,15 @@ def run_ui(args, out: Path):
             shutil.rmtree(vdir, ignore_errors=True)
             rs = [x["reaction_ms"] for x in g["steps"] if x.get("reaction_ms")]
             g["reaction_med_ms"] = round(statistics.median(rs)) if rs else None
-            g["no_reaction"] = sum(1 for x in g["steps"] if "reaction_ms" in x and x["reaction_ms"] is None)
+            g["no_reaction"] = sum(1 for x in g["steps"] if x.get("kind") != "drag" and "reaction_ms" in x and x["reaction_ms"] is None)
+            ds = [x for x in g["steps"] if x.get("kind") == "drag"]
+            if ds:
+                g["drag"] = dict(steps=len(ds), accepted=sum(x["accepted"] for x in ds),
+                                 follows=all(x["follows"] for x in ds if x["follows"] is not None),
+                                 no_reaction=sum(1 for x in ds if x["reaction_ms"] is None))
             result["games"].append(g)
             log(f"  {n:02d} {g['tile'][:30]:30} отклик {g['reaction_med_ms']} мс, ошибок консоли {len(logs)}"
+                + (f", перетаскивание {g['drag']['accepted']}/{g['drag']['steps']}" if g.get("drag") else "")
                 + (f", СБОЙ: {g['error'][:60]}" if g.get("error") else ""))
         browser.close()
     srv.shutdown()
@@ -499,10 +718,17 @@ def contact_sheet(uidir: Path, dst: Path, thumb_w=180):
     th = max(i.size[1] for _, i in ims) + 18
     sheet = Image.new("RGB", (cols * (thumb_w + 8) + 8, ((len(ims) + cols - 1) // cols) * (th + 8) + 8), "white")
     dr = ImageDraw.Draw(sheet)
+    from PIL import ImageFont
+    font = None
+    for fp in ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+               "/Library/Fonts/Arial Unicode.ttf", "C:/Windows/Fonts/arial.ttf"):
+        if os.path.exists(fp):
+            font = ImageFont.truetype(fp, 11)  # стандартный шрифт PIL не знает русских букв
+            break
     for k, (lab, im) in enumerate(ims):
         x, y = 8 + (k % cols) * (thumb_w + 8), 8 + (k // cols) * (th + 8)
         sheet.paste(im, (x, y + 16))
-        dr.text((x, y), lab[:28], fill="black")
+        dr.text((x, y), lab[:28], fill="black", font=font)
     sheet.save(dst)
 
 
@@ -540,20 +766,27 @@ def report(out, audio, med, images, ui):
         hl = ui["home"].get("layout", {})
         L.append(f"Главный экран: загрузка {ui['home'].get('load_ms')} мс, плиток {len(ui['home'].get('tiles', []))}, "
                  f"ошибок консоли {len(ui['home'].get('console', []))}"
-                 + (", ЕСТЬ горизонтальная прокрутка" if hl.get("overflowX") else ""))
-        L += ["", "| № | Игра | Вход, мс | Отклик (медиана), мс | Без реакции | Консоль | Вёрстка | Сбой |",
-              "|---|---|---|---|---|---|---|---|"]
+                 + (", ЕСТЬ горизонтальная прокрутка" if hl.get("overflowX") else "")
+                 + (f", экран выше телефона на {hl['overflowY']} px (низ обрезан)" if hl.get("overflowY") else ""))
+        L += ["", "| № | Игра | Вход, мс | Отклик (медиана), мс | Без реакции | Перетаскивание | Консоль | Вёрстка | Сбой |",
+              "|---|---|---|---|---|---|---|---|---|"]
         for g in ui["games"]:
             lay = g.get("layout", {})
             lay_s = ", ".join(f"{k} {len(v)}" for k, v in lay.items() if isinstance(v, list) and v)
             if lay.get("overflowX"):
                 lay_s = "прокрутка вбок; " + lay_s
+            if lay.get("overflowY"):
+                lay_s = f"экран выше телефона на {lay['overflowY']} px; " + lay_s
             r = g.get("reaction_med_ms")
             r_s = f"{r}" + (" ⚠" if r and r > TH["react_max"] else "")
-            L.append(f"| {g['n']} | {g['tile'][:28]} | {g.get('enter_reaction_ms')} | {r_s} | {g.get('no_reaction')} | "
+            dg = g.get("drag")
+            dg_s = (f"принято {dg['accepted']}/{dg['steps']}" + ("" if dg["follows"] else ", НЕ едет за пальцем")) if dg else "—"
+            L.append(f"| {g['n']} | {g['tile'][:28]} | {g.get('enter_reaction_ms')} | {r_s} | {g.get('no_reaction')} | {dg_s} | "
                      f"{len(g['console'])} | {lay_s or '—'} | {g.get('error', '')[:50]} |")
         L += ["", "Подробности: `ui.json` (списки элементов, тексты ошибок консоли), скриншоты и видео — `ui/NN-*/`.",
-              "Отклик меряется по изменению экрана после нажатия; «Без реакции» — экран не изменился за 600 мс.", ""]
+              "Отклик меряется по изменению экрана после нажатия; «Без реакции» — экран не изменился за 600 мс.",
+              "«Перетаскивание» — в играх, где предметы тащат пальцем: скрипт тащит предмет на разные места; "
+              "«принято» — предмет остался на месте или задание сменилось (нашёлся верный ответ).", ""]
     (out / "report.md").write_text("\n".join(L), encoding="utf-8")
 
 
@@ -580,7 +813,8 @@ def main():
         if args.only in (None, "assets", "audio"):
             if shutil.which("ffmpeg"):
                 log(f"Звуки: {sum(m['kind'] == 'audio' for m in media)} …")
-                audio, med = check_audio([m for m in media if m["kind"] == "audio"])
+                sfx_items = render_sfx(out)
+                audio, med = check_audio([m for m in media if m["kind"] == "audio"] + sfx_items)
                 write_csv(out / "audio.csv", audio)
             else:
                 log("! Нет ffmpeg — звуки пропущены (apt-get install -y ffmpeg)")
@@ -591,7 +825,7 @@ def main():
     if args.only in (None, "ui"):
         ui = run_ui(args, out)
     report(out, audio, med or {}, images, ui)
-    log(f"\nГотово: {out.relative_to(REPO)}/report.md")
+    log(f"\nГотово: {out}/report.md")
 
 
 if __name__ == "__main__":
