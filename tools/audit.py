@@ -10,7 +10,7 @@ import shutil, socketserver, statistics, subprocess, sys, threading, time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SKIP_DIRS = {".git", "node_modules", "audit-out", "__pycache__", ".venv", "venv"}
+SKIP_DIRS = {".git", "node_modules", "audit-out", "__pycache__", ".venv", "venv", "audio-raw", "reference"}
 IMG_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 AUD_EXT = {".mp3", ".ogg", ".oga", ".wav", ".m4a", ".aac", ".webm", ".opus", ".flac"}
 DATA_URI = re.compile(rb"data:(image|audio)/([a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=]{200,})")

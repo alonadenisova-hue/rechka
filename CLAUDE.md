@@ -9,6 +9,8 @@
   - `app/index.html` — весь код и стили; `app/sw.js` — офлайн-кэш (service worker); `app/manifest.webmanifest`.
   - `app/data*.js`, `app/sounds*.js` — картинки и голоса, встроенные как base64; `app/img*/`, `app/anim*/` — файлы картинок.
   - `app/data11.js` — подсказки «Сегодня дома»; `app/data14.js` — фото пазлов и их лицензии.
+- `audio-raw/` — полные исходные записи голосов животных (белка, ёж, мышь в приложение ещё не вошли), см. `audio-raw/README.md`.
+- `reference/source-v21/` — старые исходники сборки версии 21 с `tools/test.py`; только для справки.
 - В репозитории версия 25. Исходников сборки (`src/body.html`, `tools/patch_v*.py`, `tools/test.py`) пока нет.
 - Проверка после правок: `python3 tools/audit.py --only ui` — игры открываются, нет ошибок консоли.
   Если появится `tools/test.py` — гонять и его (`nomic` и `mic`).

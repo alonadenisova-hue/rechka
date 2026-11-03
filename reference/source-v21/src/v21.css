@@ -1,0 +1,91 @@
+/* ===== v21 ===== */
+.toprow.three{grid-template-columns:1.4fr 1fr 1fr}
+@media (max-width:600px) and (orientation:portrait){.toprow.three{grid-template-columns:1fr 1fr}.toprow.three #btn-mix{grid-column:1/-1;min-height:76px}}
+.bigtile.wb{background:#ffd9e8;box-shadow:0 6px 0 #f08cb4}.bigtile.wb:active{box-shadow:0 2px 0 #f08cb4}
+.t33{background:#e9f9ee}.t34{background:#fff1dc}
+.tile .art .vgart{width:100%;height:100%;object-fit:contain}
+/* «Скажи — и будет!» */
+.vg{position:relative;width:100%;height:100%;overflow:hidden;border-radius:28px;background:linear-gradient(#e9f6ff,#fff 70%);box-shadow:0 6px 0 var(--line)}
+.vg .cap{position:absolute;left:0;right:0;bottom:4%;text-align:center;font-family:var(--display);font-size:clamp(30px,8vw,60px);color:var(--ink);pointer-events:none}
+.vg .meter{position:absolute;left:12px;top:14px;bottom:14px;width:12px;border-radius:8px;background:#24324a14;overflow:hidden}
+.vg .meter i{position:absolute;left:0;right:0;bottom:0;height:0;background:#9fb3c8;border-radius:8px;transition:height .05s}
+.vg .meter i.on{background:var(--leaf)}
+.vg .call{animation:shake .6s 2}
+.vbal{position:absolute;left:50%;bottom:16%;width:min(46%,34vh);transform-origin:50% 95%;transform:translateX(-50%) scale(.4);transition:transform .08s linear}
+.vbal svg{width:100%;height:auto;display:block}
+.vani{position:absolute;left:50%;top:6%;height:72%;aspect-ratio:1;transform:translateX(-50%)}
+.vani img{width:100%;height:100%;object-fit:contain}
+.vani.hop img{animation:hop .45s}
+.vani.talk img{animation:chomp .5s infinite}
+.vg-car{background:linear-gradient(#cfeaff 0 62%,#9fd88a 62%)}
+.vg-car .road{position:absolute;left:0;right:0;top:66%;height:16%;background:#6b7688;border-top:4px solid #fff;border-bottom:4px solid #fff}
+.vg-car .flag{position:absolute;right:6%;top:46%;font-size:clamp(34px,9vw,64px)}
+.vcar{position:absolute;left:4%;top:50%;width:min(34%,30vh);transition:left .08s linear}
+.vcar svg{width:100%;height:auto;display:block}
+.vcar.go .wh{animation:spin2 .35s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin2{to{transform:rotate(360deg)}}
+.vfire{position:absolute;left:50%;top:6%;height:74%;transform:translateX(-50%)}
+.vfire svg{height:100%;width:auto;display:block}
+.vfire .flame{transform-box:fill-box;transform-origin:50% 100%;transition:transform .08s}
+.vfire .smoke{opacity:0}
+.vfire.out .flame{opacity:0;transition:opacity .3s}
+.vfire.out .smoke{animation:float 1.2s forwards}
+.vfire .seed{transition:transform 1.2s ease-out,opacity 1.2s}
+.vfire .seed.fly{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}
+.vbird{position:absolute;left:50%;top:8%;height:70%;transform:translateX(-50%)}
+.vbird svg{height:100%;width:auto;display:block}
+.vbird .beak .lo{transition:transform .1s}
+.vbird.talk .beak .lo{transform:translateY(6px)}
+.vbird.talk svg{animation:chomp .4s infinite}
+.vg .bubble{position:absolute;right:10%;top:10%;background:#fff;border-radius:22px;padding:8px 16px;font-family:var(--display);font-size:36px;box-shadow:0 4px 0 var(--line)}
+/* «Слоги» сам */
+.syl.self .drum{pointer-events:none}
+/* «Сделай как скажу» */
+.put .obj.blink{animation:blink .7s infinite}
+@keyframes blink{50%{opacity:.25;transform:scale(1.15)}}
+/* видеообразец и зеркало */
+#sayit.withvid .pic{aspect-ratio:auto;height:min(52vh,70vw);width:auto;max-width:92vw;background:#000;overflow:hidden;display:flex}
+#sayit.withvid .pic video{height:100%;width:auto;max-width:100%;object-fit:contain;transform:scaleX(-1)}
+#sayit .vrow{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+#sayit-mirror{width:min(36vw,26vh);aspect-ratio:3/4;border-radius:50% 50% 46% 46%;overflow:hidden;border:6px solid var(--sun);background:#000;box-shadow:0 6px 0 #e0a800}
+#sayit-mirror video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#vrec{position:fixed;inset:0;z-index:60;background:#24324af2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;color:#fff}
+#vrec[hidden]{display:none}
+#vrec .vbox{position:relative;width:min(92vw,62vh);aspect-ratio:3/4;background:#000;border-radius:24px;overflow:hidden}
+#vrec video{width:100%;height:100%;object-fit:cover}
+#vrec video.live{transform:scaleX(-1)}
+#vrec .mouth{position:absolute;left:30%;right:30%;top:52%;height:18%;border:3px dashed #fff8;border-radius:50%}
+#vrec .cnt{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:120px;color:#fff;text-shadow:0 4px 12px #0008;pointer-events:none}
+#vrec .vph{font-family:var(--display);font-size:clamp(24px,6vw,40px);text-align:center}
+#vrec .msg{text-align:center;max-width:520px}
+#vrec .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* доска «Хочу» */
+#wbscr{background:#fff3f8}
+.wb-grid{flex:1;min-height:0;display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);padding:0 2px 8px}
+@media (orientation:landscape){.wb-grid.n6{grid-template-columns:repeat(3,minmax(0,1fr))}.wb-grid.n8{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.wbcard{background:#fff;border-radius:26px;box-shadow:0 6px 0 #f0c2d6;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;min-height:0;transition:transform .25s}
+.wbcard .im{flex:1;min-height:0;width:100%;position:relative}
+.wbcard .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:16px}
+.wbcard b{font-family:var(--display);font-size:clamp(18px,4.6vw,30px)}
+.wbcard .wbtxt{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:28px;text-align:center}
+.wbcard.big{transform:scale(1.12);box-shadow:0 0 0 6px var(--sun),0 6px 0 #f0c2d6;z-index:5;position:relative}
+.wbcard.rec{box-shadow:0 0 0 6px var(--tomato),0 6px 0 #f0c2d6}
+.wbrow input[type=text]{flex:1;min-width:0;font:inherit;padding:8px;border-radius:10px;border:2px solid var(--line)}
+.wbrow.off{opacity:.45}
+.wbth{width:52px;height:52px;flex:none;border-radius:12px;overflow:hidden;background:var(--sky);position:relative;cursor:pointer}
+.wbth img{width:100%;height:100%;object-fit:cover}.wbth .wbtxt{font-size:10px;display:grid;place-items:center;height:100%;text-align:center}
+.wbth input{display:none}
+/* «Сегодня дома» */
+#tip{position:fixed;inset:0;z-index:70;background:#24324ad9;display:grid;place-items:center;padding:16px}
+#tip[hidden]{display:none}
+#tip .card{background:#fff;border-radius:28px;max-width:560px;width:100%;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 0 var(--line)}
+#tip h2{margin:0;font-family:var(--display);font-size:30px}
+#tip-text{font-size:20px;line-height:1.4}
+#tip .row{display:flex;gap:10px;flex-wrap:wrap}
+.holdbtn{position:relative;overflow:hidden}
+.holdbtn::after{content:'';position:absolute;left:0;bottom:0;height:5px;width:0;background:var(--plum)}
+.holdbtn.holding::after{width:100%;transition:width 1.2s linear}
+.vthr{position:relative;flex:1;min-width:160px;height:18px;border-radius:9px;background:var(--sky);overflow:hidden}
+.vthr #vthr-bar{position:absolute;left:0;top:0;bottom:0;width:0;background:#9fb3c8}
+.vthr #vthr-bar.on{background:var(--leaf)}
+.vthr #vthr-line{position:absolute;top:0;bottom:0;width:3px;background:var(--tomato)}
