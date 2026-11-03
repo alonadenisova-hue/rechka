@@ -133,6 +133,8 @@ def audio_group(name: str, dur, src=""):
     n = name.lower()
     if re.search(r"sounds\d*\.js$", src):  # window.SND — голоса животных
         return "голос животного"
+    if src.endswith("(синтез)"):
+        return "похвала" if re.search(r"\.(good|up)$", n) else "эффект"
     if any(k in n for k in ("praise", "molod", "умни", "молод", "good", "win", "yes", "ok", "correct")):
         return "похвала"
     if any(k in n for k in ("click", "tap", "pop", "клик", "щелч", "click", "snap", "whoosh", "boing")):
@@ -188,6 +190,71 @@ def check_audio(items):
             f.append("возможен щелчок на краю (нет fade)")
         r["flags"] = "; ".join(f)
     return rows, med
+
+
+# Звуки, которые приложение синтезирует на лету (Web Audio, объект sfx — доступен через window.__rechka.sfx).
+# До загрузки страницы AudioContext подменяется «прокси» на OfflineAudioContext: каждый звук рендерится отдельно.
+JS_SFX_INIT = r"""
+(() => { const sr = 44100; window.__offNew = () => { window.__off = new OfflineAudioContext(1, sr * 3, sr); }; window.__offNew();
+  const P = new Proxy({}, {get(_, k) { if (k === 'state') return 'running'; if (k === 'resume' || k === 'suspend') return () => Promise.resolve();
+    const t = window.__off, v = t[k]; return typeof v === 'function' ? v.bind(t) : v; }});
+  window.AudioContext = window.webkitAudioContext = function () { return P; }; })();
+"""
+JS_SFX = r"""
+async () => {
+  const S = (window.__rechka || {}).sfx; if (!S) return [];
+  const out = [], sr = 44100;
+  const wav = f => { const n = f.length, b = new DataView(new ArrayBuffer(44 + n * 2));
+    const w = (o, s) => [...s].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true);
+    b.setUint16(22, 1, true); b.setUint32(24, sr, true); b.setUint32(28, sr * 2, true); b.setUint16(32, 2, true);
+    b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, f[i])) * 32767, true);
+    let s = ''; const u = new Uint8Array(b.buffer); for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode(...u.subarray(i, i + 8192));
+    return btoa(s); };
+  for (const k of Object.keys(S)) {
+    if (typeof S[k] !== 'function') continue;
+    try {
+      window.__offNew(); S[k]();
+      const d = (await window.__off.startRendering()).getChannelData(0);
+      let last = d.length - 1; while (last > 0 && Math.abs(d[last]) < 1e-4) last--;
+      if (last > 0) out.push({name: k, b64: wav(d.subarray(0, Math.min(d.length, last + 1 + sr * 0.05)))});
+    } catch (e) { out.push({name: k, error: String(e)}); }
+  }
+  return out;
+}
+"""
+
+
+def render_sfx(out: Path):
+    """Синтезированные звуки (объект sfx в index.html) — в WAV, чтобы померить, как и файлы."""
+    root = find_root(None)
+    if not root:
+        return []
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return []
+    d = out / "embedded"
+    d.mkdir(parents=True, exist_ok=True)
+    srv, url = serve(root)
+    items = []
+    try:
+        with sync_playwright() as pw:
+            b = pw.chromium.launch()
+            pg = b.new_page()
+            pg.add_init_script(JS_SFX_INIT)
+            pg.goto(url, wait_until="load")
+            pg.wait_for_timeout(1500)
+            for r in pg.evaluate(JS_SFX):
+                if r.get("b64"):
+                    fp = d / f"sfx-{r['name']}.wav"
+                    fp.write_bytes(base64.b64decode(r["b64"]))
+                    items.append(dict(kind="audio", path=fp, name=f"sfx.{r['name']}", src="index.html (синтез)"))
+            b.close()
+    finally:
+        srv.shutdown()
+    return items
 
 
 # ---------------------------------------------------------------- картинки
@@ -730,7 +797,8 @@ def main():
         if args.only in (None, "assets", "audio"):
             if shutil.which("ffmpeg"):
                 log(f"Звуки: {sum(m['kind'] == 'audio' for m in media)} …")
-                audio, med = check_audio([m for m in media if m["kind"] == "audio"])
+                sfx_items = render_sfx(out)
+                audio, med = check_audio([m for m in media if m["kind"] == "audio"] + sfx_items)
                 write_csv(out / "audio.csv", audio)
             else:
                 log("! Нет ffmpeg — звуки пропущены (apt-get install -y ffmpeg)")
