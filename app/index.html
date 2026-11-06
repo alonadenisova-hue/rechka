@@ -588,9 +588,193 @@ input[type=text]{font:inherit;padding:8px 10px;border-radius:12px;border:1px sol
 .balloon.ani{width:30%;max-width:210px}
 .dogbox{justify-self:stretch}
 .dogrow.n1 .dogc{max-width:230px;max-height:32vh}
+/* бонус */
+.bonus{position:fixed;inset:0;z-index:90;background:linear-gradient(#8fd3ff,#e9f7ff 70%,#fff4d6);overflow:hidden;animation:pop2 .4s;touch-action:none}
+.bonus.out{transition:opacity .45s;opacity:0}
+.bn-top{position:absolute;left:0;right:0;top:12px;display:flex;justify-content:center;align-items:center;gap:16px;z-index:5;pointer-events:none}
+.bn-top b{font-family:var(--display);font-size:clamp(34px,9vw,56px);color:#ff6b5b;text-shadow:0 3px 0 #fff}
+.bn-cnt{min-width:64px;padding:2px 16px;border-radius:30px;background:#fff;box-shadow:0 4px 0 var(--line);font-family:var(--display);font-size:clamp(30px,8vw,48px);color:var(--plum);text-align:center}
+.bn-cnt.up{animation:hop .35s}
+.bn-time{position:absolute;left:10%;right:10%;top:clamp(72px,16vw,96px);height:12px;border-radius:6px;background:#ffffffa0;z-index:5;overflow:hidden}
+.bn-time i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#3cbf7a,#ffc93c,#ff6b5b)}
+@keyframes bnt{from{width:100%}to{width:0}}
+.bn-sky{position:absolute;inset:0}
+.balloon.bn{width:clamp(90px,22vmin,150px)}
+.bn-fx{position:fixed;z-index:95;font-size:clamp(26px,7vw,40px);pointer-events:none;animation:bnfx 1.4s cubic-bezier(.3,.1,.6,1) forwards;transform:translate(-50%,-50%)}
+@keyframes bnfx{0%{transform:translate(-50%,-50%) scale(.3);opacity:1}15%{transform:translate(calc(-50% + var(--dx)*.4),calc(-50% - 40px)) scale(1.1)}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--r)) scale(.9);opacity:0}}
+/* цифры на картинках */
+.nscene{position:relative;width:100%;height:100%;border-radius:24px;overflow:hidden;box-shadow:0 6px 0 var(--line)}
+.nscene .scn{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ni{position:absolute;background:none;padding:0;border:0;z-index:2}
+.ni svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 3px #0003)}
+.ni.apple{width:clamp(56px,17vw,96px);aspect-ratio:60/64;transform:translate(-50%,-50%);animation:cIn-pop .5s both,applesw 2.6s ease-in-out infinite alternate;animation-delay:var(--d),0s;transform-origin:50% 0}
+@keyframes applesw{from{rotate:-6deg}to{rotate:6deg}}
+.ni.fish{width:clamp(80px,26vw,140px);aspect-ratio:12/7;left:0;animation:swim calc(var(--sw)*2) ease-in-out infinite;animation-delay:var(--dl)}
+@keyframes swim{0%{left:2%}50%{left:calc(98% - clamp(80px,26vw,140px))}100%{left:2%}}
+.ni.fish svg{animation:fishflip calc(var(--sw)*2) linear infinite;animation-delay:var(--dl)}
+@keyframes fishflip{0%,49.9%{transform:scaleX(-1)}50%,100%{transform:scaleX(1)}}
+.ni.fish .fd{position:absolute;left:44%;top:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:clamp(28px,8vw,44px);color:#fff;paint-order:stroke;pointer-events:none}
+.nscene.sc-aqua .bub{position:absolute;bottom:8%;width:12px;height:12px;border-radius:50%;border:2px solid #ffffffb0;animation:bub 4s linear infinite}
+.nscene.sc-aqua .b1{left:20%}.nscene.sc-aqua .b2{left:55%;animation-delay:-1.4s;width:8px;height:8px}.nscene.sc-aqua .b3{left:78%;animation-delay:-2.6s}
+@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-80vh);opacity:0}}
+.trainrow{position:absolute;left:0;right:0;bottom:12%;height:clamp(80px,24vw,130px);overflow:visible}
+.train{position:absolute;bottom:0;display:flex;gap:2px;height:100%;animation:trainmove 30s linear infinite;animation-delay:-6s;left:100%}
+@keyframes trainmove{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 100vw))}}
+.wg{position:relative;height:100%;aspect-ratio:9/7;flex:none}
+.wg.loco{display:block}.wg svg{width:100%;height:100%}
+.ni.wg{position:relative}
+.ni.found svg{filter:drop-shadow(0 0 0 #3cbf7a) drop-shadow(0 0 10px #3cbf7a)}
+.ni.found::after{content:'✓';position:absolute;right:-4px;top:-8px;width:30px;height:30px;border-radius:50%;background:#3cbf7a;color:#fff;font-weight:700;display:grid;place-items:center;font-size:20px}
+.ni.bad svg{animation:shake .45s}
+.ni.fish.found{animation-play-state:paused}
+.nscene .nf-left{position:absolute;left:0;right:0;top:8px;z-index:6}
+
+/* ===== v28 ===== */
+/* цифры: предметы всегда целиком внутри карточки (раньше в альбомной ориентации третье яблоко пряталось) */
+.countbox{position:relative;overflow:hidden}
+.countbox>.cnt,.opt>.cnt{position:absolute;inset:8px;width:auto;height:auto;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:4%}
+.countbox>.cnt img,.opt>.cnt img{width:auto!important;object-fit:contain;min-width:0}
+.cnt.c1>img{height:86%!important;max-width:80%}
+.cnt.c2>img{height:44%!important;max-width:44%}
+.cnt.c2.r1>img{height:80%!important}
+.cnt.c3>img{height:44%!important;max-width:30%}
+.opt{position:relative}
+.opt>.cnt{inset:6px}
+@media (orientation:landscape){
+  .numwrap{grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+  .numwrap .numopts{align-content:center}
+}
+/* человечки: идёт / бежит / стоит / сидит */
+svg.fig{width:100%;height:100%;display:block;border-radius:14px}
+svg.fig *{transform-box:view-box}
+.fig .eye{animation:figblink 4s infinite}
+@keyframes figblink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.fig .eye{transform-box:fill-box;transform-origin:center}
+/* идёт: спокойный шаг */
+.fig.p-walk .th.f{animation:wth 1.15s ease-in-out infinite}
+.fig.p-walk .th.b{animation:wth 1.15s ease-in-out infinite -.575s}
+.fig.p-walk .th .sh{animation:wsh 1.15s ease-in-out infinite;animation-delay:inherit}
+.fig.p-walk .th.b .sh{animation-delay:-.575s}
+.fig.p-walk .ua.f{animation:wua 1.15s ease-in-out infinite -.575s}
+.fig.p-walk .ua.b{animation:wua 1.15s ease-in-out infinite}
+.fig.p-walk .bd{animation:wbob .575s ease-in-out infinite}
+.fig.p-walk .gr{animation:grmove 2.6s linear infinite}
+@keyframes wth{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+@keyframes wsh{0%,100%{transform:rotate(4deg)}25%{transform:rotate(0)}60%{transform:rotate(22deg)}80%{transform:rotate(10deg)}}
+@keyframes wua{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes wbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes grmove{from{transform:translateX(0)}to{transform:translateX(-40px)}}
+/* бежит: быстро, наклон вперёд, руки согнуты, обе ноги в воздухе, ветер и пыль */
+.fig.p-run .bd{animation:rbob .23s ease-in-out infinite alternate}
+.fig.p-run .th.f{animation:rth .46s linear infinite}
+.fig.p-run .th.b{animation:rth .46s linear infinite -.23s}
+.fig.p-run .th.f .sh{animation:rsh .46s linear infinite}
+.fig.p-run .th.b .sh{animation:rsh .46s linear infinite -.23s}
+.fig.p-run .ua.f{animation:rua .46s linear infinite -.23s}
+.fig.p-run .ua.b{animation:rua .46s linear infinite}
+.fig.p-run .fa{transform:rotate(-95deg)}
+.fig.p-run .gr{animation:grmove .5s linear infinite}
+.fig.p-run .spd{animation:spd .35s linear infinite}
+.fig.p-run .dust{animation:dust .46s ease-out infinite}
+@keyframes rbob{from{transform:translateY(-10px) rotate(14deg)}to{transform:translateY(-2px) rotate(14deg)}}
+@keyframes rth{0%,100%{transform:rotate(-58deg)}50%{transform:rotate(38deg)}}
+@keyframes rsh{0%,100%{transform:rotate(30deg)}35%{transform:rotate(10deg)}55%{transform:rotate(95deg)}80%{transform:rotate(70deg)}}
+@keyframes rua{0%,100%{transform:rotate(-55deg)}50%{transform:rotate(50deg)}}
+@keyframes spd{from{transform:translateX(12px);opacity:1}to{transform:translateX(-14px);opacity:.2}}
+@keyframes dust{from{transform:translateX(0) scale(.6);opacity:.9}to{transform:translateX(-26px) scale(1.3);opacity:0}}
+/* стоит: ровно, ноги вместе, руки вдоль тела, чуть дышит */
+.fig.p-stand .th.f{transform:rotate(-3deg)}.fig.p-stand .th.b{transform:rotate(3deg)}
+.fig.p-stand .ua.f{transform:rotate(-6deg)}.fig.p-stand .ua.b{transform:rotate(6deg)}
+.fig.p-stand .bd{animation:breath 2.4s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.012)}}
+/* сидит: на стуле, бёдра вперёд, голени вниз */
+.fig.p-sit .bd{transform:translateY(var(--sitdy,0))}
+.fig.p-sit .th{transform:rotate(-88deg)}
+.fig.p-sit .th .sh{transform:rotate(88deg)}
+.fig.p-sit .ua.f{transform:rotate(-40deg)}.fig.p-sit .ua.b{transform:rotate(-30deg)}
+.fig.p-sit .ua .fa{transform:rotate(-30deg)}
+@media (prefers-reduced-motion:reduce){.fig *{animation-duration:3s!important}}
+/* «Собака дома» */
+.home28{position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) minmax(0,.42fr);gap:8px;touch-action:none}
+.hm-house{position:relative;background:#fff7ec;border-radius:18px 18px 10px 10px;box-shadow:0 6px 0 #ecd9c0;padding:6% 8px 8px;display:flex;flex-direction:column;min-height:0}
+.hm-roof{position:absolute;left:-2%;right:-2%;top:-4%;height:9%;background:#ff8a65;clip-path:polygon(4% 100%,50% 0,96% 100%);border-radius:6px}
+.hm-rooms{flex:1;display:grid;gap:8px;min-height:0}
+.n2 .hm-rooms{grid-template-columns:1fr 1fr}
+.n3 .hm-rooms{grid-template-columns:1fr 1fr 1fr}
+.n4 .hm-rooms{grid-template-columns:1fr 1fr}
+.n6 .hm-rooms{grid-template-columns:1fr 1fr 1fr}
+@media (orientation:landscape){.hm-hero{height:auto;width:86%;max-height:60%}.hm-item{height:auto;width:70%}.n4 .hm-rooms{grid-template-columns:repeat(4,1fr)}.home28{grid-template-rows:none;grid-template-columns:minmax(0,1fr) minmax(0,.3fr)}.hm-floor{flex-direction:column}}
+.hm-pl{position:relative;border:0;border-radius:16px;background:var(--bg);box-shadow:inset 0 -6px 0 #0000000f;display:grid;place-items:center;overflow:hidden;min-height:0;padding:6px;cursor:pointer}
+.hm-ic{display:flex;align-items:center;justify-content:center;gap:4%;width:100%;height:100%}
+.hm-ic img{max-width:70%;max-height:78%;object-fit:contain;pointer-events:none}
+.hm-ic img+img{max-width:38%}
+.hm-ic svg{width:92%;height:auto;max-height:90%}
+.hm-pl.hint{animation:hmhint 1s ease-in-out infinite;outline:4px solid #ffc93c}
+@keyframes hmhint{50%{transform:scale(1.05)}}
+.hm-pl.bad{animation:shake .45s}
+.hm-fx{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center}
+.hm-in{position:absolute;width:52%;max-height:62%;object-fit:contain;bottom:8%;filter:drop-shadow(0 4px 4px #0003)}
+.hm-given{position:absolute;width:30%;right:6%;bottom:6%;animation:pop .4s}
+.hm-floor{position:relative;display:flex;align-items:center;justify-content:center;gap:10%;background:linear-gradient(#f3e3cc,#e9d3b3);border-radius:14px;min-height:0}
+.hm-hero{position:relative;height:88%;aspect-ratio:1;display:grid;place-items:center;touch-action:none;cursor:grab;z-index:5;transition:none}
+.hm-hero.back{transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.hm-hero img{width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 6px 4px #0003);animation:hmidle 1.6s ease-in-out infinite}
+.hm-hero.drag img{animation:none}
+@keyframes hmidle{50%{transform:translateY(-6%) rotate(-3deg)}}
+.hm-bub{position:absolute;top:-6%;right:-14%;font-style:normal;font-size:clamp(20px,6vmin,40px);background:#fff;border-radius:50%;width:1.7em;height:1.7em;display:grid;place-items:center;box-shadow:0 3px 0 #0001;animation:pop .4s}
+.hm-tray{display:flex;gap:10px}
+.hm-tray:empty{display:none}
+.hm-item{height:clamp(60px,18vmin,110px);aspect-ratio:1;background:#fff;border-radius:18px;display:grid;place-items:center;touch-action:none;box-shadow:0 4px 0 #0001;animation:pop .4s}
+.hm-item img{width:80%;height:80%;object-fit:contain;pointer-events:none}
+.hm-item.hint{animation:hmhint 1s ease-in-out infinite}
+/* результат */
+.fx-sleep{background:#c9c2f0!important}
+.fx-sleep .hm-in{transform:rotate(-80deg) scale(.9)!important;bottom:22%}
+.fx-sleep .hm-fx::after{content:'Z z z';position:absolute;top:8%;right:12%;font:700 clamp(18px,5vmin,34px) var(--display,sans-serif);color:#5b4fd6;animation:zz 1.6s ease-in-out infinite}
+@keyframes zz{0%{transform:translateY(8px);opacity:0}40%{opacity:1}100%{transform:translateY(-14px);opacity:0}}
+.fx-eat .hm-in,.fx-teeth .hm-in{animation:hmchomp .35s ease-in-out 6}
+@keyframes hmchomp{50%{transform:translateY(4px) scaleY(.94)}}
+.fx-wash .hm-fx::after,.fx-pool .hm-fx::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,#fff 0 7%,#0000 8%),radial-gradient(circle at 70% 20%,#fff 0 5%,#0000 6%),radial-gradient(circle at 45% 60%,#ffffffcc 0 6%,#0000 7%),radial-gradient(circle at 80% 70%,#fff 0 4%,#0000 5%);animation:bubbles 1.8s linear infinite}
+.fx-pool .hm-fx::after{background:radial-gradient(circle at 30% 40%,#fff9 0 4%,#0000 5%),radial-gradient(circle at 60% 30%,#fff9 0 3%,#0000 4%)}
+@keyframes bubbles{from{transform:translateY(20%)}to{transform:translateY(-30%);opacity:.3}}
+.fx-pool .hm-in{bottom:20%;animation:hmswim 1.2s ease-in-out infinite}
+@keyframes hmswim{50%{transform:translate(8%,-4%) rotate(6deg)}}
+.fx-walk{background:linear-gradient(#bfe7ff 60%,#9ad67a 60%)!important}
+.fx-walk .hm-ic{opacity:0}
+.fx-walk .hm-fx::before{content:'🌳 ☀️';position:absolute;top:8%;font-size:clamp(20px,6vmin,40px)}
+.fx-walk .hm-in{animation:walkin 1.4s ease-in-out infinite}
+@keyframes walkin{0%,100%{transform:translateX(-10%)}50%{transform:translateX(10%) translateY(-4%)}}
+.fx-tv .hm-ic img{animation:tvglow .5s steps(2) infinite}
+@keyframes tvglow{50%{filter:brightness(1.4) hue-rotate(60deg)}}
+.fx-tv .hm-in{left:6%;width:42%}
+.fx-draw .hm-fx::before{content:'🖼️';position:absolute;top:6%;left:10%;font-size:clamp(22px,7vmin,44px);animation:pop .5s}
+.fx-dress .hm-given{right:auto;left:38%;bottom:16%;width:28%}
+.fx-toilet .hm-in{bottom:28%}
+/* «Дорисуй» */
+.draw28{width:100%;height:100%;display:grid;place-items:center;touch-action:none}
+.draw28 svg{height:100%;width:auto;max-width:100%;aspect-ratio:1;border-radius:22px;box-shadow:0 6px 0 var(--line,#e3ecf5);touch-action:none}
+.dr-miss{fill:none;stroke:#9aa7b8;stroke-width:5;stroke-dasharray:3 9;stroke-linecap:round;stroke-linejoin:round}
+.dr-done{fill:none;stroke:#7b61ff;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.dr-ink{fill:none;stroke:#7b61ff55;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.dr-final{animation:drpop .6s cubic-bezier(.3,1.5,.5,1);transform-origin:100px 100px}
+@keyframes drpop{from{transform:scale(.85);opacity:.4}}
+/* шарики: покорми, цифры */
+.bfeed .bf-pet{position:absolute;left:50%;bottom:2%;transform:translateX(-50%);width:min(42%,30vh);aspect-ratio:1;display:grid;place-items:center}
+.bfeed .bf-pet img{width:100%;height:100%;object-fit:contain}
+.bfeed .bf-pet.eat{animation:hmchomp .3s ease-in-out 4}
+.bf-fly{position:fixed;z-index:50;pointer-events:none;object-fit:contain}
+.bal-in .bdn{font-size:clamp(30px,9vw,54px);color:#fff;text-shadow:0 3px 0 #0005}
+.bcount .bdg{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#fff;color:#c9d2df;font:700 clamp(18px,5vw,28px) var(--display);margin:0 3px;box-shadow:0 3px 0 #0001}
+.bcount .bdg.on{background:#ffc93c;color:#fff}
+
+/* мягкий абстрактный фон вместо белого */
+body::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23cfe6fb%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23f6d9e8%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23d9f0dc%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23fbe6c9%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23f6d9e8%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#e6f3fc,#f4ecfb 55%,#fdf0e6)}
+body[data-bg="1"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23d3f0dc%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23d6e6fb%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23fbeec9%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23e9dcf8%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23d6e6fb%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#eaf7ee,#eef3fc 55%,#fdf6e3)}
+body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23fbdccf%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23dcd6f8%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23cfeeee%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23fbe9c9%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23dcd6f8%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#fdf0ea,#f1eefc 55%,#e7f6f6)}
+body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen">
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 28</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -604,6 +788,8 @@ input[type=text]{font:inherit;padding:8px 10px;border-radius:12px;border:1px sol
     <button class="bigtile pz" id="btn-album"><svg viewBox="0 0 100 100" id="pz-icon"></svg><span><b>Пазл</b><small id="pz-sub"></small></span><span class="badge" id="pz-badge"></span></button>
   </div>
   <div class="tiles">
+    <button class="tile t38" data-game="home"><span class="lvl" data-lvl="home"></span><div class="art" id="art-home"></div><b>Собака дома</b><span class="newb">новое</span></button>
+    <button class="tile t36" data-game="draw"><span class="lvl" data-lvl="draw"></span><div class="art" id="art-draw"></div><b>Дорисуй</b><span class="newb">новое</span></button>
     <button class="tile t35" data-game="dog"><span class="lvl" data-lvl="dog"></span><div class="art" id="art-dog"></div><b>Повторяй за Шариком</b><span class="newb">звуки, слоги</span></button>
     <button class="tile t33" data-game="voice" hidden data-say="Скажи — и будет!"><span class="lvl" data-lvl="voice"></span><div class="art" id="art-voice"></div><b>Скажи — и будет!</b><span class="newb">новое</span></button>
     <button class="tile t34" data-game="make" hidden><span class="lvl" data-lvl="make"></span><div class="art" id="art-make"></div><b>Сделай как скажу</b><span class="newb">новое</span></button>
@@ -862,7 +1048,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- storage */
 const KEY='rechka-v1';
-const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1},streak:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},errs:{rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
+const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{home:1,draw:1,rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1},streak:{home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},errs:{home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
 let S;
 try{S=Object.assign(structuredClone(defaults),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(defaults)}
 for(const k of ['lvl','streak','errs','pz'])S[k]=Object.assign({},defaults[k],S[k]);
@@ -872,7 +1058,7 @@ if((S.ver||0)<22){S.lvl.num=1;S.lvl.food=1;S.lvl.seq=Math.min(S.lvl.seq||1,3);S.
 if((S.ver||0)<21){S.sayit=S.sayit||'some';S.ver=Math.max(S.ver||0,21)}
 if((S.ver||0)<18){if((S.dogL||0)>=4)S.dogL+=5;S.ver=18} /* v18: +5 лёгких уровней щенков после тренировки */ /* v14: «Повтори!» теперь начинается с 3 картинок */
 const save=()=>{try{S.log=S.log.slice(-3000);localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const MAXL={not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
+const MAXL={home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
 for(const g in MAXL)if(S.lvl[g]>MAXL[g])S.lvl[g]=MAXL[g];
 const UPG={syl:5,snd:4}; // для этих игр уровень поднимается медленнее
 const UP=3; // верных подряд с первой попытки, чтобы уровень поднялся
@@ -978,7 +1164,7 @@ function renderHome(){
   if(D4.many.length)$('#art-many').innerHTML=`<img src="${IMG[D4.many[4].lot]}" alt="">`;
   if(D4.fly.length)$('#art-fly').innerHTML=flySvg(D4.fly[2]);
   $('#art-put').innerHTML=putArt();$('#art-seq').innerHTML=`<div class="seqrow mini">${['яблоко','мяч','машина'].filter(n=>RPIC[n]).map(n=>`<img src="${IMG[RPIC[n][0]]}" alt="">`).join('')}</div>`;$('#art-want').innerHTML=`<img src="${(window.IMG24||{})['img24/fl_teddy.webp']||'img24/fl_teddy.webp'}" alt="">`;$('#art-num').innerHTML='<svg viewBox="0 0 120 100"><text x="60" y="80" text-anchor="middle" font-size="80" font-weight="700" fill="#7b61ff" font-family="Balsamiq Sans,sans-serif">123</text></svg>';$('#art-world').innerHTML=RPIC['дерево']?wimg({i:RPIC['дерево'][0]}):'';$('#art-dress').innerHTML=dressSvg({футболка:'red',шорты:'blue',кепка:'yellow'});$('#art-catch').innerHTML=`<svg viewBox="0 0 120 120"><g transform="translate(0 40)">${BASKET.replace(/^<svg[^>]*>|<\/svg>$/g,'')}</g></svg>${W9.fruit?`<img src="${IMG[W9.fruit[1].i]}" alt="" style="inset:0 25% 50% 25%;width:50%;height:50%">`:''}`;$('#art-bal').innerHTML=['#ef4a3d','#ffcf26','#2f8be0'].map(c=>balloonSvg(c)).join('');
-  $('#art-voice').innerHTML=VG_BIRD;$('#art-not').innerHTML=`<svg viewBox="0 0 120 100"><text x="60" y="66" text-anchor="middle" font-size="44" font-weight="700" fill="#ff6b5b" font-family="Balsamiq Sans,sans-serif">НЕ</text><path d="M14 86 106 14" stroke="#ff6b5b" stroke-width="7" stroke-linecap="round" opacity=".35"/></svg>`;$('#art-dog').innerHTML=DOG_SVG;$('#art-make').innerHTML=makeArt();VM.stop();applyV21Home();
+  $('#art-voice').innerHTML=VG_BIRD;$('#art-home').innerHTML=`<img src="${I24('bed')}" alt="" style="width:56%;max-height:100%;object-fit:contain"><img src="${I24('dog')}" alt="" style="width:56%;max-height:100%;object-fit:contain">`;$('#art-draw').innerHTML=`<svg viewBox="0 0 120 100"><path d="M60 18A32 32 0 0 0 60 82" stroke="#ffb020" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M60 18A32 32 0 0 1 60 82" stroke="#9aa7b8" stroke-width="5" stroke-dasharray="2 8" fill="none" stroke-linecap="round"/><path d="M96 70l10-28 6 4-10 28z" fill="#7b61ff"/></svg>`;try{$('#art-ib').innerHTML=figSvg('мальчик','бежит')+figSvg('девочка','сидит')}catch(_){}$('#art-not').innerHTML=`<svg viewBox="0 0 120 100"><text x="60" y="66" text-anchor="middle" font-size="44" font-weight="700" fill="#ff6b5b" font-family="Balsamiq Sans,sans-serif">НЕ</text><path d="M14 86 106 14" stroke="#ff6b5b" stroke-width="7" stroke-linecap="round" opacity=".35"/></svg>`;$('#art-dog').innerHTML=DOG_SVG;$('#art-make').innerHTML=makeArt();VM.stop();applyV21Home();
   show('home');if(TIP)setTimeout(showTip,300);
 }
 /* ---------- session engine */
@@ -1020,6 +1206,7 @@ async function roundDone(ok,meta){
   else{S.streak[g]=0;S.errs[g]++;if(S.errs[g]>=2&&S.lvl[g]>1){S.lvl[g]--;S.errs[g]=0}}
   save();
   await nextGate();if(!G||G.round!==R||R.dead)return;
+  {const step=(G.max||S.rounds)>=10?5:4;if(G.i%step===0&&G.i<(G.max||S.rounds)&&S.bonus!==false){await bonusPop();if(!G||G.round!==R||R.dead)return}}
   if(up)await levelUp();
   await wait(250);nextRound();
 }
@@ -1358,7 +1545,7 @@ function sceneSvg(b){const c=SEASONS[b%4];const tree=(x,y,k)=>`<rect x="${x-7}" 
   ${tree(110,470,1)}${tree(1120,500,1.1)}${tree(330,560,.8)}${flakes}`}
 const BIG={c:4,r:3,W:1200,H:900};
 /* ---------- «Занятие дня»: трудное вперемешку с лёгким */
-const MIXG=['dog','give','nes','not','want','verb','pair','color','prep','size','snd','odd','feed','put','bal','world','dress','catch','num','seq','nes','sl','ib','food','yn','tr'];
+const MIXG=['home','draw','dog','give','nes','not','want','verb','pair','color','prep','size','snd','odd','feed','put','bal','world','dress','catch','num','seq','nes','sl','ib','food','yn','tr'];
 function startMix(){const week=Date.now()-7*864e5;const acc=g=>{const L=S.log.filter(x=>x.g===g&&x.t>week);return L.length>=3?L.filter(x=>x.ok).length/L.length:.7};
   const gs=MIXG.concat(Object.keys(PH).length>=2?['me']:[]).concat(D.daina&&D.daina.length?['dai']:[]);
   const weak=gs.filter(g=>g!=='syl').sort((a,b)=>acc(a)-acc(b)+(Math.random()-.5)*.05).slice(0,2);
@@ -1376,10 +1563,7 @@ function picOf(n){const a=D.animals.find(x=>x.n===n);if(a)return a.i;const s=D.a
 let ONO_L=Object.keys(ONO).map(n=>({n,o:ONO[n],i:picOf(n)})).filter(x=>x.i&&hasSnd(x.n));
 async function sndRound(lvl){
   const R=G.round;const t=fresh(()=>pick(ONO_L),x=>x.n);const play=()=>animalSound({n:t.n,snd:t.o});
-  if(lvl>=3&&rmode('snd',2)===1){const q='Как говорит '+t.n+'?';setPrompt(q);G.round.replay=()=>say(q);
-    $('#stage').innerHTML=`<div class="solo"><div class="pic">${img(t.i)}</div></div>`;await say(q);if(R.dead)return;
-    await sayIt(t.o.replace(/!$/,''),img(t.i));if(R.dead)return;await play();R.good=cap(t.n)+' говорит: '+t.o;await say(R.good);return roundDone(true,{a:t.n,x:1})}
-  const n=lvl===1?2:4;const CLASH=[['курица','петух'],['гусь','утка'],['волк','собака'],['коза','овца']];const cl=(a,b)=>CLASH.some(p=>p.includes(a.n)&&p.includes(b.n));const others=[];for(const x of shuffle(ONO_L)){if(others.length>=n-1)break;const all=[t].concat(others);if(all.some(y=>y.n===x.n||y.o===x.o||cl(x,y)))continue;others.push(x)}
+  const n=lvl===1?2:lvl===2?3:4;const CLASH=[['курица','петух'],['гусь','утка'],['волк','собака'],['коза','овца']];const cl=(a,b)=>CLASH.some(p=>p.includes(a.n)&&p.includes(b.n));const others=[];for(const x of shuffle(ONO_L)){if(others.length>=n-1)break;const all=[t].concat(others);if(all.some(y=>y.n===x.n||y.o===x.o||cl(x,y)))continue;others.push(x)}
   setPrompt('Кто так говорит?');G.round.replay=play;
   if(!await ask('Кто так говорит?','Послушай! Кто так говорит?'))return;await play();if(R.dead)return;
   const ok=await choice(shuffle([t].concat(others).map(x=>({html:img(x.i),ok:x===t,key:x.n}))),{question:'Кто так говорит?',goodText:cap(t.n)+' говорит: '+t.o,sayit:t.o.replace(/!/g,''),onWrong:play});
@@ -1805,7 +1989,7 @@ const NUMOBJ=['яблоко','мяч','кубик','машина','утка','к
 const DIGP={1:'M70 78 L118 34 L118 230',2:'M52 82 C52 18 158 18 152 86 C146 132 92 170 50 230 L162 230',
   3:'M52 56 C86 14 162 24 148 82 C138 118 104 122 92 122 C134 122 168 148 156 192 C144 246 74 246 48 210',
   4:'M120 30 L44 166 L168 166 M132 96 L132 232',5:'M152 36 L72 36 L64 116 C102 94 162 106 156 172 C150 236 80 246 50 212'};
-const numCard=(n,pic)=>{const cols=n<=2?n:n<=4?2:3;return `<div class="cnt c${cols}">${Array.from({length:n},()=>`<img src="${IMG[pic]||pic}" alt="">`).join('')}</div>`};
+const numCard=(n,pic)=>{const cols=n<=2?n:n<=4?2:3;return `<div class="cnt c${cols}${n<=2?' r1':''}">${Array.from({length:n},()=>`<img src="${IMG[pic]||pic}" alt="">`).join('')}</div>`};
 const digCard=d=>`<span class="digit">${d}</span>`;
 function numPool(lvl){return lvl===1?[1,2,3]:[1,2,3,4,5]}
 function numOthers(n,lvl,k){const pool=numPool(lvl).filter(x=>x!==n);if(lvl>=3){const near=pool.filter(x=>Math.abs(x-n)===1);return shuffle(near).concat(shuffle(pool.filter(x=>!near.includes(x)))).slice(0,k)}return shuffle(pool).slice(0,k)}
@@ -1828,7 +2012,7 @@ async function numFingers(lvl,n,nOpt){
 const ACCW=n=>/[ая]$/.test(n)&&!['дерево'].includes(n)?n.replace(/а$/,'у').replace(/я$/,'ю'):n;
 const WANT=['яблоко','банан','слива','мяч','кубик','мишка','машина','самолёт','вертолёт','лодка','ракета','шапка','кепка','футболка','платье','кружка','горка','совок','ведро','карандаш','помидор','капуста','перец','кукуруза','цыплёнок','бабочка'];
 /* ===================== v14: игры по новым презентациям (несёт/держит, спит/лежит, идёт/бежит, съедобное) ===================== */
-const FIX7={not:10,dog:5,voice:5,rh:3,pg:3,br:3,dogs:3,tr:10,yn:10,nes:7,sl:7,ib:7,food:7}; // в этих играх 7 заданий
+const FIX7={home:7,draw:6,not:10,dog:5,voice:5,rh:3,pg:3,br:3,dogs:3,tr:10,yn:10,nes:7,sl:7,ib:7,food:7}; // в этих играх 7 заданий
 /* НЕСЁТ (идёт с предметом — анимация) / ДЕРЖИТ (стоит с тем же предметом — неподвижный кадр) */
 const NES=[['24cae7ddc528','собака','кость'],['3cb5cc83ea20','медведь','мёд'],['66c419d89c0b','дедушка','ведро'],['69c2781ebf0e','ослик','мешки'],['7040b4184ec1','белка','орехи'],
   ['922d56534f4e','обезьянка','бананы'],['9f1a0cb62cd1','почтальон','коробку'],['a5b8d2ebf749','слон','бревно'],['b04be4281ac6','девочка','пиццу'],['bc1d1f9df199','зайчик','морковку'],
@@ -2442,7 +2626,7 @@ function numObj(){const L=NUMOBJ.filter(x=>RPIC[x]);if(!G)return pick(RPIC[pick(
 
 /* ---------- ПОВТОРИ!: посмотрел 5 секунд — запомнил — перенёс картинки на пустые места (всё в ряд) */
 async function seqRound(lvl){
-  const R=G.round;const len=Math.min(5,2+lvl);
+  const R=G.round;const len=lvl>1&&rmode('seq3',5)<2?3:Math.min(5,2+lvl);
   const names=shuffle(Object.keys(RPIC).filter(n=>!['дом','холодильник','шкаф','стол'].includes(n)));const items=names.slice(0,len).map(n=>({n,i:pick(RPIC[n])}));
   if(!await ask('Запомни!','Смотри и запомни!'))return;
   const st=$('#stage');st.innerHTML=`<div class="sq sq24"><div class="seqbar"><i style="animation-duration:5s"></i></div><div class="sq-row"></div><p class="sq-note"></p></div>`;
@@ -2484,21 +2668,6 @@ const IBS=(()=>{const D2a=D2.actions||[];const out=[];
   subs.forEach(s=>{const g=v=>(D2a.find(a=>a.s===s&&a.v===v)||{}).i;const run=(D.actions.find(a=>a.s===s&&a.v==='бежит'&&!a.o)||{}).i;
     const x={s,стоит:g('стоит'),сидит:g('сидит'),идёт:g('идёт'),бежит:run};if(x.стоит&&x.сидит)out.push(x)});return out})();
 const IB_S={бобр:'бобр',медведь:'медведь',мышь:'мышка',крот:'крот',кабан:'кабан',волк:'волк',зубр:'зубр',ёж:'ёжик',рысь:'рысь',лось:'лось',белка:'белка',заяц:'зайчик',олень:'олень',енот:'енот',барсук:'барсук'};
-async function ibRound(lvl){
-  const mode=lvl===1?'ib':lvl===2?'ss':lvl===3?['ib','ss3','ss3'][rmode('ib3',3)]:['all','all','ss3'][rmode('ib4',3)];
-  if(mode==='ib'||!IBS.length){let opts;
-    const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
-    if(subs.length&&Math.random()<.5){const s=fresh(()=>pick(subs),x=>'ibA'+x);const A=v=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};opts=[A('идёт'),A('бежит')]}
-    else{const P=D2.pairs.filter(p=>p.set==='ib');const pr=fresh(()=>pick(P),x=>x.a[0].i+x.a[1].i);opts=pr.a}
-    const ok=await twoQ(opts,['идёт','бежит'],'ibq');if(ok===null)return;return roundDone(ok,{v:'идёт/бежит',n:opts[0].s})}
-  const pool=mode==='all'?IBS.filter(x=>x.идёт&&x.бежит):mode==='ss3'?IBS.filter(x=>x.идёт):IBS;
-  const x=fresh(()=>pick(pool.length?pool:IBS),y=>'ib'+mode+y.s);const nm=IB_S[x.s]||x.s;
-  const verbs=mode==='ss'?['стоит','сидит']:mode==='ss3'?['стоит','сидит','идёт']:['стоит','сидит','идёт','бежит'];
-  const opts=verbs.filter(v=>x[v]).map(v=>({i:x[v],s:nm,v}));
-  const ask2=mode==='ss'?verbs:shuffle(verbs.filter(v=>x[v])).slice(0,2);
-  const ok=await twoQ(opts,ask2,'ibq'+mode);if(ok===null)return;
-  return roundDone(ok,{v:verbs.join('/'),n:nm})}
-
 /* ---------- «ЧТО НЕ…?»: «Кто не собака?», «Что не мяч?», «Что не красного цвета?» */
 const NOT_ANI=['белка','волк','ёж','заяц','лиса','медведь','мышь','тигр','корова','собака','енот','барсук'];
 const notPics=n=>[...new Set(D.actions.filter(a=>a.s===n).map(a=>a.i).concat((D2.actions||[]).filter(a=>a.s===n).map(a=>a.i)))].filter(i=>IMG[i]);
@@ -2533,11 +2702,11 @@ const W24SIM={home:[['кружка','ложка','тарелка','вилка','
   animals:[['собака','кошка','корова','свинья','лошадь','курица','утка','гусь','коза','овца'],['лиса','волк','медведь','заяц','зайчик','ёж','белка','мышь','мышка'],['лев','тигр','слон','обезьяна','жираф','зебра']]};
 function topicPick24(){return new Promise(res=>{const st=$('#stage');setPrompt('Что будем учить?');
   const ts=['animals','food','home','clothes','toys','nature','transport','all'].filter(t=>W24T[t]&&W24T[t].length>=4);
-  st.innerHTML=`<div class="topics">${ts.map(t=>{const L=W24T[t];const ic=L.find(x=>['собака','яблоко','стул','футболка','мяч','дерево','машина'].includes(x.n))||L[0];return `<button class="opt topic" data-t="${t}">${img(ic.is[0])}<b>${W24N[t]}</b></button>`}).join('')}</div>`;
+  st.innerHTML=`<div class="topics">${ts.map(t=>{const L=W24T[t];const ic=L.find(x=>['собака','яблоко','стул','футболка','мяч','дерево','машина'].includes(x.n))||L[0];return `<button class="opt topic" data-t="${t}">${img(ic.is[0]||ic.an[0])}<b>${W24N[t]}</b></button>`}).join('')}</div>`;
   say('Что будем учить?');st.querySelectorAll('.topic').forEach(b=>b.onclick=()=>{ac();sfx.click();stopVoice();res(b.dataset.t)})})}
 async function worldRound(lvl){
   const R=G.round;if(!G.topic){G.topic=await topicPick24();if(!G||G.round!==R)return}
-  const L=W24T[G.topic]||W24T.all;const t=fresh(()=>pick(L),x=>x.n);const ti=pick(t.is);
+  const L=W24T[G.topic]||W24T.all;const t=fresh(()=>pick(L),x=>x.n);const ti=wPic(t);
   if(lvl>=4&&rmode('wq',3)===2){const q='Что это?';setPrompt(q);$('#stage').innerHTML=`<div class="solo"><div class="pic">${img(ti)}</div></div>`;R.replay=()=>say(q);
     await say(q);if(R.dead)return;await wait(2500);if(R.dead)return;R.good='Это '+t.n+'.';await say('Это '+t.n+'!');if(R.dead)return;
     if(S.sayit!=='off')await sayIt(cap(t.n),img(ti));return roundDone(true,{n:t.n,m:'назови',x:1})}
@@ -2546,7 +2715,7 @@ async function worldRound(lvl){
     if(others.length<n-1)others=others.concat(shuffle(L.filter(x=>x!==t&&!others.includes(x))).slice(0,n-1-others.length))}
   else others=shuffle(L.filter(x=>x!==t)).slice(0,n-1);
   const q='Где '+t.n+'?';if(!await ask(q))return;
-  const ok=await choice([{html:img(ti),ok:true,key:t.n}].concat(others.map(x=>({html:img(pick(x.is)),ok:false,key:x.n}))),{question:q,goodText:'Это '+t.n+'.',sayit:cap(t.n)});
+  const ok=await choice([{html:img(ti),ok:true,key:t.n}].concat(others.map(x=>({html:img(wPic(x)),ok:false,key:x.n}))),{question:q,goodText:'Это '+t.n+'.',sayit:cap(t.n)});
   return roundDone(ok,{n:t.n,m:G.topic})}
 
 /* ---------- НАГРАДА: настоящий пазл из 10 кусочков (фото), каждый третий раз — лабиринт */
@@ -2745,16 +2914,6 @@ function openReward(){if(S.pz.ready)return openPuzzle();return openAlbum()}
 
 /* ---------- ЦИФРЫ: найди все, спрятались в траве / на дереве, какая цифра спряталась */
 const NUMCOL=['#ff6b5b','#2f8be0','#3cbf7a','#7b61ff','#ff9f43'];
-async function numFindAll(n,L){
-  const R=G.round;const others=L.pool.filter(x=>x!==n).slice(0,lvlOthers(L));const cnt=L.pool.length>3?4:3;const total=L.pool.length>3?12:9;
-  const cells=shuffle(Array(cnt).fill(n).concat(Array.from({length:total-cnt},()=>pick(others))));
-  const q='Найди все цифры '+NUMW[n]+'!';if(!await ask(q,'Найди все цифры '+NUMW[n]+'! Нажми на каждую.'))return;$('#prompt').innerHTML=`Найди все <span class="digit sm">${n}</span>`;
-  const st=$('#stage');st.innerHTML=`<div class="nfind"><div class="nf-grid c${total>9?4:3}">${cells.map((d,k)=>`<button class="nf" data-d="${d}" style="--d:${k*40}ms;color:${pick(NUMCOL)};transform:rotate(${(Math.random()*24-12).toFixed(0)}deg)">${d}</button>`).join('')}</div><div class="nf-left">${'<i></i>'.repeat(cnt)}</div></div>`;
-  let got=0,wrong=0;await new Promise(res=>{st.querySelectorAll('.nf').forEach(b=>b.onclick=()=>{if(b._ok)return;ac();
-    if(+b.dataset.d===n){b._ok=1;b.classList.add('found');st.querySelectorAll('.nf-left i')[got].classList.add('on');got++;sfx.snap();tts(cap(NUMW[n]));if(got>=cnt)setTimeout(res,500)}
-    else{wrong++;G.round.wrong++;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');tone(220,0,.18,'sine',.12);tts('Это '+NUMW[+b.dataset.d])}})});
-  if(R.dead||!G)return;sfx.good();confetti(90);R.good='Все цифры '+NUMW[n]+'!';await say(pick(PRAISE)+' Все цифры '+NUMW[n]+'!');
-  return roundDone(wrong<=1,{m:'найди все',n})}
 const lvlOthers=L=>L.pool.length>3?3:2;
 async function numHidden(n,L){
   const R=G.round;const scene=pick(['grass','tree']);const cnt=L.pool.length>3?4:3;const others=L.pool.filter(x=>x!==n);const dec=L.pool.length>3?3:2;
@@ -2858,8 +3017,305 @@ function stageAnim(){const st=$('#stage');if(st)st.dataset.anim=CARD_ANIM[rnd(CA
 function mig26(){if((S.ver||0)>=26)return;if((S.badSnd||'game')==='game')S.badSnd='soft';S.ver=26;save()}
 function mig25(){if((S.ver||0)>=25)return;S.tipOn=false;S.pzL=S.pzL||{};S.pzL.pg=0;S.pz.maze=false;S.lvl.dog=Math.min(S.lvl.dog||1,3);S.ver=25;save()}
 
-async function balRound(lvl){const m=rmode('bal',5);return [balOnly,balInside,balSyl,balAni,balCount][m](lvl)}
-const ROUNDS={not:notRound,give:giveRound,dog:dogRound,voice:voiceRound,make:makeRound,rh:rhRound,pg:pgRound,br:brRound,dogs:dogsRound,tr:trRound,yn:ynRound,nes:nesRound,sl:slRound,ib:ibRound,food:foodRound,seq:seqRound,want:wantRound,num:numRound,world:worldRound,dress:dressRound,catch:catchRound,bal:balRound,odd:oddRound,verb:verbRound,color:colorRound,feed:feedRound,prep:prepRound,pair:pairRound,size:sizeRound,snd:sndRound,syl:sylRound,me:meRound,word:wordRound,dai:daiRound,many:manyRound,fly:flyRound,put:putRound};
+/* ===================== v26: бонус-шарики каждые 5 заданий, цифры на картинках (дерево, аквариум, поезд), понятные звуки животных ===================== */
+
+/* ---------- только понятные животные со звуком (без лисы, волка, тигра, енота) */
+const ONO_SKIP=['лиса','волк','тигр','енот','сова','индюк'];
+ONO_L=ONO_L.filter(x=>!ONO_SKIP.includes(x.n));
+
+/* ---------- БОНУС: 7 секунд лопаем шарики, из них сыплются конфеты, снежинки, звёзды */
+const BONUS_FX=[['🍬','🍭','🍬','🍫'],['❄','❅','❆','❄'],['⭐','✨','🌟','⭐'],['🍓','🍎','🍌','🍒'],['💖','💜','💛','💚']];
+async function bonusPop(){
+  const R=G&&G.round;const ov=document.createElement('div');ov.className='bonus';
+  ov.innerHTML=`<div class="bn-top"><b>Бонус!</b><span class="bn-cnt">0</span></div><div class="bn-time"><i></i></div><div class="bn-sky"></div>`;document.body.append(ov);
+  const sky=ov.querySelector('.bn-sky'),cnt=ov.querySelector('.bn-cnt');let got=0,done=false;
+  sfx.up();await say('Бонус! Лопай шарики!');if(!G)return ov.remove();
+  ov.querySelector('.bn-time i').style.animation='bnt 7s linear forwards';
+  const cols=['#ef4a3d','#2f8be0','#45b649','#ffcf26','#ff8fbf','#9b6bff','#ff9f43','#2ec4b6'];
+  const spawn=()=>{if(done)return;const c=pick(cols);const b=document.createElement('button');b.className='balloon bn';b.style.left=(4+Math.random()*80)+'%';
+    b.style.animationDuration=(3.6+Math.random()*2)+'s, '+(1.6+Math.random())+'s';b.innerHTML=balloonSvg(c);
+    b.onpointerdown=e=>{if(b._p||done)return;b._p=1;ac();const r=b.getBoundingClientRect();sfx.pop();b.remove();got++;cnt.textContent=got;cnt.classList.remove('up');void cnt.offsetWidth;cnt.classList.add('up');
+      const set=pick(BONUS_FX);for(let i=0;i<9;i++){const p=document.createElement('span');p.className='bn-fx';p.textContent=pick(set);
+        p.style.left=(r.left+r.width/2)+'px';p.style.top=(r.top+r.height/3)+'px';p.style.setProperty('--dx',(Math.random()*160-80)+'px');p.style.setProperty('--dy',(160+Math.random()*260)+'px');p.style.setProperty('--r',(Math.random()*720-360)+'deg');
+        p.style.animationDuration=(1+Math.random()*.8)+'s';ov.append(p);setTimeout(()=>p.remove(),2000)}
+      tone(880+got*30,0,.08,'triangle',.1)};
+    b.addEventListener('animationend',ev=>{if(ev.animationName==='rise')b.remove()});sky.append(b)};
+  for(let k=0;k<5;k++)setTimeout(spawn,k*200);const iv=setInterval(spawn,420);
+  await wait(7000);done=true;clearInterval(iv);sky.querySelectorAll('.balloon').forEach(x=>x.classList.add('away'));
+  confetti(120);await say(got?'Ура! '+got+' '+(got%10===1&&got%100!==11?'шарик':[2,3,4].includes(got%10)&&![12,13,14].includes(got%100)?'шарика':'шариков')+'!':'Ура!');
+  ov.classList.add('out');await wait(450);ov.remove()}
+
+/* ---------- ЦИФРЫ на красивой картинке: яблоки на дереве, рыбки в аквариуме, вагончики поезда */
+const SC_TREE=`<svg class="scn" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="tsk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#e8f7ff"/></linearGradient></defs><rect width="100" height="100" fill="url(#tsk)"/>
+  <circle cx="88" cy="12" r="7" fill="#ffd34d"/><g fill="#fff" opacity=".9"><ellipse cx="18" cy="12" rx="9" ry="3.5"/><ellipse cx="24" cy="10" rx="6" ry="3.5"/></g>
+  <path d="M0 86Q30 80 60 86T100 84V100H0z" fill="#7cc95f"/><path d="M45 92 47 52h6l2 40z" fill="#8a5a2b"/><path d="M50 62 38 50M50 58l12-10" stroke="#8a5a2b" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="50" cy="34" r="28" fill="#3f9e4d"/><circle cx="30" cy="42" r="17" fill="#4fae55"/><circle cx="70" cy="42" r="17" fill="#4fae55"/><circle cx="40" cy="20" r="15" fill="#5fbf5f"/><circle cx="62" cy="20" r="15" fill="#5fbf5f"/><circle cx="50" cy="48" r="14" fill="#4fae55"/></svg>`;
+const SC_AQUA=`<svg class="scn" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="aq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd6f5"/><stop offset="1" stop-color="#1f86c7"/></linearGradient></defs><rect width="100" height="100" fill="url(#aq)"/>
+  <path d="M0 8Q10 5 20 8T40 8T60 8T80 8T100 8" stroke="#ffffff88" stroke-width="1.2" fill="none"/><path d="M0 90Q20 84 40 90T80 88T100 90V100H0z" fill="#f3d9a4"/>
+  <path d="M10 92q-4-14 2-26q-6 12-2 26M16 92q4-18-2-32M84 92q-4-16 3-30M90 92q2-12-3-22" stroke="#2fa35a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <ellipse cx="62" cy="91" rx="6" ry="3" fill="#c79b6b"/><ellipse cx="30" cy="93" rx="4" ry="2" fill="#e9a3b8"/></svg>`;
+const SC_RAIL=`<svg class="scn" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="rs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7e0ff"/><stop offset="1" stop-color="#f0fbff"/></linearGradient></defs><rect width="100" height="100" fill="url(#rs)"/>
+  <circle cx="14" cy="14" r="7" fill="#ffd34d"/><path d="M0 52Q20 36 40 50T80 44T100 48V100H0z" fill="#9ddc7c"/><path d="M0 64Q30 54 60 64T100 60V100H0z" fill="#7cc95f"/>
+  <rect x="0" y="80" width="100" height="2.5" fill="#8a6a4a"/><rect x="0" y="86" width="100" height="2.5" fill="#8a6a4a"/>${Array.from({length:21},(_,k)=>`<rect x="${k*5}" y="79" width="2" height="11" fill="#a07850"/>`).join('')}</svg>`;
+const FISH=(c,d)=>`<svg viewBox="0 0 120 70"><path d="M100 35 L120 15 L118 55Z" fill="${shadeHex(c,-20)}"/><ellipse cx="55" cy="35" rx="48" ry="30" fill="${c}"/><path d="M40 8q12-10 26 0" fill="${shadeHex(c,-15)}"/><circle cx="24" cy="28" r="6" fill="#fff"/><circle cx="22" cy="28" r="3" fill="#24324a"/><path d="M12 42q6 4 12 0" stroke="#24324a" stroke-width="2" fill="none"/></svg><b class="fd" style="-webkit-text-stroke:2px ${shadeHex(c,-35)}">${d}</b>`;
+const APPLE=(d)=>`<svg viewBox="0 0 60 64"><path d="M30 12q2-9 9-11" stroke="#6b4a2a" stroke-width="3" fill="none"/><path d="M33 8q10-6 16 2q-8 4-16-2z" fill="#4fae55"/><path d="M30 14C18 6 4 14 5 32c1 18 14 30 25 28 11 2 24-10 25-28C56 14 42 6 30 14z" fill="#e23b3b"/><ellipse cx="18" cy="24" rx="4" ry="7" fill="#fff" opacity=".45"/><text x="30" y="47" text-anchor="middle" font-size="28" font-weight="700" fill="#fff" font-family="Balsamiq Sans,sans-serif">${d}</text></svg>`;
+const WAGON=(c,d,first)=>`<svg viewBox="0 0 90 70">${first?`<rect x="4" y="10" width="44" height="42" rx="6" fill="#ef4a3d"/><rect x="48" y="26" width="38" height="26" rx="5" fill="#ef4a3d"/><rect x="58" y="6" width="12" height="22" fill="#24324a"/><rect x="12" y="18" width="26" height="18" rx="4" fill="#bfe8ff"/>`:`<rect x="6" y="14" width="78" height="38" rx="7" fill="${c}"/><rect x="2" y="10" width="86" height="8" rx="4" fill="${shadeHex(c,-25)}"/><text x="45" y="47" text-anchor="middle" font-size="34" font-weight="700" fill="#fff" font-family="Balsamiq Sans,sans-serif" stroke="${shadeHex(c,-40)}" stroke-width="2" paint-order="stroke">${d}</text>`}<circle cx="22" cy="56" r="9" fill="#24324a"/><circle cx="68" cy="56" r="9" fill="#24324a"/><circle cx="22" cy="56" r="3.5" fill="#ccc"/><circle cx="68" cy="56" r="3.5" fill="#ccc"/></svg>`;
+async function numFindAll(n,L){
+  const R=G.round;const kind=['tree','aqua','train'][rmode('nscene',3)];const others=L.pool.filter(x=>x!==n);
+  const cnt=L.pool.length>3?3:3,total=kind==='tree'?8:kind==='aqua'?7:8;
+  const items=shuffle(Array(cnt).fill(n).concat(Array.from({length:total-cnt},()=>pick(others))));
+  const where={tree:'на дереве',aqua:'в аквариуме',train:'в поезде'}[kind];
+  const q='Найди все цифры '+NUMW[n]+'!';if(!await ask(q,'Цифры '+NUMW[n]+' спрятались '+where+'! Найди все!'))return;$('#prompt').innerHTML=`Найди все <span class="digit sm">${n}</span>`;
+  const st=$('#stage');let body='';
+  if(kind==='tree'){const spots=shuffle([[30,22],[50,12],[68,22],[22,40],[40,34],[60,36],[78,40],[50,50],[34,52],[66,54]]);
+    body=SC_TREE+items.map((d,k)=>`<button class="ni apple" data-d="${d}" style="left:${spots[k][0]}%;top:${spots[k][1]}%;--d:${k*60}ms">${APPLE(d)}</button>`).join('')}
+  else if(kind==='aqua'){const ys=shuffle([16,26,36,46,56,66,74]);const cs=['#ff9f43','#ff6b9e','#ffd23f','#7b61ff','#2ec4b6','#ef4a3d','#5aa9ff'];
+    body=SC_AQUA+items.map((d,k)=>`<button class="ni fish" data-d="${d}" style="top:${ys[k%ys.length]}%;--sw:${(5+Math.random()*4).toFixed(1)}s;--dl:-${(Math.random()*6).toFixed(1)}s">${FISH(cs[k%cs.length],d)}</button>`).join('')+'<i class="bub b1"></i><i class="bub b2"></i><i class="bub b3"></i>'}
+  else{const cs=['#2f8be0','#45b649','#ffb020','#9b6bff','#ff6b9e','#2ec4b6'];
+    body=SC_RAIL+`<div class="trainrow"><div class="train">${`<span class="wg loco">${WAGON('#ef4a3d',0,true)}</span>`+items.map((d,k)=>`<button class="ni wg" data-d="${d}">${WAGON(cs[k%cs.length],d)}</button>`).join('')}</div></div>`}
+  st.innerHTML=`<div class="nscene sc-${kind}">${body}<div class="nf-left">${'<i></i>'.repeat(cnt)}</div></div>`;
+  let got=0,wrong=0;await new Promise(res=>{st.querySelectorAll('.ni').forEach(b=>b.onclick=()=>{if(b._ok)return;ac();
+    if(+b.dataset.d===n){b._ok=1;b.classList.add('found');st.querySelectorAll('.nf-left i')[got].classList.add('on');got++;sfx.snap();tts(cap(NUMW[n]));if(got>=cnt)setTimeout(res,600)}
+    else{wrong++;G.round.wrong++;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');tone(220,0,.18,'sine',.12);tts('Это '+NUMW[+b.dataset.d])}})});
+  if(R.dead||!G)return;sfx.good();confetti(90);R.good='Все цифры '+NUMW[n]+'!';await say(pick(PRAISE)+' Ты нашёл все цифры '+NUMW[n]+'!');
+  return roundDone(wrong<=1,{m:'найди все: '+kind,n})}
+
+
+
+/* ===================== v28: идёт/бежит/стоит/сидит — живые человечки; «Собака дома»; «Дорисуй»; шарики; фон ===================== */
+
+/* ---------- человечки: одна фигурка, 4 позы, движение анимацией (идёт — медленно, бежит — быстро, наклон, пыль) */
+const FIG_P={мальчик:{skin:'#f6cba4',hair:'#6b3e1f',st:'short',top:'#3b82f6',bot:'#2b3a67',shoe:'#e8452c'},
+  девочка:{skin:'#f8d3b0',hair:'#b5651d',st:'tails',top:'#ff6fa3',bot:'#ff6fa3',skirt:1,shoe:'#7b61ff'},
+  папа:{skin:'#eec19a',hair:'#2f2a26',st:'short',top:'#2fb37a',bot:'#3a3f4a',shoe:'#5a3a22',tall:1},
+  мама:{skin:'#f6cba4',hair:'#e0a43a',st:'long',top:'#ffb020',bot:'#5b6bd6',shoe:'#c23b6b',tall:1},
+  дедушка:{skin:'#efc6a4',hair:'#d9d9d9',st:'bald',top:'#a05a2c',bot:'#56606e',shoe:'#3a2a1a',tall:1},
+  бабушка:{skin:'#f3cfb3',hair:'#e6e6e6',st:'bun',top:'#9b6bff',bot:'#9b6bff',skirt:1,shoe:'#5a3a22'}};
+const FIG_W=Object.keys(FIG_P);
+let FIG_N=0;
+function figSvg(who,pose){const P=FIG_P[who]||FIG_P.мальчик;const id='f'+(++FIG_N);const L=P.tall?41:35,T=P.tall?56:48;
+  const hipY=200-2*L-6,shY=hipY-T,hx=100,hy=shY-24;
+  const leg=(c,dark)=>`<g class="th ${c}" style="transform-origin:${hx}px ${hipY}px"><line x1="${hx}" y1="${hipY}" x2="${hx}" y2="${hipY+L}" stroke="${dark?fshade(P.bot):P.bot}" stroke-width="15" stroke-linecap="round"/>
+    <g class="sh" style="transform-origin:${hx}px ${hipY+L}px"><line x1="${hx}" y1="${hipY+L}" x2="${hx}" y2="${hipY+2*L}" stroke="${P.skirt?P.skin:(dark?fshade(P.bot):P.bot)}" stroke-width="${P.skirt?10:14}" stroke-linecap="round"/><ellipse cx="${hx+7}" cy="${hipY+2*L+3}" rx="13" ry="7" fill="${dark?fshade(P.shoe):P.shoe}"/></g></g>`;
+  const arm=(c,dark)=>`<g class="ua ${c}" style="transform-origin:${hx}px ${shY+6}px"><line x1="${hx}" y1="${shY+6}" x2="${hx}" y2="${shY+6+T*.48}" stroke="${dark?fshade(P.top):P.top}" stroke-width="12" stroke-linecap="round"/>
+    <g class="fa" style="transform-origin:${hx}px ${shY+6+T*.48}px"><line x1="${hx}" y1="${shY+6+T*.48}" x2="${hx}" y2="${shY+6+T*.92}" stroke="${P.skin}" stroke-width="10" stroke-linecap="round"/><circle cx="${hx}" cy="${shY+8+T*.92}" r="6.5" fill="${P.skin}"/></g></g>`;
+  const hair={short:`<path d="M${hx-22} ${hy-2}q2-26 24-26q22 0 22 22q-10-10-24-8q-12 2-22 12z" fill="${P.hair}"/>`,
+    tails:`<path d="M${hx-23} ${hy+2}q0-28 25-28q22 0 22 24q-12-12-26-10q-12 2-21 14z" fill="${P.hair}"/><circle cx="${hx-24}" cy="${hy-6}" r="9" fill="${P.hair}"/><path d="M${hx-30} ${hy}q-8 14-2 26q8-10 6-22z" fill="${P.hair}"/>`,
+    long:`<path d="M${hx-24} ${hy+20}q-6-46 26-46q24 0 22 26q-12-12-28-8q-8 4-12 12q-2 10 2 22z" fill="${P.hair}"/>`,
+    bald:`<path d="M${hx-23} ${hy+4}q-2-12 6-14l2 10z" fill="${P.hair}"/><path d="M${hx+6} ${hy+10}q10 2 14 -2" stroke="${P.hair}" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    bun:`<circle cx="${hx-14}" cy="${hy-22}" r="10" fill="${P.hair}"/><path d="M${hx-23} ${hy+2}q0-26 24-26q22 0 22 20q-12-10-26-8q-12 2-20 14z" fill="${P.hair}"/>`}[P.st];
+  const body=P.skirt?`<path d="M${hx-14} ${shY}h28l${P.st==='bun'?10:8} ${T+10}h-${P.st==='bun'?56:52}z" fill="${P.top}"/>`
+    :`<rect x="${hx-14}" y="${shY-2}" width="28" height="${T+8}" rx="12" fill="${P.top}"/>`;
+  const head=`<circle cx="${hx}" cy="${hy}" r="22" fill="${P.skin}"/>${hair}<ellipse class="eye" cx="${hx+10}" cy="${hy-2}" rx="3" ry="3.6" fill="#2a2a2a"/><path d="M${hx+19} ${hy+2}q5 3 0 6" stroke="#d99a72" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M${hx+6} ${hy+12}q6 4 11 0" stroke="#b5533c" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="${hx+3}" cy="${hy+6}" r="4" fill="#ff9b8a" opacity=".45"/>`;
+  const dy=L-2,sy=hipY+dy;const chair=pose==='сидит'?`<g class="chair"><rect x="${hx-40}" y="${sy-58}" width="10" height="${200-sy+58}" rx="4" fill="#a0612c"/><rect x="${hx-40}" y="${sy+5}" width="70" height="11" rx="5" fill="#c27a3a"/><rect x="${hx+18}" y="${sy+12}" width="9" height="${200-sy-12}" rx="4" fill="#a0612c"/></g>`:'';
+  const fx=pose==='бежит'?`<g class="spd"><path d="M30 ${shY+10}h-22M38 ${shY+30}h-30M28 ${hipY}h-20" stroke="#9cc3ff" stroke-width="5" stroke-linecap="round"/></g><g class="dust"><circle cx="62" cy="196" r="7" fill="#d8c7a8"/><circle cx="48" cy="192" r="5" fill="#e3d6bd"/><circle cx="36" cy="197" r="4" fill="#ece2cf"/></g>`:'';
+  const ground=`<rect x="0" y="${pose==='сидит'?200:200}" width="200" height="20" fill="#bde39b"/><g class="gr"><path d="${Array.from({length:12},(_,k)=>`M${k*40} 206h14`).join('')}" stroke="#8cc96a" stroke-width="4" stroke-linecap="round"/></g>`;
+  return `<svg class="fig p-${{идёт:'walk',бежит:'run',стоит:'stand',сидит:'sit'}[pose]}" viewBox="0 -14 200 234" role="img" aria-label="${who} ${pose}"><rect y="-14" width="200" height="234" fill="#f3f8ff"/>${ground}${chair}${fx}
+    <g class="bd" style="transform-origin:${hx}px ${hipY}px${pose==='сидит'?';--sitdy:'+dy+'px':''}">${arm('b',1)}${leg('b',1)}${body}${leg('f')}${head}${arm('f')}</g></svg>`}
+function fshade(h){const v=parseInt(h.slice(1),16);const f=c=>Math.round(c*.78).toString(16).padStart(2,'0');return '#'+f(v>>16)+f((v>>8)&255)+f(v&255)}
+
+/* «идёт / бежит / стоит / сидит»: 1 ур. — 2 карточки, 2 — 3, 3 — 4; потом фото и мультики; вопросы чередуются */
+const IB_V=['идёт','бежит','стоит','сидит'];
+async function ibRound(lvl){
+  const R=G.round;
+  if(lvl>=4&&rmode('ibph',3)===2){/* перенос: настоящие фото людей и мультики животных (идёт / бежит) */
+    let opts;const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
+    if(subs.length&&Math.random()<.5){const s=fresh(()=>pick(subs),x=>'ibA'+x);const A=v=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};opts=[A('идёт'),A('бежит')]}
+    else{const P=D2.pairs.filter(p=>p.set==='ib');const pr=fresh(()=>pick(P),x=>x.a[0].i+x.a[1].i);opts=pr.a}
+    const ok=await twoQ(opts,['идёт','бежит'],'ibq');if(ok===null)return;return roundDone(ok,{v:'идёт/бежит (фото)',n:opts[0].s})}
+  const n=lvl===1?2:lvl===2?3:4;
+  /* набор глаголов: на 1 уровне пары чередуются (идёт–сидит, бежит–стоит, идёт–бежит, стоит–сидит…) */
+  const PAIRS=[['идёт','сидит'],['бежит','стоит'],['идёт','бежит'],['стоит','сидит'],['бежит','сидит'],['идёт','стоит']];
+  const verbs=n===2?PAIRS[rmode('ibpair',PAIRS.length)]:n===3?shuffle(IB_V.slice()).slice(0,3):IB_V.slice();
+  /* на 1–2 уровне все карточки — один и тот же человек, потом разные */
+  const same=lvl<=2||Math.random()<.4;const who0=fresh(()=>pick(FIG_W),x=>'ibw'+x);const ws=same?verbs.map(()=>who0):shuffle(FIG_W.slice()).slice(0,n);
+  const opts=verbs.map((v,k)=>({v,s:ws[k]}));
+  const ask2=shuffle(verbs.slice()).slice(0,2);let all=true;
+  for(const v of ask2){const t=opts.find(o=>o.v===v);const q='Кто '+v+'?';if(!await ask(q))return;
+    const ok=await choice(shuffle(opts.map(a=>({html:figSvg(a.s,a.v),ok:a===t,key:a.v}))),{question:q,goodText:cap(t.s)+' '+v+'.',sayit:cap(t.s)+' '+v});
+    if(!ok)all=false;if(!G||G.round!==R||R.dead)return;await wait(300)}
+  return roundDone(all,{v:verbs.join('/'),n:ws[0]})}
+
+/* ---------- «Что это?»: живые картинки из презентаций (мультики животных и транспорта), без непонятных значков */
+(function fixW28(){try{
+  const AN={кот:'кошка',конь:'лошадь',цыпа:'цыплёнок',свинка:'свинья',овечка:'овца',ёжик:'ёж',мышка:'мышь',зайка:'заяц',козлик:'коза',ослик:'ослик',крыса:'крыса',птица:'птица'};
+  const BAD=['подушка','пульт','телефон','дом','бревно','палка','росток','перо'];
+  const MERGE={зайчик:'заяц',мышка:'мышь'};
+  for(const [t,L] of Object.entries(W24T)){if(t==='all')continue;
+    for(let k=L.length-1;k>=0;k--){const x=L[k];if(BAD.includes(x.n)){L.splice(k,1);continue}
+      if(MERGE[x.n]){const y=L.find(z=>z.n===MERGE[x.n]);if(y){x.is.forEach(i=>y.is.includes(i)||y.is.push(i));L.splice(k,1);continue}x.n=MERGE[x.n]}
+      const ph=x.is.filter(i=>!String(i).includes('fl_'));if(ph.length)x.is=ph}}
+  /* животные: только понятные картинки со слайдов (мультяшные целиком, фото «стоит»), без мордочек-значков и зверей на стульях */
+  const CHAIR=['корова','лиса','волк','тигр','енот','бобр','бурундук','кабан','лось','олень','рысь','барсук'];
+  const SCENE=/ebed5a3c24|021c36ef57|611feaf0a5/;
+  const apics=n=>{const out=[];const ad=i=>{if(i&&!out.includes(i)&&!SCENE.test(String(i)))out.push(i)};
+    D.animals.filter(a=>a.n===n&&!(CHAIR.includes(n)&&!a.v24)).forEach(a=>ad(a.i));
+    const ib=(IBS||[]).find(x=>x.s===n||IB_S[x.s]===n);if(ib)ad(ib.стоит);
+    if(!out.length&&(window.ANIPIC||{})[n])ad(ANIPIC[n]);return out.filter(i=>!/e9_/.test(String(i)))};
+  if(W24T.animals)W24T.animals.forEach(x=>{const ps=apics(x.n);x.is=ps});
+  const add=(t,n,a)=>{const L=W24T[t];if(!L)return;let x=L.find(z=>z.n===n);if(!x){x={n,is:[]};L.push(x)}x.an=x.an||[];x.an.includes(a)||x.an.push(a)};
+  const UNCLEAR=['anim2/image25.webp','anim/a_53318bbab361.webp','anim/a_fd7e773509c8.webp','anim/a_607bd9df7d49.webp'];
+  (D.anims||[]).concat(D3.anims||[]).forEach(a=>{if(!a.s||!a.a||UNCLEAR.includes(a.a))return;const n=AN[a.s]||a.s;
+    if(['самолёт','машина','лодка'].includes(n))add('transport',n,a.a);
+    else if(!['девочка','мальчик','тётя','малыш','null','лама','птица','крыса','козёл'].includes(n))add('animals',n,a.a)});
+  if(W24T.animals)W24T.animals.forEach(x=>{if(['лиса','волк'].includes(x.n)&&(x.an||[]).length)x.is=[]});
+  if(W24T.animals)for(let k=W24T.animals.length-1;k>=0;k--){const x=W24T.animals[k];if(!x.is.length&&!(x.an||[]).length)W24T.animals.splice(k,1)}
+  W24T.all=Object.entries(W24T).filter(([t])=>t!=='all').flatMap(([,L])=>L);
+}catch(e){console.warn('fixW28',e)}})();
+/* картинка для карточки: если есть «живая» (анимация со слайда) — чаще её */
+const wPic=x=>x.an&&x.an.length&&(!x.is.length||Math.random()<.6)?pick(x.an):pick(x.is);
+
+/* ---------- «СОБАКА ДОМА»: «Собака хочет спать» → тащим на кровать → «Собака спит!» */
+const HM_PL={
+  bed:{n:'кровать',ic:['bed'],bg:'#ece6ff'},
+  table:{n:'стол',ic:['plate'],bg:'#fff0d4'},
+  toilet:{n:'туалет',ic:['toilet'],bg:'#e4f3ff'},
+  bath:{n:'ванна',ic:['bathtub'],bg:'#dcf5ff'},
+  door:{n:'дверь',ic:['door'],bg:'#ffe9d9'},
+  pool:{n:'бассейн',svg:'<svg viewBox="0 0 120 80"><rect x="6" y="16" width="108" height="58" rx="18" fill="#7fd0ff" stroke="#e9f6ff" stroke-width="7"/><path class="wv" d="M18 40q8-6 16 0t16 0 16 0 16 0 16 0 16 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/><path class="wv" d="M18 56q8-6 16 0t16 0 16 0 16 0 16 0 16 0" stroke="#d6f1ff" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M98 6v34M110 6v34M98 14h12M98 26h12" stroke="#b0bccb" stroke-width="4" stroke-linecap="round"/></svg>',bg:'#d8f3e6'},
+  closet:{n:'шкаф',ic:['coat'],bg:'#f1e9de'},
+  art:{n:'краски',ic:['palette','crayon'],bg:'#ffe6f1'},
+  tv:{n:'телевизор',ic:['television'],bg:'#e6ecff'},
+  sink:{n:'зубная щётка',ic:['toothbrush'],bg:'#e9fbff'}};
+const HM_T=[
+  {k:'sleep',want:'спать',pl:'bed',done:'спит',lv:1},
+  {k:'eat',want:'есть',pl:'table',done:'ест',lv:1,item:{ic:'bowl',n:'миску',lv:3}},
+  {k:'walk',want:'гулять',pl:'door',done:'гуляет',lv:1},
+  {k:'wash',want:'мыться',pl:'bath',done:'моется',lv:1,item:{ic:'soap',n:'мыло',lv:4}},
+  {k:'tv',want:'смотреть мультик',pl:'tv',done:'смотрит мультик',lv:1},
+  {k:'pool',want:'в бассейн',pl:'pool',done:'плавает',lv:2},
+  {k:'toilet',want:'в туалет',pl:'toilet',done:'в туалете',lv:2},
+  {k:'draw',want:'рисовать',pl:'art',done:'рисует',lv:2},
+  {k:'dress',want:'одеться',pl:'closet',done:'одевается',lv:3,item:{ic:'t-shirt',n:'футболку',lv:3}},
+  {k:'teeth',want:'чистить зубы',pl:'sink',done:'чистит зубы',lv:4}];
+const HM_HERO=[{n:'собака',ic:'dog',dat:'собаке'},{n:'кошка',ic:'cat',dat:'кошке'},{n:'зайка',ic:'rabbit',dat:'зайке'},{n:'мишка',ic:'teddy2',dat:'мишке'}];
+async function homeRound(lvl){
+  const R=G.round;const nPl=[0,2,3,4,6][lvl]||4;
+  const T=fresh(()=>pick(HM_T.filter(t=>t.lv<=Math.min(lvl,4))),t=>'hm'+t.k);
+  const hero=lvl>=4&&Math.random()<.6?pick(HM_HERO.slice(1)):HM_HERO[0];const H=cap(hero.n);
+  const others=shuffle(Object.keys(HM_PL).filter(p=>p!==T.pl)).slice(0,nPl-1);const pls=shuffle([T.pl].concat(others));posFix(pls,p=>p===T.pl);
+  const q=H+' хочет '+T.want+'!';const how=T.pl==='door'?'Веди '+hero.n.replace(/а$/,'у')+' к двери!':'Где '+HM_PL[T.pl].n+'?';
+  if(!await ask(q,q))return;R.good=H+' '+T.done+'.';R.replay=()=>say(q);
+  const st=$('#stage');
+  const plHtml=p=>{const P=HM_PL[p];return `<button class="hm-pl pl-${p}" data-p="${p}" style="--bg:${P.bg}" aria-label="${P.n}"><span class="hm-ic">${P.svg||P.ic.map(k=>`<img src="${I24(k)}" alt="" draggable="false">`).join('')}</span><span class="hm-fx"></span></button>`};
+  st.innerHTML=`<div class="home28 n${nPl}"><div class="hm-house"><div class="hm-roof"></div><div class="hm-rooms">${pls.map(plHtml).join('')}</div></div>
+    <div class="hm-floor"><div class="hm-hero" aria-label="${hero.n}"><img src="${I24(hero.ic)}" alt="" draggable="false"><i class="hm-bub">${{sleep:'💤',eat:'🍽️',walk:'🌳',wash:'🧼',tv:'📺',pool:'🌊',toilet:'🚽',draw:'🎨',dress:'👕',teeth:'🦷'}[T.k]}</i></div><div class="hm-tray"></div></div></div>`;
+  const box=st.firstChild,heroEl=box.querySelector('.hm-hero');let wrong=0,done=false;
+  const hintT=setTimeout(()=>{if(done)return;box.querySelector('.pl-'+T.pl).classList.add('hint');say(how)},9000);
+  /* шаг 1: отвести героя */
+  const res1=await new Promise(res=>{
+    const tryPlace=async p=>{if(done)return;const el=box.querySelector('.pl-'+p);
+      if(p===T.pl){done=true;clearTimeout(hintT);el.classList.remove('hint');sfx.snap();flyInto(heroEl,el,T.k);res(true);return}
+      wrong++;G.round.wrong=(G.round.wrong||0)+1;el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad');heroBack();const ms=sfx.bad();await wait(Math.max(400,ms));
+      if(!done)say('Нет, это '+HM_PL[p].n+'. '+q);if(wrong>=2)box.querySelector('.pl-'+T.pl).classList.add('hint')};
+    const heroBack=()=>{heroEl.classList.add('back');heroEl.style.transform=''};
+    let d=null;
+    heroEl.onpointerdown=e=>{if(done)return;e.preventDefault();ac();try{heroEl.setPointerCapture(e.pointerId)}catch(_){}heroEl.classList.remove('back');heroEl.classList.add('drag');d={x:e.clientX,y:e.clientY};sfx.click()};
+    heroEl.onpointermove=e=>{if(!d)return;heroEl.style.transform=`translate(${e.clientX-d.x}px,${e.clientY-d.y}px) scale(1.08)`};
+    heroEl.onpointerup=heroEl.onpointercancel=e=>{if(!d)return;const moved=Math.hypot(e.clientX-d.x,e.clientY-d.y);d=null;heroEl.classList.remove('drag');
+      if(moved<12){heroBack();say(q);return}
+      const hit=[...box.querySelectorAll('.hm-pl')].find(b=>{const r=b.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom});
+      if(!hit){heroBack();return}tryPlace(hit.dataset.p)};
+    box.querySelectorAll('.hm-pl').forEach(b=>b.onclick=()=>{if(!done){ac();tryPlace(b.dataset.p)}})});
+  clearTimeout(hintT);if(!res1||R.dead||!G||G.round!==R)return;await wait(650);if(R.dead)return;
+  /* шаг 2 (со 3 уровня): дать миску / футболку / мыло */
+  if(T.item&&lvl>=T.item.lv){const tray=box.querySelector('.hm-tray');const it=document.createElement('div');it.className='hm-item';it.innerHTML=`<img src="${I24(T.item.ic)}" alt="" draggable="false">`;tray.append(it);
+    const q2='Дай '+hero.dat+' '+T.item.n+'!';setPrompt(q2);await say(q2);if(R.dead)return;const tgt=box.querySelector('.pl-'+T.pl);
+    await new Promise(res=>{let d=null,ok=false;const fin=()=>{if(ok)return;ok=true;sfx.snap();tgt.querySelector('.hm-fx').insertAdjacentHTML('beforeend',`<img class="hm-given" src="${I24(T.item.ic)}" alt="">`);it.remove();res()};
+      const h2=setTimeout(()=>{it.classList.add('hint');tgt.classList.add('hint')},8000);
+      it.onclick=()=>{ac();clearTimeout(h2);fin()};
+      it.onpointerdown=e=>{e.preventDefault();ac();try{it.setPointerCapture(e.pointerId)}catch(_){}d={x:e.clientX,y:e.clientY}};
+      it.onpointermove=e=>{if(d)it.style.transform=`translate(${e.clientX-d.x}px,${e.clientY-d.y}px)`};
+      it.onpointerup=e=>{if(!d)return;const r=tgt.getBoundingClientRect();const inT=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;const mv=Math.hypot(e.clientX-d.x,e.clientY-d.y);d=null;it.style.transform='';if(inT||mv<12){clearTimeout(h2);fin()}}});
+    if(R.dead)return;await wait(300)}
+  /* результат: анимация + голос «Собака спит!» */
+  box.querySelector('.pl-'+T.pl).classList.add('fx-'+T.k);confetti(50);
+  await say(pick(PRAISE)+' '+H+' '+T.done+'!');if(R.dead)return;await wait(1100);if(R.dead)return;
+  if(S.sayit!=='off'&&Math.random()<.5)await sayIt(H+' '+T.done,`<img src="${I24(hero.ic)}" alt="">`);
+  return roundDone(wrong===0,{n:T.k,m:hero.n,w:wrong})}
+function flyInto(heroEl,pl,k){const a=heroEl.getBoundingClientRect(),b=pl.getBoundingClientRect();const fx=pl.querySelector('.hm-fx');
+  const img=heroEl.querySelector('img').cloneNode();img.className='hm-in';fx.prepend(img);
+  const c=img.getBoundingClientRect();img.animate([{transform:`translate(${a.left+a.width/2-(c.left+c.width/2)}px,${a.top+a.height/2-(c.top+c.height/2)}px) scale(1.6)`},{transform:'none'}],{duration:520,easing:'cubic-bezier(.3,1.3,.5,1)'});
+  heroEl.style.visibility='hidden'}
+
+/* ---------- «ДОРИСУЙ»: пунктир → провести пальчиком → картинка оживает */
+const DRW_C=(cx,cy,r)=>`M${cx} ${cy-r}A${r} ${r} 0 1 1 ${cx-.1} ${cy-r}`;
+const DRAW28=[
+  /* 1: прямые линии */
+  {lv:1,n:'дерево',q:'Дорисуй ствол!',base:'<circle cx="100" cy="72" r="50" fill="#7cc96b"/><circle cx="72" cy="86" r="26" fill="#6bbd5b"/><circle cx="128" cy="86" r="26" fill="#6bbd5b"/>',miss:'M100 120V188',done:'<rect x="88" y="112" width="24" height="78" rx="6" fill="#9a5b2e"/><circle cx="100" cy="72" r="50" fill="#5fbf5f"/><circle cx="72" cy="86" r="26" fill="#4fae55"/><circle cx="128" cy="86" r="26" fill="#4fae55"/><circle cx="84" cy="60" r="7" fill="#ef4a3d"/><circle cx="118" cy="78" r="7" fill="#ef4a3d"/>'},
+  {lv:1,n:'цветок',q:'Дорисуй стебелёк!',base:'<g fill="#ff7eb3">'+[0,72,144,216,288].map(a=>`<ellipse cx="100" cy="38" rx="15" ry="22" transform="rotate(${a} 100 62)"/>`).join('')+'</g><circle cx="100" cy="62" r="13" fill="#ffd23f"/>',miss:'M100 84V188',done:'<path d="M100 84V188" stroke="#4fae55" stroke-width="9" stroke-linecap="round"/><ellipse cx="122" cy="140" rx="20" ry="9" fill="#5fbf5f" transform="rotate(-30 122 140)"/><g fill="#ff5c9a">'+[0,72,144,216,288].map(a=>`<ellipse cx="100" cy="38" rx="15" ry="22" transform="rotate(${a} 100 62)"/>`).join('')+'</g><circle cx="100" cy="62" r="13" fill="#ffc21a"/>'},
+  {lv:1,n:'шарик',q:'Дорисуй ниточку!',base:'<ellipse cx="100" cy="72" rx="44" ry="54" fill="#ff6b5b"/><path d="M94 126h12l-6 8z" fill="#e24a3b"/>',miss:'M100 134V192',done:'<path d="M100 134q-10 14 0 28t0 30" stroke="#666" stroke-width="3" fill="none"/><ellipse cx="100" cy="72" rx="44" ry="54" fill="#ff5b4b"/><ellipse cx="84" cy="50" rx="10" ry="16" fill="#fff" opacity=".5"/><path d="M94 126h12l-6 8z" fill="#e24a3b"/>'},
+  {lv:1,n:'квадрат',q:'Дорисуй квадрат!',base:'<path d="M150 46H50V154H150" stroke="#7b61ff" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',miss:'M150 46V154',done:'<rect x="50" y="46" width="100" height="108" rx="4" fill="#ffd23f" stroke="#7b61ff" stroke-width="9"/>'},
+  {lv:1,n:'флажок',q:'Дорисуй палочку!',base:'<path d="M60 34h80l-18 24 18 24H60z" fill="#ef4a3d"/>',miss:'M60 30V190',done:'<path d="M60 26V192" stroke="#8a5a2b" stroke-width="9" stroke-linecap="round"/><path d="M60 34h80l-18 24 18 24H60z" fill="#ef4a3d"/><circle cx="60" cy="24" r="7" fill="#ffc21a"/>'},
+  {lv:1,n:'леденец',q:'Дорисуй палочку!',base:'<circle cx="100" cy="70" r="46" fill="#ff7eb3"/><path d="M100 70m-30 0a30 30 0 1 1 30 30a18 18 0 1 1 -12-18" stroke="#fff" stroke-width="7" fill="none"/>',miss:'M100 118V192',done:'<rect x="94" y="112" width="12" height="82" rx="6" fill="#f0e6d8"/><circle cx="100" cy="70" r="46" fill="#ff5c9a"/><path d="M100 70m-30 0a30 30 0 1 1 30 30a18 18 0 1 1 -12-18" stroke="#fff" stroke-width="7" fill="none"/>'},
+  /* 2: дуги и уголки */
+  {lv:2,n:'солнышко',q:'Дорисуй круг!',base:'<path d="M100 40A60 60 0 0 0 100 160" stroke="#ffb020" stroke-width="9" fill="none" stroke-linecap="round"/>',miss:'M100 40A60 60 0 0 1 100 160',done:'<g stroke="#ffb020" stroke-width="8" stroke-linecap="round">'+[0,45,90,135,180,225,270,315].map(a=>`<path d="M100 18V2" transform="rotate(${a} 100 100)"/>`).join('')+'</g><circle cx="100" cy="100" r="60" fill="#ffd23f"/><circle cx="80" cy="92" r="6" fill="#5a3a22"/><circle cx="120" cy="92" r="6" fill="#5a3a22"/><path d="M78 118q22 18 44 0" stroke="#5a3a22" stroke-width="5" fill="none" stroke-linecap="round"/>'},
+  {lv:2,n:'мячик',q:'Дорисуй круг!',base:'<path d="M100 40A60 60 0 0 1 100 160" stroke="#2f8be0" stroke-width="9" fill="none" stroke-linecap="round"/>',miss:'M100 40A60 60 0 0 0 100 160',done:'<circle cx="100" cy="100" r="60" fill="#2f8be0"/><path d="M40 100h120" stroke="#fff" stroke-width="10"/><path d="M100 40q-36 60 0 120" stroke="#ffd23f" stroke-width="10" fill="none"/><ellipse cx="78" cy="70" rx="10" ry="16" fill="#fff" opacity=".4"/>'},
+  {lv:2,n:'улыбка',q:'Дорисуй ротик!',base:'<circle cx="100" cy="100" r="74" fill="#ffe0b8" stroke="#e8b48a" stroke-width="5"/><circle cx="74" cy="84" r="9" fill="#3a2a1a"/><circle cx="126" cy="84" r="9" fill="#3a2a1a"/>',miss:'M66 122Q100 158 134 122',done:'<circle cx="100" cy="100" r="74" fill="#ffd8a8" stroke="#e8b48a" stroke-width="5"/><circle cx="74" cy="84" r="9" fill="#3a2a1a"/><circle cx="126" cy="84" r="9" fill="#3a2a1a"/><circle cx="60" cy="112" r="10" fill="#ff9b8a" opacity=".6"/><circle cx="140" cy="112" r="10" fill="#ff9b8a" opacity=".6"/><path d="M66 122Q100 158 134 122" stroke="#c0392b" stroke-width="8" fill="none" stroke-linecap="round"/>'},
+  {lv:2,n:'домик',q:'Дорисуй крышу!',base:'<rect x="50" y="92" width="100" height="92" fill="#ffd9a0" stroke="#c98b4a" stroke-width="5"/><rect x="88" y="136" width="26" height="48" fill="#9a5b2e"/><rect x="62" y="108" width="22" height="22" fill="#9fd8ff"/>',miss:'M38 94L100 34L162 94',done:'<path d="M34 96L100 30L166 96z" fill="#ef4a3d"/><rect x="50" y="92" width="100" height="92" fill="#ffd9a0" stroke="#c98b4a" stroke-width="5"/><rect x="88" y="136" width="26" height="48" fill="#9a5b2e"/><rect x="62" y="108" width="22" height="22" fill="#9fd8ff"/><rect x="118" y="108" width="22" height="22" fill="#9fd8ff"/>'},
+  {lv:2,n:'рыбка',q:'Дорисуй хвостик!',base:'<ellipse cx="112" cy="100" rx="56" ry="36" fill="#ff9f43"/><circle cx="142" cy="92" r="7" fill="#fff"/><circle cx="144" cy="92" r="4" fill="#222"/>',miss:'M58 100L24 70V130Z',done:'<path d="M60 100L22 66V134Z" fill="#ff7b1c"/><ellipse cx="112" cy="100" rx="56" ry="36" fill="#ff9f43"/><path d="M100 76q12 24 0 48" stroke="#ff7b1c" stroke-width="5" fill="none"/><circle cx="142" cy="92" r="7" fill="#fff"/><circle cx="144" cy="92" r="4" fill="#222"/>'},
+  {lv:2,n:'грибок',q:'Дорисуй ножку!',base:'<path d="M36 100Q100 10 164 100Z" fill="#ef4a3d"/><circle cx="80" cy="74" r="8" fill="#fff"/><circle cx="118" cy="64" r="9" fill="#fff"/>',miss:'M84 102V176H116V102',done:'<rect x="84" y="98" width="32" height="80" rx="10" fill="#fff3dc" stroke="#e8c89a" stroke-width="4"/><path d="M36 100Q100 10 164 100Z" fill="#ef4a3d"/><circle cx="80" cy="74" r="8" fill="#fff"/><circle cx="118" cy="64" r="9" fill="#fff"/><circle cx="138" cy="86" r="6" fill="#fff"/>'},
+  /* 3: несколько линий */
+  {lv:3,n:'солнышко с лучиками',q:'Дорисуй лучики!',base:'<circle cx="100" cy="100" r="44" fill="#ffd23f"/>',miss:[0,60,120,180,240,300].map(a=>{const r=Math.PI*a/180;return `M${(100+56*Math.cos(r)).toFixed(1)} ${(100+56*Math.sin(r)).toFixed(1)}L${(100+86*Math.cos(r)).toFixed(1)} ${(100+86*Math.sin(r)).toFixed(1)}`}).join(''),done:'<g stroke="#ffb020" stroke-width="9" stroke-linecap="round">'+[0,60,120,180,240,300].map(a=>{const r=Math.PI*a/180;return `<path d="M${(100+56*Math.cos(r)).toFixed(1)} ${(100+56*Math.sin(r)).toFixed(1)}L${(100+86*Math.cos(r)).toFixed(1)} ${(100+86*Math.sin(r)).toFixed(1)}"/>`}).join('')+'</g><circle cx="100" cy="100" r="44" fill="#ffd23f"/><circle cx="86" cy="94" r="5" fill="#5a3a22"/><circle cx="114" cy="94" r="5" fill="#5a3a22"/><path d="M86 112q14 12 28 0" stroke="#5a3a22" stroke-width="4" fill="none" stroke-linecap="round"/>'},
+  {lv:3,n:'машина',q:'Дорисуй колёса!',base:'<path d="M24 136V108q0-10 10-12l26-4 20-26h50l22 26 18 4q8 2 8 12v28z" fill="#2f8be0"/><path d="M86 72h20v22H70zM114 72h14l16 22h-30z" fill="#cdeaff"/>',miss:DRW_C(64,142,18)+DRW_C(140,142,18),done:'<path d="M24 136V108q0-10 10-12l26-4 20-26h50l22 26 18 4q8 2 8 12v28z" fill="#2f8be0"/><path d="M86 72h20v22H70zM114 72h14l16 22h-30z" fill="#cdeaff"/><circle cx="64" cy="142" r="20" fill="#333"/><circle cx="64" cy="142" r="8" fill="#ccc"/><circle cx="140" cy="142" r="20" fill="#333"/><circle cx="140" cy="142" r="8" fill="#ccc"/>'},
+  {lv:3,n:'снеговик',q:'Дорисуй голову!',base:'<circle cx="100" cy="146" r="44" fill="#fff" stroke="#b9d3e8" stroke-width="5"/><circle cx="100" cy="130" r="5" fill="#333"/><circle cx="100" cy="150" r="5" fill="#333"/>',miss:DRW_C(100,72,32),done:'<circle cx="100" cy="146" r="44" fill="#fff" stroke="#b9d3e8" stroke-width="5"/><circle cx="100" cy="72" r="32" fill="#fff" stroke="#b9d3e8" stroke-width="5"/><circle cx="88" cy="66" r="4.5" fill="#333"/><circle cx="112" cy="66" r="4.5" fill="#333"/><path d="M100 74l22 6-22 4z" fill="#ff8c1a"/><path d="M76 46h48l-6-26H82z" fill="#333"/><circle cx="100" cy="130" r="5" fill="#333"/><circle cx="100" cy="150" r="5" fill="#333"/>'},
+  {lv:3,n:'кошечка',q:'Дорисуй ушки!',base:'<circle cx="100" cy="112" r="58" fill="#ffb366"/><circle cx="80" cy="104" r="7" fill="#333"/><circle cx="120" cy="104" r="7" fill="#333"/><path d="M100 118l-7 7h14z" fill="#ff7b9c"/><path d="M60 126h-28M60 134l-26 6M140 126h28M140 134l26 6" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/>',miss:'M58 82L54 30L92 58M108 58L146 30L142 82',done:'<path d="M56 86L50 24L96 58zM104 58L150 24L144 86z" fill="#ff9a3c"/><path d="M62 72L60 40L84 58zM116 58L140 40L138 72z" fill="#ffc9d8"/><circle cx="100" cy="112" r="58" fill="#ffb366"/><circle cx="80" cy="104" r="7" fill="#333"/><circle cx="120" cy="104" r="7" fill="#333"/><path d="M100 118l-7 7h14z" fill="#ff7b9c"/><path d="M92 132q8 6 16 0" stroke="#8a5a2b" stroke-width="3" fill="none"/><path d="M60 126h-28M60 134l-26 6M140 126h28M140 134l26 6" stroke="#8a5a2b" stroke-width="3" stroke-linecap="round"/>'}];
+async function drawRound(lvl){
+  const R=G.round;const it=fresh(()=>pick(DRAW28.filter(x=>x.lv===Math.min(lvl,3))),x=>'dr'+x.n);
+  if(!await ask(it.q,it.q+' Веди пальчиком по точкам.'))return;R.good=cap(it.n)+'!';R.replay=()=>say(it.q);
+  const st=$('#stage');st.innerHTML=`<div class="draw28"><svg viewBox="0 0 200 200"><rect width="200" height="200" rx="18" fill="#fffdf6"/><g class="dr-base">${it.base}</g><path class="dr-miss" d="${it.miss}"/><g class="dr-fill"></g><path class="dr-ink" d=""/></svg></div>`;
+  const svg=st.querySelector('svg'),miss=svg.querySelector('.dr-miss'),ink=svg.querySelector('.dr-ink'),fillG=svg.querySelector('.dr-fill');
+  const L=miss.getTotalLength(),N=Math.max(30,Math.round(L/5)),pts=[];for(let k=0;k<=N;k++){const p=miss.getPointAtLength(L*k/N);pts.push({x:p.x,y:p.y,hit:false})}
+  const jump=k=>k>0&&Math.hypot(pts[k].x-pts[k-1].x,pts[k].y-pts[k-1].y)>L/N*2.5;
+  const hintT=setTimeout(()=>{if(G&&G.round===R)svg.insertAdjacentHTML('beforeend',`<circle class="tr-dot" r="7"><animateMotion dur="${Math.max(2,L/60).toFixed(1)}s" repeatCount="indefinite" path="${it.miss}"/></circle>`)},5000);
+  const redraw=()=>{let s='';for(let k=1;k<=N;k++)if(pts[k].hit&&pts[k-1].hit&&!jump(k))s+=`M${pts[k-1].x.toFixed(1)} ${pts[k-1].y.toFixed(1)}L${pts[k].x.toFixed(1)} ${pts[k].y.toFixed(1)}`;fillG.innerHTML=`<path d="${s}" class="dr-done"/>`};
+  let d='',drawing=false,last=0;
+  await new Promise(res=>{
+    const P=e=>{const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse())};
+    const ready=()=>pts.filter(p=>p.hit).length>=pts.length*.9;
+    const mark=q=>{let ch=false;for(const p of pts)if(!p.hit&&Math.hypot(p.x-q.x,p.y-q.y)<20){p.hit=true;ch=true}if(ch){redraw();const t=Date.now();if(t-last>90){last=t;tone(420+pts.filter(p=>p.hit).length/pts.length*500,0,.06,'triangle',.06)}}if(ready()){drawing=false;res()}};
+    svg.onpointerdown=e=>{e.preventDefault();ac();try{svg.setPointerCapture(e.pointerId)}catch(_){}drawing=true;const q=P(e);d+=`M${q.x.toFixed(1)} ${q.y.toFixed(1)} `;ink.setAttribute('d',d);mark(q)};
+    svg.onpointermove=e=>{if(!drawing)return;const q=P(e);d+=`L${q.x.toFixed(1)} ${q.y.toFixed(1)} `;ink.setAttribute('d',d);mark(q)};
+    svg.onpointerup=svg.onpointercancel=()=>{drawing=false}});
+  clearTimeout(hintT);if(R.dead||!G)return;svg.onpointerdown=svg.onpointermove=null;
+  svg.querySelectorAll('.dr-base,.dr-miss,.dr-fill,.dr-ink,.tr-dot').forEach(e=>e.remove());svg.insertAdjacentHTML('beforeend',`<g class="dr-final">${it.done}</g>`);
+  sfx.good();confetti(90);await say(pick(PRAISE)+' '+cap(it.n)+'!');if(R.dead)return;await wait(700);
+  return roundDone(true,{n:it.n})}
+
+/* ---------- ШАРИКИ: без «по очереди»; новые — «Покорми» и «Лопни цифру» */
+async function balFeed(lvl){
+  const R=G.round;const PP=D.animals.filter(a=>a.f&&D.foods[a.f]&&!['мальчик','девочка'].includes(a.n)&&(lvl>=3||!RARE.includes(a.n)));
+  const t=fresh(()=>pick(PP),x=>'bf'+x.n);const n=lvl===1?2:lvl===2?3:4;
+  const fs=shuffle([t.f].concat(shuffle(Object.keys(D.foods).filter(f=>f!==t.f)).slice(0,n-1)));
+  const q='Дай '+t.dat+' '+D.foods[t.f].acc+'!';if(!await ask(q,q+' Лопни шарик!'))return;R.good=q;R.replay=()=>say(q);
+  const st=$('#stage');const cols=shuffle(['#ef4a3d','#2f8be0','#45b649','#ffcf26','#ff8fbf','#9b6bff']);
+  st.innerHTML=`<div class="sky bal-row bfeed">${fs.map((f,k)=>`<button class="balloon still big ani" data-k="${k}" style="left:${(100/n)*k+(100/n-24)/2}%;top:${8+(k%2)*10}%;animation-delay:${k*.3}s">${balInner(cols[k],`<img src="${IMG[D.foods[f].i]||D.foods[f].i}" alt="">`)}</button>`).join('')}<div class="bf-pet">${img(t.i)}</div></div>`;
+  let wrong=0;await new Promise(res=>{st.querySelectorAll('.balloon').forEach(b=>b.onpointerdown=async()=>{if(b._p)return;ac();const f=fs[+b.dataset.k];
+    if(f===t.f){b._p=1;popFx(b,cols[+b.dataset.k],st);const r=b.getBoundingClientRect(),pr=st.querySelector('.bf-pet').getBoundingClientRect();b.remove();
+      const fl=document.createElement('img');fl.className='bf-fly';fl.src=IMG[D.foods[f].i]||D.foods[f].i;Object.assign(fl.style,{left:r.left+r.width*.2+'px',top:r.top+'px',width:r.width*.6+'px'});document.body.append(fl);
+      fl.animate([{transform:'none'},{transform:`translate(${pr.left+pr.width/2-r.left-r.width/2}px,${pr.top+pr.height*.4-r.top}px) scale(.6)`,opacity:.2}],{duration:700,easing:'ease-in'}).onfinish=()=>fl.remove();
+      await wait(700);st.querySelector('.bf-pet').classList.add('eat');sfx.chomp();res()}
+    else{wrong++;G.round.wrong++;b.classList.add('nope');setTimeout(()=>b.classList.remove('nope'),500);tone(220,0,.18,'sine',.12);say('Нет. Это '+(D.foods[f].acc||'')+'. '+q)}})});
+  if(R.dead||!G)return;await animalSound(t);confetti(70);await say(pick(PRAISE));
+  return roundDone(wrong===0,{m:'покорми',n:t.n})}
+async function balDigit(lvl){
+  const R=G.round;const pool=lvl===1?[1,2]:lvl===2?[1,2,3]:[1,2,3,4,5];const n=fresh(()=>pick(pool),x=>'bd'+x);const need=lvl===1?2:3;
+  const q='Лопни шарики с цифрой '+NUMW[n]+'!';if(!await ask(q))return;R.good=q;$('#prompt').innerHTML=`Лопни <span class="digit sm">${n}</span>`;
+  const st=$('#stage');st.innerHTML=`<div class="sky"><div class="bcount">${Array.from({length:need},()=>`<b class="bdg">${n}</b>`).join('')}</div></div>`;const sky=st.firstChild;
+  const cols=['#ef4a3d','#2f8be0','#45b649','#ffcf26','#ff8fbf','#9b6bff','#ff9f43'];let got=0,wrong=0,done=false;
+  await new Promise(res=>{const spawn=()=>{if(done||!sky.isConnected){done=true;return}const d=Math.random()<.45?n:pick(pool.filter(x=>x!==n));const c=pick(cols);const b=document.createElement('button');b.className='balloon big';
+      b.style.left=(5+Math.random()*72)+'%';b.style.animationDuration=(6.5+Math.random()*3)+'s, '+(1.8+Math.random())+'s';b.innerHTML=balInner(c,`<b class="bdn">${d}</b>`);
+      b.onpointerdown=()=>{if(done||b._p)return;ac();if(d===n){b._p=1;popFx(b,c,st);b.remove();const ic=sky.querySelectorAll('.bcount .bdg')[got];if(ic)ic.classList.add('on');got++;tts(cap(NUMW[n]));
+          if(got>=need){done=true;sky.querySelectorAll('.balloon').forEach(x=>x.classList.add('away'));setTimeout(res,800)}}
+        else{wrong++;b.classList.add('nope');setTimeout(()=>b.classList.remove('nope'),500);tone(220,0,.18,'sine',.12);tts('Это '+NUMW[d])}};
+      b.addEventListener('animationend',ev=>{if(ev.animationName==='rise')b.remove()});sky.append(b)};
+    for(let k=0;k<4;k++)setTimeout(spawn,k*400);const iv=setInterval(()=>{if(done||!sky.isConnected){done=true;clearInterval(iv)}else spawn()},900)});
+  if(R.dead||!G)return;sfx.good();confetti(90);await say(pick(PRAISE)+' Это цифра '+NUMW[n]+'!');
+  return roundDone(wrong<=1,{m:'цифры',n})}
+async function balRound(lvl){const M=[balOnly,balInside,balAni,balFeed,balCount,balDigit];return M[rmode('bal28',M.length)](lvl)}
+try{document.body.dataset.bg=String(Math.floor(Math.random()*3))}catch(_){}
+
+const ROUNDS={home:homeRound,draw:drawRound,not:notRound,give:giveRound,dog:dogRound,voice:voiceRound,make:makeRound,rh:rhRound,pg:pgRound,br:brRound,dogs:dogsRound,tr:trRound,yn:ynRound,nes:nesRound,sl:slRound,ib:ibRound,food:foodRound,seq:seqRound,want:wantRound,num:numRound,world:worldRound,dress:dressRound,catch:catchRound,bal:balRound,odd:oddRound,verb:verbRound,color:colorRound,feed:feedRound,prep:prepRound,pair:pairRound,size:sizeRound,snd:sndRound,syl:sylRound,me:meRound,word:wordRound,dai:daiRound,many:manyRound,fly:flyRound,put:putRound};
 
 /* ===================== v21: голосовые игры, видеообразец, «Сделай как скажу», «Хочу», «Сегодня дома» ===================== */
 /* ---------- микрофон только для громкости: никакого распознавания речи */
@@ -3258,7 +3714,7 @@ function v21Stats(L){let h='';const esc=s=>String(s).replace(/</g,'&lt;');
   return h}
 
 /* ---------- parent area */
-const GN={not:'Что не…?',dog:'Повторяй за Шариком (звуки, слоги, слова)',give:'Держит или даёт?',voice:'Скажи — и будет!',rh:'Час пик',pg:'Пингвины на льдине',tr:'Летит, едет, плывёт',yn:'Да или нет?',nes:'Несёт — держит',sl:'Спит — лежит',ib:'Идёт, бежит, стоит, сидит',food:'Съедобное — несъедобное',odd:'Другой / одинаковые',verb:'Кто что делает',color:'Цвета',feed:'Покорми',prep:'Где? В или на',pair:'Похожие действия (все пары)',size:'Большой — маленький, один — много',snd:'Кто как говорит?',syl:'Слоги',me:'Я',word:'Что это? (предметы)',dai:'Дай — на',many:'Один — много',put:'Положи (на, под, в)',bal:'Шарики',seq:'Повтори!',want:'Я хочу',num:'Цифры',world:'Что это? (вещи, животные, еда)',dress:'Одень мальчика',catch:'Лови!'};
+const GN={home:'Собака дома',draw:'Дорисуй',not:'Что не…?',dog:'Повторяй за Шариком (звуки, слоги, слова)',give:'Держит или даёт?',voice:'Скажи — и будет!',rh:'Час пик',pg:'Пингвины на льдине',tr:'Летит, едет, плывёт',yn:'Да или нет?',nes:'Несёт — держит',sl:'Спит — лежит',ib:'Идёт, бежит, стоит, сидит',food:'Съедобное — несъедобное',odd:'Другой / одинаковые',verb:'Кто что делает',color:'Цвета',feed:'Покорми',prep:'Где? В или на',pair:'Похожие действия (все пары)',size:'Большой — маленький, один — много',snd:'Кто как говорит?',syl:'Слоги',me:'Я',word:'Что это? (предметы)',dai:'Дай — на',many:'Один — много',put:'Положи (на, под, в)',bal:'Шарики',seq:'Повтори!',want:'Я хочу',num:'Цифры',world:'Что это? (вещи, животные, еда)',dress:'Одень мальчика',catch:'Лови!'};
 const LVLDESC={
   dog:['звуки животных («му-у», «гав»), слоги («па-па»), ряды из 2 слов','+ «Хочу банан!»','слоги по 3, ряды из 4 слов (3 тип)','ряды 5 типа из 2 слов','ряды 5 типа из 4 слов','ряды 5 типа из 6 слов'],
   voice:['любой звук — шарик надувается, животное отвечает, машина едет, свечка гаснет, попугай повторяет','звук дольше полсекунды («у-у-у», «р-р-р»)','два звука подряд с паузой («ав-ав», «би-би»)'],
@@ -3270,10 +3726,12 @@ const LVLDESC={
   tr:['«Что летит?» из 2 или перетащить одну картинку на небо, на дорогу, на речку','из 3 или одна картинка','разложить 3 картинки: на небо, на дорогу, на речку','разложить 5 картинок; иногда выбор из 4'],
   yn:['«Это коза?» — на картинке совсем другое (мяч, машина…) или правда коза; вверху ДА, внизу НЕТ, можно смахнуть картинку','похожее: «Это корова?» на картинке коза, «Это ложка?» — вилка'],
   nes:['«Кто несёт?» / «Кто держит?» из 2: несёт — идёт с предметом, держит — стоит и держит двумя руками (девочка, котик)','из 4','действие + предмет: «Кто держит книгу?», «Кто несёт мяч?» из 4'],
+  home:['«Собака хочет спать» — 2 места: кровать, стол, дверь, ванна, телевизор','3 места + бассейн, туалет, рисовать','4 места + «Дай собаке миску / футболку»','6 мест, кошка, зайка, мишка, + чистить зубы, мыло'],
+  draw:['дорисуй прямую: ствол, стебелёк, ниточку','дорисуй дугу: круг, ротик, крышу, хвостик','дорисуй несколько линий: лучики, колёса, ушки'],
   not:['«Кто не собака?», «Что не мяч?» — из 2','из 3','из 3 + «Что не красного цвета?»','из 4'],
   give:['«Кто даёт?» / «Кто держит?» из 2','из 4','«Кто даёт воду?» — 4 картинки «даёт», слушать предмет','«Кто держит ложку?», «Кто даёт траву?» — действие + предмет из 4'],
   sl:['пары со слайдов: «Кто спит?» и «Кто лежит?» на одной картинке, порядок вопросов меняется'],
-  ib:['«Кто идёт?» / «Кто бежит?»','«Кто стоит?» / «Кто сидит?» (один и тот же зверь)','стоит, сидит, идёт — из 3','стоит, сидит, идёт, бежит — из 4'],
+  ib:['2 человечка: идёт / бежит / стоит / сидит — пары чередуются','3 человечка','4 человечка, разные люди','+ настоящие фото и мультики'],
   food:['знакомая еда (банан, яблоко, оладьи, пельмени, манго, вода): 1 еда + 1 вещь','2 + 2','3 + 3','картинки со слайдов «Буду — не буду»: 2 + 2','всё вместе: 3 еды + 3 вещи'],
   odd:['3 картинки, одна другая','4 картинки «Что не…»; одинаковые — фигуры','другая фигура; одинаковые — 6 картинок','отличие только в цвете или форме; одинаковые — 6 фигур'],
   verb:['«Кто бежит?» из 2, действия разные','из 2, похожие действия (идёт/бежит, сидит/стоит, лежит/спит)','из 4 картинок','фраза из 2 слов: «Где лиса бежит?» из 4','фраза из 3 слов: «Где корова ест сено?», «Где лиса сидит на стуле?» из 4'],
@@ -3282,13 +3740,13 @@ const LVLDESC={
   fly:['«Где муха?» — найди и покажи муху','«Где муха на ёлке?» из 2','из 4'],
   size:['«Что большое?» — слон и заяц, дом и котёнок, из 2','«Где большой дом?» — один предмет, большой и маленький','из 4: два предмета, большие и маленькие','из 6: три предмета','размер + цвет: «Где маленький красный мяч?» из 4'],
   pair:['стоит или идёт: животные, фото, из 2','стоит или сидит: животные, фото, из 2','идёт или бежит: люди (фото) и животные (анимация), из 2','спит или лежит: всегда «Кто спит?» (спящий тоже лежит), рисунки, из 2','все пары вперемешку, из 4'],
-  snd:['«Кто так говорит?» — голос животного, из 2','из 4','через раз «Как говорит корова?» — ребёнок говорит сам (запись и повтор)'],
+  snd:['«Кто так говорит?» — голос понятного животного (собака, кошка, корова, лошадь, свинья, коза, овца, курица, петух, утка, гусь, лягушка, медведь, слон), из 2','из 3','из 4'],
   syl:['1–2 слога: мяч, ли-са','2 слога','3 слога: со-ба-ка','всё вперемешку','«Скажи сам»: ребёнок говорит слово, барабан бьёт на каждый слог (нужен микрофон; без него — как уровень 4)'],
   me:['«Где ты ешь?» — 2 фото ребёнка','из 4 фото ребёнка','фото ребёнка среди животных, которые делают то же самое'],
   word:['«Где ведро?» — 2 реальных предмета','из 4','из 6','из 4 похожих: посуда, одежда, мебель, транспорт'],
   dai:['«Катя, дай!» — отдай предмет, «На!»','«Дай сыр!» — 3 раза отдать герою его еду','среди чужих предметов: найди нужный','«Дай синий клубок!» — по цвету, в конце «Скажи: на!»'],
   many:['один или много, из 2','из 4: два предмета, один и много','один — мало — много, из 3'],
-  seq:['3 картинки в ряд: 5 секунд посмотреть, потом перенести на пустые места по порядку','4 картинки','5 картинок'],
+  seq:['3 картинки в ряд: 5 секунд посмотреть, потом перенести на пустые места','4 картинки (часто и по 3)','5 картинок (часто и по 3)'],
   want:['голос просит «Хочу мишку!» — найти из 2 (еда, игрушки, «хочу в бассейн / в магазин / гулять», «включи мультик / пианино»)','из 3','из 4','из 6'],
   num:['предметы → цифра 1–3, «найди все единички»','+ цифра → предметы, «какая цифра спряталась?»','+ пальчики, цифры прячутся в траве и на дереве','1–5: предметы, найди все','1–5: столько же, пальчики, спряталась, в траве','соедини, обведи до конца, найди все','всё вперемешку, соседние числа'],
   world:['тема на выбор (животные, еда, дом, одежда, игрушки, природа, транспорт): «Где кошка?» из 2','из 4','из 6','из 6 похожих (фрукт к фрукту) + через раз «Что это?» — назвать самому','из 9'],
@@ -3421,8 +3879,8 @@ $('#btn-finish-home').onclick=renderHome;
 v24init();mig24();mig25();mig26();wbInit();v21Wire();vidLoad();wbLoad();micProbe().then(applyV21Home);
 loadPhotos();
 renderHome();
-window.__rechka={sfx,numFindAll,numHidden,numPeek,balAni,balCount,pgSolve2,openReward,posFix,IBS,W24T,WANT24,PZP,VG_ANI:()=>VG_ANI,VM,VMC,chooseTip,mkTask,get TIP(){return TIP},showTip,openWB,recordVideo,get VIDK(){return VIDK},sayIt,segDetector,peakDetector,get MICX(){return MICX},dgSolve,rhSolve,pgSolve,brSolve,brState,dgCells,get G(){return G},handSvg,ROUNDS,RHY,rpic,S,D,PZ_LIST,SYL,ONO_L,MDB,openPuzzle,openAlbum,startMix,get PH(){return PH}};
+window.__ev=s=>eval(s);window.__rechka={figSvg,balFeed,balDigit,homeRound,drawRound,sfx,bonusPop,numFindAll,numHidden,numPeek,balAni,balCount,pgSolve2,openReward,posFix,IBS,W24T,WANT24,PZP,VG_ANI:()=>VG_ANI,VM,VMC,chooseTip,mkTask,get TIP(){return TIP},showTip,openWB,recordVideo,get VIDK(){return VIDK},sayIt,segDetector,peakDetector,get MICX(){return MICX},dgSolve,rhSolve,pgSolve,brSolve,brState,dgCells,get G(){return G},handSvg,ROUNDS,RHY,rpic,S,D,PZ_LIST,SYL,ONO_L,MDB,openPuzzle,openAlbum,startMix,get PH(){return PH}};
 })();
 </script>
-<script>if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
+<script>if("serviceWorker" in navigator){const had=!!navigator.serviceWorker.controller;let rl=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!rl){rl=true;location.reload()}});addEventListener("load",()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{}))}</script>
 </body></html>

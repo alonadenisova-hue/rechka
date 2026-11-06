@@ -1,0 +1,35 @@
+.grid.n8,.grid.n9{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (orientation:landscape){.grid.n8{grid-template-columns:repeat(4,minmax(0,1fr))}.grid.n9{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.wb-grid.n12{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (orientation:landscape){.wb-grid.n12{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sq-slot{position:absolute;border-radius:20px;background:#fff;box-shadow:0 6px 0 var(--line);box-sizing:border-box}
+.sq-slot.empty{background:#ffffff90;border:4px dashed #a9c3d6;box-shadow:none}
+.sq-slot b{position:absolute;top:4px;left:10px;font-family:var(--display);font-size:22px;color:#a9c3d6}
+.sq-slot:not(.empty) b{display:none}
+.sq-slot.bad{animation:shake .4s}
+.sq-slot.hint{border-color:var(--sun);animation:blink 1s infinite}
+.sq-c.mov2{transition:left .3s,top .3s}
+.sq-c.lock{cursor:default;z-index:2}
+.sq-ghost{position:absolute;opacity:.6;border-radius:20px;pointer-events:none;z-index:1}
+.sq-ghost img{position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);object-fit:contain}
+.vwant{position:absolute;left:50%;top:6%;height:72%;aspect-ratio:1;transform:translateX(-50%)}
+.vgift,.vitem{position:absolute;inset:6%}
+.vgift svg,.vitem img{width:100%;height:100%;object-fit:contain}
+.vgift.wig{animation:shake .5s}
+.vgift .lid{transition:transform .5s;transform-box:fill-box;transform-origin:center}
+.vgift.open .lid{transform:translate(-40px,-70px) rotate(-35deg)}
+.vgift.open{opacity:0;transition:opacity .4s .45s}
+.vitem{opacity:0;transform:scale(.3);transition:opacity .5s,transform .5s cubic-bezier(.3,1.6,.6,1)}
+.vitem.show{opacity:1;transform:scale(1)}
+.rw24{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:20px;font-weight:700;color:var(--ink)}
+.rw24 svg{width:96px;height:96px;animation:pop2 .6s}
+#puz.mz .pz-board{background:none;box-shadow:none;touch-action:none}
+.pz-board svg.mz{position:absolute;inset:0;width:100%;height:100%}
+.mz-goal,.mz-hero{position:absolute;object-fit:contain;pointer-events:none}
+.mz-hero{transition:left .12s,top .12s;z-index:3;filter:drop-shadow(0 3px 2px #0003)}
+.mz-hero.call{animation:hop .6s}
+.mz-hero.happy{animation:hop .6s 3}
+.mz-goal{animation:blink 1.6s infinite}
+@media (orientation:landscape){#puz.mz{grid-template-columns:1fr}#puz.mz .pz-board{grid-column:1/-1;justify-self:center}}
+.stk.ph{width:120px;height:72px;border-radius:12px;padding:0}.stk.ph img{object-fit:cover}
+.t37{background:#fff4d6}.t38{background:#e6f7ef}

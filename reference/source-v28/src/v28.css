@@ -1,0 +1,144 @@
+
+/* ===== v28 ===== */
+/* цифры: предметы всегда целиком внутри карточки (раньше в альбомной ориентации третье яблоко пряталось) */
+.countbox{position:relative;overflow:hidden}
+.countbox>.cnt,.opt>.cnt{position:absolute;inset:8px;width:auto;height:auto;display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:4%}
+.countbox>.cnt img,.opt>.cnt img{width:auto!important;object-fit:contain;min-width:0}
+.cnt.c1>img{height:86%!important;max-width:80%}
+.cnt.c2>img{height:44%!important;max-width:44%}
+.cnt.c2.r1>img{height:80%!important}
+.cnt.c3>img{height:44%!important;max-width:30%}
+.opt{position:relative}
+.opt>.cnt{inset:6px}
+@media (orientation:landscape){
+  .numwrap{grid-template-rows:minmax(0,1fr);grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+  .numwrap .numopts{align-content:center}
+}
+/* человечки: идёт / бежит / стоит / сидит */
+svg.fig{width:100%;height:100%;display:block;border-radius:14px}
+svg.fig *{transform-box:view-box}
+.fig .eye{animation:figblink 4s infinite}
+@keyframes figblink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.fig .eye{transform-box:fill-box;transform-origin:center}
+/* идёт: спокойный шаг */
+.fig.p-walk .th.f{animation:wth 1.15s ease-in-out infinite}
+.fig.p-walk .th.b{animation:wth 1.15s ease-in-out infinite -.575s}
+.fig.p-walk .th .sh{animation:wsh 1.15s ease-in-out infinite;animation-delay:inherit}
+.fig.p-walk .th.b .sh{animation-delay:-.575s}
+.fig.p-walk .ua.f{animation:wua 1.15s ease-in-out infinite -.575s}
+.fig.p-walk .ua.b{animation:wua 1.15s ease-in-out infinite}
+.fig.p-walk .bd{animation:wbob .575s ease-in-out infinite}
+.fig.p-walk .gr{animation:grmove 2.6s linear infinite}
+@keyframes wth{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+@keyframes wsh{0%,100%{transform:rotate(4deg)}25%{transform:rotate(0)}60%{transform:rotate(22deg)}80%{transform:rotate(10deg)}}
+@keyframes wua{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes wbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes grmove{from{transform:translateX(0)}to{transform:translateX(-40px)}}
+/* бежит: быстро, наклон вперёд, руки согнуты, обе ноги в воздухе, ветер и пыль */
+.fig.p-run .bd{animation:rbob .23s ease-in-out infinite alternate}
+.fig.p-run .th.f{animation:rth .46s linear infinite}
+.fig.p-run .th.b{animation:rth .46s linear infinite -.23s}
+.fig.p-run .th.f .sh{animation:rsh .46s linear infinite}
+.fig.p-run .th.b .sh{animation:rsh .46s linear infinite -.23s}
+.fig.p-run .ua.f{animation:rua .46s linear infinite -.23s}
+.fig.p-run .ua.b{animation:rua .46s linear infinite}
+.fig.p-run .fa{transform:rotate(-95deg)}
+.fig.p-run .gr{animation:grmove .5s linear infinite}
+.fig.p-run .spd{animation:spd .35s linear infinite}
+.fig.p-run .dust{animation:dust .46s ease-out infinite}
+@keyframes rbob{from{transform:translateY(-10px) rotate(14deg)}to{transform:translateY(-2px) rotate(14deg)}}
+@keyframes rth{0%,100%{transform:rotate(-58deg)}50%{transform:rotate(38deg)}}
+@keyframes rsh{0%,100%{transform:rotate(30deg)}35%{transform:rotate(10deg)}55%{transform:rotate(95deg)}80%{transform:rotate(70deg)}}
+@keyframes rua{0%,100%{transform:rotate(-55deg)}50%{transform:rotate(50deg)}}
+@keyframes spd{from{transform:translateX(12px);opacity:1}to{transform:translateX(-14px);opacity:.2}}
+@keyframes dust{from{transform:translateX(0) scale(.6);opacity:.9}to{transform:translateX(-26px) scale(1.3);opacity:0}}
+/* стоит: ровно, ноги вместе, руки вдоль тела, чуть дышит */
+.fig.p-stand .th.f{transform:rotate(-3deg)}.fig.p-stand .th.b{transform:rotate(3deg)}
+.fig.p-stand .ua.f{transform:rotate(-6deg)}.fig.p-stand .ua.b{transform:rotate(6deg)}
+.fig.p-stand .bd{animation:breath 2.4s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.012)}}
+/* сидит: на стуле, бёдра вперёд, голени вниз */
+.fig.p-sit .bd{transform:translateY(var(--sitdy,0))}
+.fig.p-sit .th{transform:rotate(-88deg)}
+.fig.p-sit .th .sh{transform:rotate(88deg)}
+.fig.p-sit .ua.f{transform:rotate(-40deg)}.fig.p-sit .ua.b{transform:rotate(-30deg)}
+.fig.p-sit .ua .fa{transform:rotate(-30deg)}
+@media (prefers-reduced-motion:reduce){.fig *{animation-duration:3s!important}}
+/* «Собака дома» */
+.home28{position:relative;width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) minmax(0,.42fr);gap:8px;touch-action:none}
+.hm-house{position:relative;background:#fff7ec;border-radius:18px 18px 10px 10px;box-shadow:0 6px 0 #ecd9c0;padding:6% 8px 8px;display:flex;flex-direction:column;min-height:0}
+.hm-roof{position:absolute;left:-2%;right:-2%;top:-4%;height:9%;background:#ff8a65;clip-path:polygon(4% 100%,50% 0,96% 100%);border-radius:6px}
+.hm-rooms{flex:1;display:grid;gap:8px;min-height:0}
+.n2 .hm-rooms{grid-template-columns:1fr 1fr}
+.n3 .hm-rooms{grid-template-columns:1fr 1fr 1fr}
+.n4 .hm-rooms{grid-template-columns:1fr 1fr}
+.n6 .hm-rooms{grid-template-columns:1fr 1fr 1fr}
+@media (orientation:landscape){.hm-hero{height:auto;width:86%;max-height:60%}.hm-item{height:auto;width:70%}.n4 .hm-rooms{grid-template-columns:repeat(4,1fr)}.home28{grid-template-rows:none;grid-template-columns:minmax(0,1fr) minmax(0,.3fr)}.hm-floor{flex-direction:column}}
+.hm-pl{position:relative;border:0;border-radius:16px;background:var(--bg);box-shadow:inset 0 -6px 0 #0000000f;display:grid;place-items:center;overflow:hidden;min-height:0;padding:6px;cursor:pointer}
+.hm-ic{display:flex;align-items:center;justify-content:center;gap:4%;width:100%;height:100%}
+.hm-ic img{max-width:70%;max-height:78%;object-fit:contain;pointer-events:none}
+.hm-ic img+img{max-width:38%}
+.hm-ic svg{width:92%;height:auto;max-height:90%}
+.hm-pl.hint{animation:hmhint 1s ease-in-out infinite;outline:4px solid #ffc93c}
+@keyframes hmhint{50%{transform:scale(1.05)}}
+.hm-pl.bad{animation:shake .45s}
+.hm-fx{position:absolute;inset:0;pointer-events:none;display:grid;place-items:center}
+.hm-in{position:absolute;width:52%;max-height:62%;object-fit:contain;bottom:8%;filter:drop-shadow(0 4px 4px #0003)}
+.hm-given{position:absolute;width:30%;right:6%;bottom:6%;animation:pop .4s}
+.hm-floor{position:relative;display:flex;align-items:center;justify-content:center;gap:10%;background:linear-gradient(#f3e3cc,#e9d3b3);border-radius:14px;min-height:0}
+.hm-hero{position:relative;height:88%;aspect-ratio:1;display:grid;place-items:center;touch-action:none;cursor:grab;z-index:5;transition:none}
+.hm-hero.back{transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.hm-hero img{width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 6px 4px #0003);animation:hmidle 1.6s ease-in-out infinite}
+.hm-hero.drag img{animation:none}
+@keyframes hmidle{50%{transform:translateY(-6%) rotate(-3deg)}}
+.hm-bub{position:absolute;top:-6%;right:-14%;font-style:normal;font-size:clamp(20px,6vmin,40px);background:#fff;border-radius:50%;width:1.7em;height:1.7em;display:grid;place-items:center;box-shadow:0 3px 0 #0001;animation:pop .4s}
+.hm-tray{display:flex;gap:10px}
+.hm-tray:empty{display:none}
+.hm-item{height:clamp(60px,18vmin,110px);aspect-ratio:1;background:#fff;border-radius:18px;display:grid;place-items:center;touch-action:none;box-shadow:0 4px 0 #0001;animation:pop .4s}
+.hm-item img{width:80%;height:80%;object-fit:contain;pointer-events:none}
+.hm-item.hint{animation:hmhint 1s ease-in-out infinite}
+/* результат */
+.fx-sleep{background:#c9c2f0!important}
+.fx-sleep .hm-in{transform:rotate(-80deg) scale(.9)!important;bottom:22%}
+.fx-sleep .hm-fx::after{content:'Z z z';position:absolute;top:8%;right:12%;font:700 clamp(18px,5vmin,34px) var(--display,sans-serif);color:#5b4fd6;animation:zz 1.6s ease-in-out infinite}
+@keyframes zz{0%{transform:translateY(8px);opacity:0}40%{opacity:1}100%{transform:translateY(-14px);opacity:0}}
+.fx-eat .hm-in,.fx-teeth .hm-in{animation:hmchomp .35s ease-in-out 6}
+@keyframes hmchomp{50%{transform:translateY(4px) scaleY(.94)}}
+.fx-wash .hm-fx::after,.fx-pool .hm-fx::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 30%,#fff 0 7%,#0000 8%),radial-gradient(circle at 70% 20%,#fff 0 5%,#0000 6%),radial-gradient(circle at 45% 60%,#ffffffcc 0 6%,#0000 7%),radial-gradient(circle at 80% 70%,#fff 0 4%,#0000 5%);animation:bubbles 1.8s linear infinite}
+.fx-pool .hm-fx::after{background:radial-gradient(circle at 30% 40%,#fff9 0 4%,#0000 5%),radial-gradient(circle at 60% 30%,#fff9 0 3%,#0000 4%)}
+@keyframes bubbles{from{transform:translateY(20%)}to{transform:translateY(-30%);opacity:.3}}
+.fx-pool .hm-in{bottom:20%;animation:hmswim 1.2s ease-in-out infinite}
+@keyframes hmswim{50%{transform:translate(8%,-4%) rotate(6deg)}}
+.fx-walk{background:linear-gradient(#bfe7ff 60%,#9ad67a 60%)!important}
+.fx-walk .hm-ic{opacity:0}
+.fx-walk .hm-fx::before{content:'🌳 ☀️';position:absolute;top:8%;font-size:clamp(20px,6vmin,40px)}
+.fx-walk .hm-in{animation:walkin 1.4s ease-in-out infinite}
+@keyframes walkin{0%,100%{transform:translateX(-10%)}50%{transform:translateX(10%) translateY(-4%)}}
+.fx-tv .hm-ic img{animation:tvglow .5s steps(2) infinite}
+@keyframes tvglow{50%{filter:brightness(1.4) hue-rotate(60deg)}}
+.fx-tv .hm-in{left:6%;width:42%}
+.fx-draw .hm-fx::before{content:'🖼️';position:absolute;top:6%;left:10%;font-size:clamp(22px,7vmin,44px);animation:pop .5s}
+.fx-dress .hm-given{right:auto;left:38%;bottom:16%;width:28%}
+.fx-toilet .hm-in{bottom:28%}
+/* «Дорисуй» */
+.draw28{width:100%;height:100%;display:grid;place-items:center;touch-action:none}
+.draw28 svg{height:100%;width:auto;max-width:100%;aspect-ratio:1;border-radius:22px;box-shadow:0 6px 0 var(--line,#e3ecf5);touch-action:none}
+.dr-miss{fill:none;stroke:#9aa7b8;stroke-width:5;stroke-dasharray:3 9;stroke-linecap:round;stroke-linejoin:round}
+.dr-done{fill:none;stroke:#7b61ff;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.dr-ink{fill:none;stroke:#7b61ff55;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.dr-final{animation:drpop .6s cubic-bezier(.3,1.5,.5,1);transform-origin:100px 100px}
+@keyframes drpop{from{transform:scale(.85);opacity:.4}}
+/* шарики: покорми, цифры */
+.bfeed .bf-pet{position:absolute;left:50%;bottom:2%;transform:translateX(-50%);width:min(42%,30vh);aspect-ratio:1;display:grid;place-items:center}
+.bfeed .bf-pet img{width:100%;height:100%;object-fit:contain}
+.bfeed .bf-pet.eat{animation:hmchomp .3s ease-in-out 4}
+.bf-fly{position:fixed;z-index:50;pointer-events:none;object-fit:contain}
+.bal-in .bdn{font-size:clamp(30px,9vw,54px);color:#fff;text-shadow:0 3px 0 #0005}
+.bcount .bdg{display:inline-grid;place-items:center;width:1.6em;height:1.6em;border-radius:50%;background:#fff;color:#c9d2df;font:700 clamp(18px,5vw,28px) var(--display);margin:0 3px;box-shadow:0 3px 0 #0001}
+.bcount .bdg.on{background:#ffc93c;color:#fff}
+
+/* мягкий абстрактный фон вместо белого */
+body::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23cfe6fb%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23f6d9e8%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23d9f0dc%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23fbe6c9%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23f6d9e8%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#e6f3fc,#f4ecfb 55%,#fdf0e6)}
+body[data-bg="1"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23d3f0dc%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23d6e6fb%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23fbeec9%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23e9dcf8%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23d6e6fb%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#eaf7ee,#eef3fc 55%,#fdf6e3)}
+body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22b%22%3E%3CfeGaussianBlur%20stdDeviation%3D%2228%22/%3E%3C/filter%3E%3C/defs%3E%3Cg%20filter%3D%22url%28%23b%29%22%20opacity%3D%22.9%22%3E%3Cpath%20d%3D%22M-40%20120C40%2040%20160%2060%20200%20140S120%20300%2020%20280-120%20200-40%20120Z%22%20fill%3D%22%23fbdccf%22/%3E%3Cpath%20d%3D%22M260%2020c80-20%20170%2040%20150%20120s-110%2090-170%2050-60-150%2020-170Z%22%20fill%3D%22%23dcd6f8%22/%3E%3Cpath%20d%3D%22M300%20520c70%2010%20130%2090%2090%20160s-150%2070-190%2010%2030-180%20100-170Z%22%20fill%3D%22%23cfeeee%22/%3E%3Cpath%20d%3D%22M-30%20560c60-40%20160-10%20170%2060s-80%20140-150%20120-80-140-20-180Z%22%20fill%3D%22%23fbe9c9%22/%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22400%22%20r%3D%2290%22%20fill%3D%22%23dcd6f8%22%20opacity%3D%22.5%22/%3E%3C/g%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M0%20330q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3Cpath%20d%3D%22M0%20760q50-30%20100%200t100%200%20100%200%20100%200%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23fff%22%20opacity%3D%22.6%22%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%22430%22%20r%3D%226%22/%3E%3Ccircle%20cx%3D%22340%22%20cy%3D%22300%22%20r%3D%225%22/%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2240%22%20r%3D%224%22/%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22700%22%20r%3D%225%22/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat,linear-gradient(160deg,#fdf0ea,#f1eefc 55%,#e7f6f6)}
+body{background:#eaf3fb}
