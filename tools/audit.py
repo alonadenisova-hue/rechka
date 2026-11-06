@@ -343,7 +343,9 @@ JS_CANDIDATES = r"""
     if (all) return r.right > 0 && r.left < innerWidth;
     return r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth; };
   let els;
+  const parts = [...document.querySelectorAll('#stage [data-part]')];  // «Покажи, где…»: части тела на рисунке
   if (sel) els = [...document.querySelectorAll(sel)];
+  else if (!all && parts.length) els = parts.filter(e => !e.parentElement.closest('[data-part]'));
   else els = [...document.querySelectorAll('button,a,[onclick],[role=button],[data-game],[data-id],[draggable=true],.tile,.card,.btn,img,div,span')]
     .filter(e => { const s = getComputedStyle(e);
       return e.matches('button,a,[onclick],[role=button],[data-game],.tile,.card,.btn') || s.cursor === 'pointer' ||
