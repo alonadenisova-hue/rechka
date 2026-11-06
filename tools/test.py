@@ -361,6 +361,35 @@ with sync_playwright() as p:
         pg.set_viewport_size({'width': 412, 'height': 860})
         check(pg.evaluate("__ev('W24T.animals').every(x=>x.is.length||x.an.length)") and pg.evaluate("!__ev('W24T.all').some(x=>['подушка','пульт','телефон'].includes(x.n))"), '«Что это?»: у каждого животного понятная картинка, без непонятных значков')
 
+    # ---- v29: «Покажи, где…» — нажать на часть тела мальчика
+    if True:
+        PT = """(name)=>{const g=[...document.querySelectorAll('#stage [data-part]')].find(e=>e.dataset.part===name);
+          const e=[...g.children].find(c=>c.tagName!=='g'&&c.getAttribute('fill')!=='transparent')||g;const r=e.getBoundingClientRect();
+          return [r.x+r.width/2,r.y+r.height/2]}"""
+        for lv in (1, 2, 3):
+            okr = okw = 0
+            start('body', lv); prev = None
+            for r_ in range(3):
+                pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.bodyReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=20000); pg.wait_for_timeout(300)
+                prev = pg.evaluate(f"{R}.G.round.tStart")
+                i0 = pg.evaluate(f"{R}.G.i")
+                tgt = pg.evaluate("document.querySelector('#prompt').textContent.replace('Покажи, где ','').replace('!','').trim()")
+                top = [x for x in ('нога', 'рука', 'живот', 'голова') if x != tgt and not pg.evaluate(f"__ev('bodyHits')('{tgt}','{x}')")]
+                w0 = pg.evaluate(f"{R}.G.round.wrong")
+                pg.touchscreen.tap(*pg.evaluate(PT, top[0])); pg.wait_for_timeout(300)
+                if pg.evaluate(f"{R}.G.round.wrong") == w0 + 1: okw += 1
+                pg.wait_for_function(f"!document.querySelector('#stage .bad')", timeout=8000); pg.wait_for_timeout(300)
+                pg.touchscreen.tap(*pg.evaluate(PT, tgt))
+                try: pg.wait_for_function(f"{R}.G&&{R}.G.i!=={i0}", timeout=15000); okr += 1
+                except Exception: pass
+            check(okr == 3 and okw == 3, f'«Покажи, где…» ур. {lv}: неверное место — ошибка, верное — задание засчитано ({okw}/3, {okr}/3)')
+        # выключатель в разделе для взрослых прячет плитку
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.bodyOn=false;__ev('applyV21Home')()")
+        hid = not pg.is_visible('.tile[data-game="body"]')
+        pg.evaluate(f"{R}.S.bodyOn=true;__ev('applyV21Home')()")
+        check(hid and pg.is_visible('.tile[data-game="body"]'), '«Покажи, где…» выключается в разделе для взрослых')
+
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
 print('\nИТОГ:', 'всё прошло' if not fails else f'{len(fails)} проблем(ы)')
