@@ -390,6 +390,37 @@ with sync_playwright() as p:
         pg.evaluate(f"{R}.S.bodyOn=true;__ev('applyV21Home')()")
         check(hid and pg.is_visible('.tile[data-game="body"]'), '«Покажи, где…» выключается в разделе для взрослых')
 
+    # ---- v30: «Зеркало с Шариком» — камера (поза подменяется через window.__mirrSim) и кнопка «Получилось»
+    if True:
+        SIM = {'улыбка': "{b:{mouthSmileLeft:.9,mouthSmileRight:.9}}", 'а': "{b:{jawOpen:.8}}", 'трубочка': "{b:{mouthPucker:.9}}",
+               'глазки': "{b:{eyeBlinkLeft:.9,eyeBlinkRight:.9}}", 'щёки': "{b:{cheekPuff:.8}}", 'брови': "{b:{browInnerUp:.8}}"}
+        # точки лица для «покажи на себе»: 478 точек, нужные — нос 1, рот 13/14, глаза 159/386, края лица 234/454, щёки 50/280, лоб 10
+        FACE = "(()=>{const f=Array.from({length:478},()=>({x:.5,y:.5}));Object.assign(f,{1:{x:.5,y:.5},13:{x:.5,y:.62},14:{x:.5,y:.64},159:{x:.42,y:.42},386:{x:.58,y:.42},234:{x:.3,y:.5},454:{x:.7,y:.5},50:{x:.38,y:.55},280:{x:.62,y:.55},10:{x:.5,y:.25}});return f})()"
+        PTS = {'нос': (.5, .5), 'рот': (.5, .63), 'глаз': (.42, .42), 'ухо': (.28, .5), 'щёчка': (.38, .55), 'голова': (.5, .2)}
+        for lv in (1, 2, 3):
+            start('mirr', lv); okc = 0; prev = None
+            for r_ in range(3):
+                pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=60000); pg.wait_for_timeout(200)
+                prev = pg.evaluate(f"{R}.G.round.tStart")
+                i0 = pg.evaluate(f"{R}.G.i"); key = pg.evaluate("__ev('G.mirrLast').slice(-1)[0]")
+                if key in SIM: pg.evaluate(f"window.__mirrSim=Object.assign({{f:null,h:[]}},{SIM[key]})")
+                else:
+                    x, y = PTS[key]; pg.evaluate(f"window.__mirrSim={{b:{{}},f:{FACE},h:[{{x:{x},y:{y}}}]}}")
+                try: pg.wait_for_function(f"{R}.G&&{R}.G.i!=={i0}", timeout=10000); okc += 1
+                except Exception: print('    не засчитано:', key)
+                pg.evaluate("delete window.__mirrSim")
+            check(okc == 3, f'«Зеркало с Шариком» ур. {lv}: поза перед камерой засчитана ({okc} из 3)')
+        start('mirr', 1); pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady", timeout=60000)
+        i0 = pg.evaluate(f"{R}.G.i"); pg.click('.mok')
+        try: pg.wait_for_function(f"{R}.G.i!=={i0}", timeout=10000); okp = True
+        except Exception: okp = False
+        check(okp, '«Зеркало с Шариком»: кнопка «Получилось» для мамы засчитывает попытку')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(1500)
+        check(pg.evaluate("!__ev('MIRR_STREAM')"), '«Зеркало с Шариком»: камера выключается после выхода домой')
+        pg.evaluate(f"{R}.S.mirrOn=false;__ev('applyV21Home')()"); hid = not pg.is_visible('.tile[data-game="mirr"]')
+        pg.evaluate(f"{R}.S.mirrOn=true;__ev('applyV21Home')()")
+        check(hid, '«Зеркало с Шариком» выключается в разделе для взрослых')
+
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
 print('\nИТОГ:', 'всё прошло' if not fails else f'{len(fails)} проблем(ы)')
