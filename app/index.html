@@ -3503,6 +3503,7 @@ async function mirrRound(lvl){
   if(!cam){if(!MIRR_STREAM||!MIRR_STREAM.active)MIRR_STREAM=await getCam(false);if(R.dead||!G||G.round!==R)return;
     if(MIRR_STREAM){mirrWatch();video.srcObject=MIRR_STREAM;try{await video.play()}catch(e){}cam=true}}
   if(cam&&!window.__mirrSim){try{await mpLoad()}catch(e){cam=false}}
+  if(R.dead||!G||G.round!==R||!box.isConnected)return; /* ушли из игры, пока включалась камера */
   if(!cam){mirrStop();st.querySelector('.mbox').innerHTML=`<div class="mnocam">${ex.ic?`<div style="font-size:72px">${ex.ic}</div>`:''}Камера недоступна — повторяй за Шариком, а мама нажмёт «Получилось».</div><div class="msh">${DOG_SVG}</div>`}
   R.mirrReady=true;
   const ok=await new Promise(res=>{let done=false,held=0,lastT=performance.now(),t0=performance.now(),hinted=false;
