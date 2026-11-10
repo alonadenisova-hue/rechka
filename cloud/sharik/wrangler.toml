@@ -1,0 +1,18 @@
+# Сервер ИИ‑Шарика. Выкладка: см. README.md в этой папке.
+name = "rechka-sharik"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+MODEL = "claude-opus-5-5"
+EFFORT = "low"
+DAILY_LIMIT = "600"
+# адреса сайта «Речки» через запятую (пусто — разрешить всем, только для проверки)
+ALLOWED_ORIGINS = ""
+
+# Счётчик обращений за день (чтобы не потратить лишнего). Создать: npx wrangler kv namespace create USAGE
+# и вписать id ниже, затем раскомментировать.
+# [[kv_namespaces]]
+# binding = "USAGE"
+# id = "…"
