@@ -434,7 +434,7 @@ with sync_playwright() as p:
         okg = []
         for want in ('body', 'yn'):
             try:
-                pg.wait_for_function(f"{R}.G&&{R}.G.game==='{want}'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000)
+                pg.wait_for_function(f"{R}.G&&{R}.G.game==='{want}'&&{R}.G.round&&!{R}.G.round.finished&&{R}.G.round.lvl!==undefined", timeout=30000)
                 okg.append(want); i0 = pg.evaluate(f"{R}.G.i")
                 pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
                 pg.wait_for_function(f"!{R}.G||{R}.G.i!=={i0}", timeout=10000)
