@@ -398,9 +398,10 @@ with sync_playwright() as p:
         FACE = "(()=>{const f=Array.from({length:478},()=>({x:.5,y:.5}));Object.assign(f,{1:{x:.5,y:.5},13:{x:.5,y:.62},14:{x:.5,y:.64},159:{x:.42,y:.42},386:{x:.58,y:.42},234:{x:.3,y:.5},454:{x:.7,y:.5},50:{x:.38,y:.55},280:{x:.62,y:.55},10:{x:.5,y:.25}});return f})()"
         PTS = {'нос': (.5, .5), 'рот': (.5, .63), 'глаз': (.42, .42), 'ухо': (.28, .5), 'щёчка': (.38, .55), 'голова': (.5, .2)}
         for lv in (1, 2, 3):
-            start('mirr', lv); okc = 0
+            start('mirr', lv); okc = 0; prev = None
             for r_ in range(3):
-                pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady", timeout=60000); pg.wait_for_timeout(200)
+                pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=60000); pg.wait_for_timeout(200)
+                prev = pg.evaluate(f"{R}.G.round.tStart")
                 i0 = pg.evaluate(f"{R}.G.i"); key = pg.evaluate("__ev('G.mirrLast').slice(-1)[0]")
                 if key in SIM: pg.evaluate(f"window.__mirrSim=Object.assign({{f:null,h:[]}},{SIM[key]})")
                 else:
@@ -409,7 +410,7 @@ with sync_playwright() as p:
                 except Exception: print('    не засчитано:', key)
                 pg.evaluate("delete window.__mirrSim")
             check(okc == 3, f'«Зеркало с Шариком» ур. {lv}: поза перед камерой засчитана ({okc} из 3)')
-        start('mirr', 1); pg.wait_for_function(f"{R}.G.round.mirrReady", timeout=60000)
+        start('mirr', 1); pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady", timeout=60000)
         i0 = pg.evaluate(f"{R}.G.i"); pg.click('.mok')
         try: pg.wait_for_function(f"{R}.G.i!=={i0}", timeout=10000); okp = True
         except Exception: okp = False
