@@ -421,6 +421,32 @@ with sync_playwright() as p:
         pg.evaluate(f"{R}.S.mirrOn=true;__ev('applyV21Home')()")
         check(hid, '«Зеркало с Шариком» выключается в разделе для взрослых')
 
+    # ---- v31: «Занятие с Шариком» — ответы сервера подменяются через window.__shSim
+    if True:
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
+        check(not pg.is_visible('#btn-sharik'), '«Занятие с Шариком» скрыто, пока не включено в разделе для взрослых')
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+          window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
+            if(n>=3)return {{say:'Ты молодец! Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+            return {{say:n===1?'Привет! Покажи нос!':'Молодец!',next:{{kind:'game',game:n===1?'body':'yn',level:1}},tone:'praise'}}}}}})()""")
+        check(pg.is_visible('#btn-sharik'), '«Занятие с Шариком» появляется на главном экране')
+        pg.click('#btn-sharik')
+        okg = []
+        for want in ('body', 'yn'):
+            try:
+                pg.wait_for_function(f"{R}.G&&{R}.G.game==='{want}'&&{R}.G.round&&!{R}.G.round.finished&&{R}.G.round.lvl!==undefined", timeout=30000)
+                okg.append(want); i0 = pg.evaluate(f"{R}.G.i")
+                pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
+                pg.wait_for_function(f"!{R}.G||{R}.G.i!=={i0}", timeout=10000)
+            except Exception as e_: print('    ', want, str(e_)[:120])
+        try: pg.wait_for_selector('#finish', state='visible', timeout=30000); fin = True
+        except Exception: fin = False
+        evs = pg.evaluate("window.__shLog.map(e=>e.type+(e.game?':'+e.game:'')+(e.ok!==undefined?':'+e.ok:''))")
+        check(okg == ['body', 'yn'] and fin and evs[:3] == ['start', 'result:body:true', 'result:yn:true'],
+              f'«Занятие с Шариком»: Шарик выбирает игры, получает результаты и заканчивает занятие ({okg}, {evs}, конец={fin})')
+        pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
+        pg.click('#btn-finish-home'); pg.wait_for_timeout(800)
+
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
 print('\nИТОГ:', 'всё прошло' if not fails else f'{len(fails)} проблем(ы)')
