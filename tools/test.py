@@ -410,6 +410,32 @@ with sync_playwright() as p:
                 except Exception: print('    не засчитано:', key)
                 pg.evaluate("delete window.__mirrSim")
             check(okc == 3, f'«Зеркало с Шариком» ур. {lv}: поза перед камерой засчитана ({okc} из 3)')
+        # v35: уровень 4 — всё тело и движения (поза подменяется: 33 точки MediaPipe Pose, движения — функцией времени)
+        POSE = """window.__P=(ch)=>{const P=Array.from({length:33},()=>({x:.5,y:.5,visibility:1}));
+          const set=(o)=>{for(const k in o)P[k]={x:o[k][0],y:o[k][1],visibility:1}};
+          set({0:[.5,.2],11:[.6,.32],12:[.4,.32],13:[.63,.45],14:[.37,.45],15:[.64,.58],16:[.36,.58],19:[.64,.61],20:[.36,.61],
+               23:[.57,.6],24:[.43,.6],25:[.57,.78],26:[.43,.78],27:[.57,.95],28:[.43,.95]});set(ch||{});return {b:{},f:null,h:[],p:P}}"""
+        PSIM = {'живот': "__P({19:[.5,.5]})", 'нога': "__P({19:[.57,.8]})", 'коленка': "__P({19:[.57,.77]})",
+                'плечи': "__P({19:[.4,.34],20:[.6,.34]})", 'руки вверх': "__P({15:[.62,.08],16:[.38,.08],19:[.62,.05],20:[.38,.05]})",
+                'присядь': "__P({23:[.57,.75],24:[.43,.75],25:[.65,.8],26:[.35,.8]})",
+                'помаши': "t=>__P({13:[.62,.3],15:[.6+.08*Math.sign(Math.sin(t/200)),.18],19:[.6+.08*Math.sign(Math.sin(t/200)),.15]})",
+                'хлопни': "t=>{const c=Math.sin(t/250)>0;return __P({15:[c?.52:.7,.45],16:[c?.48:.3,.45]})}"}
+        pg.evaluate(POSE)
+        start('mirr', 4); okc = 0; prev = None; seen = []
+        for r_ in range(4):
+            pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=60000); pg.wait_for_timeout(200)
+            prev = pg.evaluate(f"{R}.G.round.tStart")
+            i0 = pg.evaluate(f"{R}.G.i"); key = pg.evaluate("__ev('G.mirrLast').slice(-1)[0]"); seen.append(key)
+            pg.evaluate(f"window.__mirrSim=__P()"); pg.wait_for_timeout(700)
+            early = pg.evaluate(f"{R}.G.i!=={i0}")
+            pg.evaluate(f"window.__mirrSim={PSIM.get(key, '__P()')}")
+            try: pg.wait_for_function(f"{R}.G&&{R}.G.i!=={i0}", timeout=10000); okc += 0 if early else 1
+            except Exception: print('    не засчитано:', key)
+            pg.evaluate("delete window.__mirrSim")
+        check(okc == 4, f'«Зеркало с Шариком» ур. 4 (тело и движения): движение засчитано, спокойная поза — нет ({okc} из 4: {seen})')
+        # смотрит ли на экран: лицо прямо — да, отвернулся — нет
+        look = pg.evaluate(f"(()=>{{const f=Array.from({{length:478}},()=>({{x:.5,y:.5}}));f[234]={{x:.3,y:.5}};f[454]={{x:.7,y:.5}};f[1]={{x:.5,y:.5}};const a=__ev('mirrLook')({{f}});f[1]={{x:.66,y:.5}};const b=__ev('mirrLook')({{f}});return [a,b,__ev('mirrLook')({{f:null}})]}})()")
+        check(look == [True, False, False], f'«Зеркало»: смотрит ли на экран ({look})')
         start('mirr', 1); pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady", timeout=60000)
         i0 = pg.evaluate(f"{R}.G.i"); pg.click('.mok')
         try: pg.wait_for_function(f"{R}.G.i!=={i0}", timeout=10000); okp = True

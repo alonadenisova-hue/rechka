@@ -15,7 +15,7 @@ export interface Task {
 }
 
 export const TASKS: Task[] = [
-  { id: "mirr", title: "Зеркало: артикуляционная гимнастика и «покажи на себе»", answer: ["camera", "parent"], levels: 3, example: "Улыбнись широко, как я!", on: true },
+  { id: "mirr", title: "Зеркало: артикуляционная гимнастика и «покажи на себе» (ур. 1–3 лицо; ур. 4 — всё тело и движения: живот, нога, коленка, плечи, помаши, хлопни, руки вверх, присядь)", answer: ["camera", "parent"], levels: 4, example: "Улыбнись широко, как я!", on: true },
   { id: "body", title: "Покажи, где… (части тела на мальчике)", answer: ["tap"], levels: 3, example: "Где у мальчика нога? Покажи!", on: true },
   { id: "verb", title: "Кто что делает", answer: ["tap"], levels: 5, example: "Кто спит? Найди!", on: true },
   { id: "give", title: "Держит или даёт?", answer: ["tap"], levels: 1, example: "Кто даёт?", on: true },

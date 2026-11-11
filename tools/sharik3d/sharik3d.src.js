@@ -142,7 +142,8 @@ function makeState() {
 
 // «покажи на себе»: поворот правой лапы [вперёд-вверх, вбок]
 // точки (в координатах Шарика), куда тянется правая лапа; углы считаются из направления от плеча
-const TOUCH_PT = { nose: [0, 1.62, 0.98], mouth: [0, 1.36, 0.86], eye: [0.24, 1.84, 0.7], cheek: [0.42, 1.52, 0.66], ear: [0.78, 1.72, 0.45], head: [0.12, 2.2, 0.72] };
+const TOUCH_PT = { nose: [0, 1.62, 0.98], mouth: [0, 1.36, 0.86], eye: [0.24, 1.84, 0.7], cheek: [0.42, 1.52, 0.66], ear: [0.78, 1.72, 0.45], head: [0.12, 2.2, 0.72],
+  belly: [0.02, 0.72, 0.62], leg: [0.5, 0.45, 0.5], knee: [0.48, 0.34, 0.62], shoulder: [-0.3, 1.08, 0.5] };
 const SHOULDER = [0.2, 0.98, 0.3], LEG = 0.92;
 const TOUCH = {};
 for (const k in TOUCH_PT) {
@@ -167,6 +168,8 @@ function animate(P, st, t, dt) {
   let wave = 0;
   if (st.waveT >= 0) { st.waveT += dt; if (st.waveT < 2.2) wave = Math.min(1, st.waveT * 4, (2.2 - st.waveT) * 4); else st.waveT = -1; }
 
+  if (st.pose === "wave" && st.waveT < 0) st.waveT = 0.3; // машет без остановки
+  if (st.pose === "squat") { const q = (Math.sin(t * 3) + 1) / 2; jumpY -= q * 0.22; squash = Math.min(squash, 1 - q * 0.12); }
   const breathe = Math.sin(t * 2.2) * 0.015;
   P.body.position.y = jumpY;
   P.body.scale.set(1 + (1 - squash) * 0.5, squash + breathe, 1 + (1 - squash) * 0.5);
@@ -257,6 +260,13 @@ function animate(P, st, t, dt) {
   // утешение — «гладит»: левая лапа поднимается и медленно двигается
   if (m === "comfort" && st.moodT < 3) { P.legL.rotation.x = -1.2; P.legL.rotation.z = -0.3 + Math.sin(t * 4) * 0.25; }
   else P.legL.rotation.z = MathUtils.lerp(P.legL.rotation.z, 0, dt * 8);
+  // «руки вверх» и «хлопни в ладоши» — обе лапы
+  if (pose === "armsup") {
+    for (const [L, sgn] of [[P.legL, 1], [P.legR, -1]]) { L.rotation.x = -2.75; L.rotation.z = sgn * -0.85 + Math.sin(t * 5) * 0.06; L.scale.y = 1; }
+  } else if (pose === "clap") {
+    const c = Math.abs(Math.sin(t * 4.5)); // 0 — лапы вместе
+    for (const [L, sgn] of [[P.legL, 1], [P.legR, -1]]) { L.rotation.x = -1.5; L.rotation.z = sgn * (0.22 - c * 0.4); L.scale.y = 1; }
+  }
 }
 
 function frame(now) {
@@ -313,7 +323,8 @@ function api(st) {
   const h = {
     mood(m) { if (st.mood !== m) { st.mood = m; st.moodT = 0; } if (m === "praise") h.jump(); if (m === "invite") h.wave(); return h; },
     talk(on) { st.talk = !!on; if (!on) { st.vis = null; st.lvl = 0; } return h; },
-    pose(p) { st.pose = p || null; return h; }, // smile, tube, open, puff, eyes, brows, nose, mouth, eye, cheek, ear, head
+    pose(p) { st.pose = p || null; return h; }, // smile, tube, open, puff, eyes, brows, nose, mouth, eye, cheek, ear, head,
+    // belly, leg, knee, shoulder, wave, clap, armsup, squat
     viseme(v) { st.vis = v || null; return h; }, // 'a','o','u','i','e','y','m' или null
     level(v) { st.lvl = Math.max(0, +v || 0); return h; }, // громкость звука речи 0…1
     jump() { st.jumpT = 0; return h; },
