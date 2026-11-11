@@ -1,8 +1,10 @@
 // Сервер ИИ‑Шарика (Cloudflare Worker).
 //   POST /sharik  — приложение присылает, что происходит на занятии, получает реплику Шарика и следующий шаг.
+//   POST /stt     — распознать короткую запись голоса Льва (WAV) — только подсказка для мамы, не оценка.
 //   GET  /health  — проверка, что сервер жив (без обращения к модели).
 // Ключи хранятся в секретах Cloudflare (wrangler secret put …), не в коде и не в приложении.
 import Anthropic from "@anthropic-ai/sdk";
+import { STT_MAX_BYTES, STT_MODEL, STT_PROMPT, cleanTranscript, looksLikeWav, toBase64 } from "./stt.ts";
 import { REPLY_SCHEMA, SYSTEM_PROMPT, fallbackReply, parseRequest, sanitize, userMessage, type SharikRequest } from "./sharik.ts";
 
 export interface Env {
@@ -14,6 +16,8 @@ export interface Env {
   DAILY_LIMIT?: string; // сколько обращений к модели в сутки (по умолчанию 600)
   ANTHROPIC_BASE_URL?: string; // только для тестов
   USAGE?: KVNamespace; // счётчик обращений за день (необязательно)
+  AI?: Ai; // Workers AI — распознавание речи для /stt (необязательно; без него /stt отвечает note: no_ai)
+  STT_LIMIT?: string; // сколько распознаваний в сутки (по умолчанию 400)
 }
 
 const MODEL_DEFAULT = "claude-opus-5-5";
@@ -43,11 +47,11 @@ function sameCode(a: string, b: string): boolean {
   return d === 0;
 }
 
-async function underLimit(env: Env): Promise<boolean> {
+async function underLimit(env: Env, kind: "day" | "stt" = "day"): Promise<boolean> {
   if (!env.USAGE) return true;
-  const key = "day:" + new Date().toISOString().slice(0, 10);
+  const key = kind + ":" + new Date().toISOString().slice(0, 10);
   const n = parseInt((await env.USAGE.get(key)) || "0", 10);
-  const lim = parseInt(env.DAILY_LIMIT || "600", 10);
+  const lim = parseInt((kind === "stt" ? env.STT_LIMIT || "400" : env.DAILY_LIMIT || "600"), 10);
   if (n >= lim) return false;
   await env.USAGE.put(key, String(n + 1), { expirationTtl: 60 * 60 * 48 });
   return true;
@@ -73,15 +77,51 @@ export async function askModel(env: Env, req: SharikRequest) {
   return { reply: sanitize(parsed, req), note: parsed ? "ok" : "bad_json", usage: res.usage };
 }
 
+// Распознавание: приложение присылает WAV (моно, 16 кГц, до 6 с), получает {text, note}.
+// Текст показывается маме мелко и уходит в поле heard. Шарик по нему не поправляет и не оценивает Льва.
+export async function transcribe(env: Env, wav: ArrayBuffer): Promise<{ text: string; note: string }> {
+  if (!env.AI) return { text: "", note: "no_ai" };
+  const r = (await env.AI.run(STT_MODEL, {
+    audio: toBase64(wav),
+    language: "ru",
+    task: "transcribe",
+    vad_filter: true,
+    initial_prompt: STT_PROMPT,
+    condition_on_previous_text: false,
+  })) as { text?: string };
+  const text = cleanTranscript(r?.text);
+  return { text, note: text ? "ok" : "empty" };
+}
+
+async function sttRoute(request: Request, env: Env, h: Record<string, string>): Promise<Response> {
+  const len = parseInt(request.headers.get("Content-Length") || "0", 10);
+  if (len > STT_MAX_BYTES) return json({ error: "too_big" }, 413, h);
+  const buf = await request.arrayBuffer();
+  if (buf.byteLength > STT_MAX_BYTES) return json({ error: "too_big" }, 413, h);
+  if (!looksLikeWav(buf)) return json({ error: "bad_audio" }, 400, h);
+  if (!env.AI) return json({ text: "", note: "no_ai" }, 200, h);
+  if (!(await underLimit(env, "stt"))) return json({ text: "", note: "daily_limit" }, 200, h);
+  const t0 = Date.now();
+  try {
+    const r = await transcribe(env, buf);
+    console.log(JSON.stringify({ ev: "stt", ms: Date.now() - t0, bytes: buf.byteLength, note: r.note }));
+    return json(r, 200, h);
+  } catch (e) {
+    console.log(JSON.stringify({ ev: "stt", ms: Date.now() - t0, note: "error", err: String(e).slice(0, 200) }));
+    return json({ text: "", note: "error" }, 200, h);
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const h = cors(request, env);
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
-    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY }, 200, h);
-    if (url.pathname !== "/sharik" || request.method !== "POST") return json({ error: "not_found" }, 404, h);
+    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY, stt: !!env.AI }, 200, h);
+    if ((url.pathname !== "/sharik" && url.pathname !== "/stt") || request.method !== "POST") return json({ error: "not_found" }, 404, h);
     if (h["Access-Control-Allow-Origin"] === "null") return json({ error: "origin" }, 403, h);
     if (env.SHARIK_CODE && !sameCode(request.headers.get("X-Sharik-Code") || "", env.SHARIK_CODE)) return json({ error: "code" }, 401, h);
+    if (url.pathname === "/stt") return sttRoute(request, env, h);
     const len = parseInt(request.headers.get("Content-Length") || "0", 10);
     if (len > 32000) return json({ error: "too_big" }, 413, h);
     let body: unknown;

@@ -425,7 +425,7 @@ with sync_playwright() as p:
     if True:
         pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
         check(not pg.is_visible('#btn-sharik'), '«Занятие с Шариком» скрыто, пока не включено в разделе для взрослых')
-        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
           window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
             if(n>=3)return {{say:'Ты молодец! Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
             return {{say:n===1?'Привет! Покажи нос!':'Молодец!',next:{{kind:'game',game:n===1?'body':'yn',level:1}},tone:'praise'}}}}}})()""")
@@ -446,6 +446,49 @@ with sync_playwright() as p:
               f'«Занятие с Шариком»: Шарик выбирает игры, получает результаты и заканчивает занятие ({okg}, {evs}, конец={fin})')
         pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
         pg.click('#btn-finish-home'); pg.wait_for_timeout(800)
+
+        # ---- v32: Шарик слышит Льва — голос и распознавание подменяются (__shVoiceSim, __shSttSim)
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shStt=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+          window.__shLog=[];let nv=0;window.__shVoiceSim=async()=>{{nv++;return nv===1?{{ms:900,span:1200}}:null}};
+          window.__shSttSim=async()=>'нос';
+          window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
+            if(ev.type==='voice')return {{say:'Ух ты, ты сказал!',next:{{kind:'game',game:null,level:null}},tone:'praise'}};
+            if(n>=3)return {{say:'Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+            return {{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
+        pg.click('#btn-sharik')
+        try:
+            pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000); okb = True
+        except Exception: okb = False
+        evs = pg.evaluate("window.__shLog.map(e=>[e.type,e.game||'',e.voiceMs||0,e.heard||''])")
+        check(okb and evs[:2] == [['start', '', 0, ''], ['voice', 'body', 900, 'нос']],
+              f'«Занятие с Шариком»: голос Льва — событие voice с длительностью и heard, игра та, что задумана ({evs[:2]}, игра={okb})')
+        if okb:
+            i0 = pg.evaluate(f"{R}.G.i"); pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
+            try: pg.wait_for_selector('#finish', state='visible', timeout=30000); fin = True
+            except Exception: fin = False
+            check(fin, '«Занятие с Шариком»: после голоса занятие продолжается и заканчивается')
+            pg.click('#btn-finish-home'); pg.wait_for_timeout(800)
+        # выключатель: Шарик не слушает
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shVoice=false;window.__shLog=[];window.__shVoiceSim=async()=>({{ms:900,span:1200}})}})()""")
+        pg.click('#btn-sharik')
+        try: pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000)
+        except Exception: pass
+        evs = pg.evaluate("window.__shLog.map(e=>e.type)")
+        check(evs[:1] == ['start'] and 'voice' not in evs, f'«Занятие с Шариком»: слушание голоса выключается в разделе для взрослых ({evs})')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
+        pg.evaluate(f"delete window.__shSim;delete window.__shVoiceSim;delete window.__shSttSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shStt=false;__ev('applyV21Home')()")
+        if MODE == 'mic':  # настоящий микрофон Chromium (сигнал «бип») — Шарик слышит голос
+            pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+              window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);return ev.type==='voice'?{{say:'Ух ты!',next:{{kind:'end',game:null,level:null}},tone:'praise'}}:{{say:'Привет!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
+            pg.click('#btn-sharik')
+            try: pg.wait_for_selector('#finish', state='visible', timeout=30000)
+            except Exception: pass
+            evs = pg.evaluate("window.__shLog.map(e=>[e.type,e.voiceMs||0])")
+            check(len(evs) >= 2 and evs[1][0] == 'voice' and evs[1][1] > 100, f'«Занятие с Шариком»: микрофон слышит голос — событие voice ({evs})')
+            if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
+            else: pg.evaluate("document.querySelector('#btn-home').click()")
+            pg.wait_for_timeout(800)
+            pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
 
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
