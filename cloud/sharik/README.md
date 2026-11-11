@@ -114,6 +114,10 @@
  "available":["body","mirr","bal"],"history":[{"who":"sharik","text":"Покажи, где нос!"}],
  "event":{"type":"result","game":"body","task":"Покажи, где нос","ok":true,"attempts":1,"how":"tap"}}
 ```
+Необязательное поле `memory` — сводка прошлых занятий за 7 дней (считается на телефоне, сервер её не хранит):
+`{"days":3,"lastDaysAgo":1,"games":[{"game":"body","rounds":12,"first":8,"lvFrom":1,"lvNow":2}],
+"hard":[{"game":"body","item":"ухо","tries":4,"misses":3,"daysAgo":1}],"better":[{"game":"body","item":"нос","daysAgo":1}]}`.
+
 `event.type`: `start`, `result`, `silence`, `voice`, `tired`, `parent_end`, `parent_pause`.
 Голос Льва (Шарик послушал после своей реплики): `{"type":"voice","game":"body","voiceMs":900,"heard":"нос"}` —
 `game` — игра, которую Шарик собирался включить, `heard` — только если мама включила распознавание.

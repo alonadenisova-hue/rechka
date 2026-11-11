@@ -490,6 +490,18 @@ with sync_playwright() as p:
             pg.wait_for_timeout(800)
             pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
 
+    # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
+    mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
+      S.log=[{{t:now-2*D,g:'body',l:1,ok:false,w:2,n:'ухо'}},{{t:now-D-5,g:'body',l:1,ok:true,w:1,n:'ухо'}},{{t:now-D,g:'body',l:1,ok:false,w:1,n:'ухо'}},
+        {{t:now-3*D,g:'body',l:1,ok:true,w:1,n:'нос'}},{{t:now-D,g:'body',l:2,ok:true,w:0,n:'нос'}},{{t:now-D+9,g:'body',l:2,ok:true,w:0,n:'нос'}},
+        {{t:now-9*D,g:'body',l:1,ok:false,w:3,n:'рука'}},{{t:now-D,g:'hack',ok:true}}];
+      const keepG=window.__rechka.G;const m=__ev('shMemory')(now);S.shMem=false;const off=__ev('shMemory')(now);S.shMem=true;S.log=keep;
+      return {{m,off}}}})()""")
+    m = mem['m'] or {}
+    check(m.get('days') == 3 and m.get('lastDaysAgo') == 1 and [h['item'] for h in m.get('hard', [])] == ['ухо']
+          and [h['item'] for h in m.get('better', [])] == ['нос'] and [g['game'] for g in m.get('games', [])] == ['body'] and mem['off'] is None,
+          f'«Занятие с Шариком»: сводка прошлых занятий (трудно — ухо, получается — нос; выключается) {mem}')
+
     # ---- v33: объёмный Шарик (three.js); без WebGL — прежний рисунок
     if True:
         pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)

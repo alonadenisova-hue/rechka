@@ -774,7 +774,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 33</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 34</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -984,6 +984,7 @@ body{background:#eaf3fb}
     <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
     <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
     <div class="row"><label for="set-sh3d">Объёмный Шарик (3D: двигается, показывает упражнения; если телефон тормозит — выключить)</label><input type="checkbox" id="set-sh3d"></div>
+    <div class="row"><label for="set-shmem">Шарик помнит прошлые занятия (сводка за 7 дней считается на телефоне)</label><input type="checkbox" id="set-shmem"></div>
     <div class="row"><label for="set-shvoice">Шарик слушает голос после вопроса и радуется попытке (только громкость)</label><input type="checkbox" id="set-shvoice"></div>
     <div class="row"><label for="set-shstt">Распознавать слова через сервер — показывать маме мелким шрифтом (не для оценки)</label><input type="checkbox" id="set-shstt"></div>
     <div class="row"><label for="set-wbask">Через секунду мягко предлагать: «Скажи: дай сок!»</label><input type="checkbox" id="set-wbask"></div>
@@ -3582,6 +3583,7 @@ function shOn(){return !!(S.shOn&&S.shUrl)}
 function shAvail(){return [...document.querySelectorAll('.tile[data-game]')].filter(t=>!t.hidden).map(t=>t.dataset.game)}
 async function shAsk(ev){if(window.__shSim)return window.__shSim(ev);
   const body={child:{name:S.name||'Лев'},minutes:(Date.now()-G.t0)/60000,plannedMinutes:+S.shMin||20,levels:S.lvl,available:shAvail(),history:(G.shHist||[]).slice(-12),event:ev};
+  if(G.shMem===undefined)G.shMem=shMemory();if(G.shMem)body.memory=G.shMem;
   try{const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),9000);
     const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/sharik',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify(body),signal:ctl.signal});
     clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&typeof j.say==='string'&&j.next)return j}}catch(e){}
@@ -3614,6 +3616,26 @@ async function shStt(f32){if(window.__shSttSim)return window.__shSttSim();
     const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/stt',{method:'POST',headers:{'Content-Type':'audio/wav','X-Sharik-Code':S.shCode||''},body:wavBlob(f32,VM.sr),signal:ctl.signal});
     clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&typeof j.text==='string')return j.text.slice(0,80)}}catch(e){}
   return ''}
+/* v34: память между занятиями. Сводка за 7 дней считается здесь, на телефоне, по журналу S.log (до начала этого
+   занятия) и уходит на сервер вместе с запросом; сервер её не хранит. Выключатель в «Для взрослых». */
+function shMemory(now=Date.now()){
+  if(S.shMem===false)return null;
+  const from=now-7*864e5,t0=(G&&G.t0)||now;
+  const L=(S.log||[]).filter(x=>x&&x.t>=from&&x.t<t0&&ROUNDS[x.g]&&x.g!=='voice');if(!L.length)return null;
+  const dayN=t=>Math.floor((new Date(t).setHours(0,0,0,0))/864e5),today=dayN(now);
+  const miss=x=>!x.ok||(typeof x.w==='number'&&x.w>0);
+  const item=x=>{const v=typeof x.n==='string'||typeof x.n==='number'?x.n:typeof x.c==='string'?x.c:null;return v===null?null:String(v).slice(0,24)};
+  const byG={},byI={};
+  for(const x of L){const g=byG[x.g]||(byG[x.g]={game:x.g,rounds:0,first:0,lvFrom:x.l||1,lvNow:S.lvl[x.g]||x.l||1});g.rounds++;if(!miss(x))g.first++;
+    const it=item(x);if(it!==null){const k=x.g+'|'+it;(byI[k]||(byI[k]={game:x.g,item:it,a:[]})).a.push({t:x.t,m:miss(x)})}}
+  const hard=[],better=[];
+  for(const k in byI){const I=byI[k],m=I.a.filter(a=>a.m);if(!m.length)continue;
+    const last2=I.a.slice(-2);const lastMiss=m[m.length-1].t;
+    if(I.a.length>=3&&last2.length===2&&last2.every(a=>!a.m)&&m.length>=1)better.push({game:I.game,item:I.item,daysAgo:today-dayN(I.a[I.a.length-1].t)});
+    else if(m.length>=2&&m.length/I.a.length>=.4)hard.push({game:I.game,item:I.item,tries:I.a.length,misses:m.length,daysAgo:today-dayN(lastMiss)})}
+  hard.sort((a,b)=>a.daysAgo-b.daysAgo||b.misses-a.misses);better.sort((a,b)=>a.daysAgo-b.daysAgo);
+  const games=Object.values(byG).sort((a,b)=>b.rounds-a.rounds).slice(0,8);
+  return {days:new Set(L.map(x=>dayN(x.t))).size,lastDaysAgo:today-dayN(L[L.length-1].t),games,hard:hard.slice(0,4),better:better.slice(0,3)}}
 function shPickLocal(){const av=new Set(shAvail());const L=SH_LOCAL.filter(g=>av.has(g)&&ROUNDS[g]&&g!==G.game);return pick(L.length?L:SH_LOCAL.filter(g=>ROUNDS[g]))}
 /* экран Шарика между заданиями: говорит и решает, что дальше. Возвращает false, если занятие закончилось */
 async function shStep(){
@@ -3659,7 +3681,7 @@ async function shStep(){
 function startSharik(){ac();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
   $('#game').classList.remove('withnext');$('#game').classList.add('sharik');show('game');renderDots();nextRound()}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false}
 
 const ROUNDS={mirr:mirrRound,body:bodyRound,home:homeRound,draw:drawRound,not:notRound,give:giveRound,dog:dogRound,voice:voiceRound,make:makeRound,rh:rhRound,pg:pgRound,br:brRound,dogs:dogsRound,tr:trRound,yn:ynRound,nes:nesRound,sl:slRound,ib:ibRound,food:foodRound,seq:seqRound,want:wantRound,num:numRound,world:worldRound,dress:dressRound,catch:catchRound,bal:balRound,odd:oddRound,verb:verbRound,color:colorRound,feed:feedRound,prep:prepRound,pair:pairRound,size:sizeRound,snd:sndRound,syl:sylRound,me:meRound,word:wordRound,dai:daiRound,many:manyRound,fly:flyRound,put:putRound};
 
@@ -4197,6 +4219,7 @@ $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20)
 $('#set-shvoice').onchange=e=>{S.shVoice=e.target.checked;save()};
 $('#set-shstt').onchange=e=>{S.shStt=e.target.checked;save()};
 $('#set-sh3d').onchange=e=>{S.sh3d=e.target.checked;save()};
+$('#set-shmem').onchange=e=>{S.shMem=e.target.checked;save()};
 $('#btn-sharik').onclick=async()=>{ac();startSharik()};
 $('#set-myvoice').onchange=e=>{S.myVoice=e.target.checked;save()};
 $('#pz-gift').onclick=()=>{S.pz.ready=true;save();renderParent()};

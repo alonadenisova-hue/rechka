@@ -14,7 +14,17 @@ export interface SharikEvent {
   how?: "tap" | "camera" | "voice" | "parent";
 }
 
+// Сводка прошлых занятий за 7 дней — считается на телефоне, сервер её не хранит.
+export interface SharikMemory {
+  days?: number; // в сколько дней занимались
+  lastDaysAgo?: number; // сколько дней назад было последнее занятие
+  games?: { game: string; rounds: number; first: number; lvFrom?: number; lvNow?: number }[];
+  hard?: { game: string; item: string; tries?: number; misses?: number; daysAgo?: number }[];
+  better?: { game: string; item: string; daysAgo?: number }[];
+}
+
 export interface SharikRequest {
+  memory?: SharikMemory; // необязательно: Шарик помнит прошлые занятия
   child?: { name?: string };
   minutes?: number; // сколько минут идёт занятие
   plannedMinutes?: number; // сколько минут задумано
@@ -70,6 +80,7 @@ export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый �
 - Если устал (event tired, много ошибок подряд, занятие дольше задуманного) — kind=break с игрой-перерывом или kind=end.
 - Когда время занятия вышло или мама нажала «хватит» (parent_end) — тепло прощаешься, kind=end.
 - Лев попытался сказать (event voice: был голос, длительность в секундах) — сразу и коротко радуйся попытке: «Ух ты, ты сказал!», «Как громко!». Если есть heard и это похоже на слово по теме — можно повторить его как образец («Да! Нос!»), но никогда не поправляй и не проси сказать «правильно». Потом продолжай занятие: обычно kind=game — ту игру, которую собирался включить (поле игра в событии), или другую.
+- Если есть сводка прошлых занятий: на старте можешь коротко вспомнить приятное («Вчера ты здорово нашёл нос!»). Трудное (hard) давай повторить, когда Лев в хорошем настроении, и не чаще раза-двух за занятие. Когда трудное сейчас получилось — похвали за прогресс: «Вчера ушко было трудно, а сегодня — получилось!». Прогресс (better) — повод похвалить. Не упрекай за прошлые ошибки.
 - Пауза от мамы (parent_pause) — kind=wait, скажи что-то короткое вроде «Жду тебя!».
 
 Что ты отвечаешь (JSON по схеме):
@@ -81,6 +92,29 @@ export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый �
 Каталог игр (id: описание):
 ${catalogText()}`;
 
+const ago = (d?: number) => (d === undefined ? "" : d <= 0 ? "сегодня" : d === 1 ? "вчера" : `${d} дн. назад`);
+const num = (v: unknown, lo: number, hi: number): number | undefined =>
+  typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : undefined;
+const word = (v: unknown) => (typeof v === "string" || typeof v === "number" ? String(v).replace(/[«»\n\r]/g, " ").trim().slice(0, 24) : "");
+
+// Сводка прошлых занятий текстом для модели. Только игры из каталога, числа в разумных пределах.
+export function memoryText(m: SharikMemory | undefined): string {
+  if (!m || typeof m !== "object") return "";
+  const lines: string[] = [];
+  const days = num(m.days, 0, 7), last = num(m.lastDaysAgo, 0, 7);
+  if (days) lines.push(`Занимались ${days} дн. из последних 7, последний раз — ${ago(last)}.`);
+  const games = (Array.isArray(m.games) ? m.games : []).filter((g) => g && TASK_IDS.has(g.game)).slice(0, 8);
+  if (games.length) lines.push("Игры: " + games.map((g) => {
+    const r = num(g.rounds, 0, 999) || 0, f = num(g.first, 0, 999) || 0, a = num(g.lvFrom, 1, 9), b = num(g.lvNow, 1, 9);
+    return `${g.game} — ${r} заданий, с первой попытки ${Math.min(f, r)}${a && b && a !== b ? `, уровень ${a}→${b}` : ""}`;
+  }).join("; ") + ".");
+  const hard = (Array.isArray(m.hard) ? m.hard : []).filter((h) => h && TASK_IDS.has(h.game) && word(h.item)).slice(0, 4);
+  if (hard.length) lines.push("Трудно (hard): " + hard.map((h) => `${h.game} «${word(h.item)}»` + (h.misses ? ` — не сразу ${num(h.misses, 0, 99)} из ${num(h.tries, 0, 99)}` : "") + (h.daysAgo !== undefined ? `, ${ago(num(h.daysAgo, 0, 7))}` : "")).join("; ") + ".");
+  const better = (Array.isArray(m.better) ? m.better : []).filter((h) => h && TASK_IDS.has(h.game) && word(h.item)).slice(0, 3);
+  if (better.length) lines.push("Стало получаться (better): " + better.map((h) => `${h.game} «${word(h.item)}»` + (h.daysAgo !== undefined ? ` (${ago(num(h.daysAgo, 0, 7))})` : "")).join("; ") + ".");
+  return lines.join("\n");
+}
+
 // Переменная часть: что происходит сейчас.
 export function userMessage(req: SharikRequest): string {
   const name = (req.child?.name || "Лев").slice(0, 30);
@@ -88,6 +122,7 @@ export function userMessage(req: SharikRequest): string {
   const lv = req.levels || {};
   const hist = (req.history || []).slice(-12).map((h) => `${h.who === "sharik" ? "Шарик" : "Событие"}: ${String(h.text).slice(0, 160)}`);
   const e = req.event;
+  const mem = memoryText(req.memory);
   const ev = [
     `тип: ${e.type}`,
     e.game ? `игра: ${e.game}` : "",
@@ -103,6 +138,7 @@ export function userMessage(req: SharikRequest): string {
     `Занятие идёт ${Math.round(req.minutes || 0)} мин из ${Math.round(req.plannedMinutes || 20)}.`,
     `Включённые игры: ${avail.length ? avail.join(", ") : "все из каталога"}.`,
     `Уровни сейчас: ${Object.entries(lv).filter(([g]) => TASK_IDS.has(g)).map(([g, l]) => `${g}=${l}`).join(", ") || "нет данных"}.`,
+    ...(mem ? [`Прошлые занятия (сводка с телефона):\n${mem}`] : []),
     hist.length ? `Последнее:\n${hist.join("\n")}` : "Это начало занятия.",
     `Сейчас: ${ev}.`,
     `Что скажет Шарик и что дальше?`,
@@ -161,5 +197,6 @@ export function parseRequest(body: unknown): SharikRequest | null {
   if (!b.event || !types.includes(b.event.type)) return null;
   if (b.history && (!Array.isArray(b.history) || b.history.length > 50)) return null;
   if (b.available && !Array.isArray(b.available)) return null;
+  if (b.memory !== undefined && (b.memory === null || typeof b.memory !== "object" || Array.isArray(b.memory))) delete b.memory;
   return b;
 }
