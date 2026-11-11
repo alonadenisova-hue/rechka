@@ -189,7 +189,7 @@ function animate(P, st, t, dt) {
   const vis = st.vis || (pose === "tube" ? "u" : pose === "open" ? "a" : pose === "puff" ? "m" : null);
   if (pose === "smile" && !st.vis && !st.talk) { target = 0; width = 1.8; }
   else if (vis && VIS[vis]) { [target, width] = VIS[vis]; if (pose === "puff") width = 0.5; }
-  else if (st.lvl > 0) target = Math.min(1, st.lvl);
+  else if (st.lvlOn) target = Math.min(1, st.lvl); // живой голос: рот строго по громкости, в паузах закрыт
   else if (st.talk) target = 0.25 + 0.75 * Math.abs(Math.sin(t * 9.5)) * (0.6 + 0.4 * Math.sin(t * 3.1));
   else if (m === "praise") { target = 0.3; width = 1.4; } // широкая улыбка // радостная улыбка с приоткрытым ртом
   st.open += (target - st.open) * Math.min(1, dt * 18);
@@ -325,11 +325,11 @@ function init() {
 function api(st) {
   const h = {
     mood(m) { if (st.mood !== m) { st.mood = m; st.moodT = 0; } if (m === "praise") h.jump(); if (m === "invite") h.wave(); return h; },
-    talk(on) { st.talk = !!on; if (!on) { st.vis = null; st.lvl = 0; } return h; },
+    talk(on) { st.talk = !!on; if (!on) { st.vis = null; st.lvl = 0; st.lvlOn = false; } return h; },
     pose(p) { st.pose = p || null; return h; }, // smile, tube, open, puff, eyes, brows, nose, mouth, eye, cheek, ear, head,
     // belly, leg, knee, shoulder, wave, clap, armsup, squat
     viseme(v) { st.vis = v || null; return h; }, // 'a','o','u','i','e','y','m' или null
-    level(v) { st.lvl = Math.max(0, +v || 0); return h; }, // громкость звука речи 0…1
+    level(v) { st.lvl = Math.max(0, +v || 0); st.lvlOn = st.talk && st.lvl >= 0; return h; }, // громкость звука речи 0…1 (пока talk)
     jump() { st.jumpT = 0; return h; },
     wave() { st.waveT = 0; return h; },
     unmount() { if (cur && cur.st === st) { cur = null; R.canvas.remove(); } },

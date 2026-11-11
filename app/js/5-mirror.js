@@ -148,7 +148,7 @@ async function mirrRound(lvl){
         else if(G.sharik&&!busy&&away<2&&now-lastLook>MIRR_CFG.away){away++;busy=true;
           (async()=>{const h3=s3(st.querySelector('.msh'));const j=await shAsk({type:'silence',game:'mirr',task:ex.p});if(done||R.dead||!G||G.round!==R){busy=false;return}
             const t=j&&j.say||`${S.name||'Лев'}, я тут! ${ex.say}`;G.shHist&&G.shHist.push({who:'event',text:'отвлёкся от экрана'},{who:'sharik',text:t});
-            if(h3)h3.mood(j&&j.tone||'invite').talk(true);await say(t);if(h3)h3.talk(false).pose(MIRR_POSE[key]||null);lastLook=performance.now();busy=false})()}}
+            if(h3)h3.mood(j&&j.tone||'invite');await shSpeak(t,st.querySelector('.msh'));if(s3(st.querySelector('.msh')))s3(st.querySelector('.msh')).pose(MIRR_POSE[key]||null);lastLook=performance.now();busy=false})()}}
       if(!hinted&&!busy&&now-t0>MIRR_CFG.hintAfter){hinted=true;say(ex.say)}
       requestAnimationFrame(loop)};
     requestAnimationFrame(loop)});

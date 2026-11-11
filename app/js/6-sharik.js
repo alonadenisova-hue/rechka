@@ -85,10 +85,61 @@ function shMemory(now=Date.now()){
   hard.sort((a,b)=>a.daysAgo-b.daysAgo||b.misses-a.misses);better.sort((a,b)=>a.daysAgo-b.daysAgo);
   const games=Object.values(byG).sort((a,b)=>b.rounds-a.rounds).slice(0,8);
   return {days:new Set(L.map(x=>dayN(x.t))).size,lastDaysAgo:today-dayN(L[L.length-1].t),games,hard:hard.slice(0,4),better:better.slice(0,3)}}
+/* v37: живой голос Шарика — облачный синтез через свой сервер (/tts, тот же семейный код).
+   Записи мамы главнее; нет ответа за SHT.wait мс, ошибка или нет интернета — голос телефона, как раньше.
+   Объёмный Шарик открывает рот, только когда звук действительно зазвучал, и по его громкости (AnalyserNode);
+   конец, ошибка, остановка (stopVoice) или уход с экрана — рот закрыт. Слушать Льва — только после конца звука. */
+const SHT={wait:3500,tick:50,gain:5}; // ждать сервер (мс), как часто мерить громкость (мс), чувствительность рта
+const SH_HOW=[]; /* чем говорил Шарик последние разы: tts:ok / tts:stop / phone / mom (для проверки) */
+const SHT_MEM=new Map(); // фраза → MP3 (пока приложение открыто); на диске — Cache Storage «sharik-tts»
+function shTtsOn(){return S.shTts!==false&&shOn()&&!!S.voice&&!(G&&G.shNoTts)}
+async function shTtsGet(text){
+  if(window.__shTtsSim)return window.__shTtsSim(text);
+  const key=text.trim();if(SHT_MEM.has(key))return SHT_MEM.get(key);
+  let cache=null;try{cache=await caches.open('sharik-tts')}catch(e){}
+  const req=new Request(location.origin+'/__sharik_tts/'+encodeURIComponent(key).slice(0,1800));
+  if(cache){try{const c=await cache.match(req);if(c){const b=await c.blob();SHT_MEM.set(key,b);return b}}catch(e){}}
+  const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),SHT.wait);
+  try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/tts',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify({text:key}),signal:ctl.signal});
+    if(!r.ok||!/audio/.test(r.headers.get('Content-Type')||'')){
+      if(r.status===503){try{const j=await r.json();if(j&&j.note==='no_tts'&&G)G.shNoTts=true}catch(e){}} /* на сервере голос не настроен — больше не спрашивать */
+      return null}
+    const b=await r.blob();if(b.size<200)return null;
+    SHT_MEM.set(key,b);if(SHT_MEM.size>80)SHT_MEM.delete(SHT_MEM.keys().next().value);
+    if(cache)cache.put(req,new Response(b,{headers:{'Content-Type':'audio/mpeg'}})).catch(()=>{});
+    return b}
+  catch(e){return null}finally{clearTimeout(tm)}}
+/* проиграть MP3 Шарика: 'ok' — дослушали, 'stop' — остановили, 'fail' — не заиграло (тогда голос телефона) */
+function shPlay(blob,el,onStart){return new Promise(res=>{
+  stopVoice();const my=sayGen;const u=URL.createObjectURL(blob);const a=new Audio();a.preload='auto';a.src=u;curAudio=a;
+  let an=null,src=null,tm=0,started=false,done=false;const h3=()=>s3(el);
+  const fin=r=>{if(done)return;done=true;clearInterval(tm);el.classList.remove('talk');const h=h3();if(h)h.level(0).talk(false);
+    try{src&&src.disconnect()}catch(e){}try{URL.revokeObjectURL(u)}catch(e){}if(curAudio===a)curAudio=null;res(started&&r==='fail'?'ok':r)};
+  const A=ac();if(A){try{src=A.createMediaElementSource(a);an=A.createAnalyser();an.fftSize=512;src.connect(an);an.connect(A.destination)}catch(e){an=null}}
+  const buf=an?new Uint8Array(an.fftSize):null;
+  a.onplaying=()=>{if(my!==sayGen||!el.isConnected){a.pause();return}if(started)return;started=true;onStart&&onStart();
+    el.classList.add('talk');const h=h3();if(h)h.talk(true);
+    if(an)tm=setInterval(()=>{if(my!==sayGen||!el.isConnected){a.pause();return}an.getByteTimeDomainData(buf);let q=0;for(let i=0;i<buf.length;i++){const d=(buf[i]-128)/128;q+=d*d}
+      const h=h3();if(h)h.level(Math.min(1,Math.sqrt(q/buf.length)*SHT.gain))},SHT.tick)};
+  a.onended=()=>fin('ok');a.onerror=()=>fin('fail');a.onpause=()=>fin(my!==sayGen?'stop':'ok');
+  setTimeout(()=>{if(!started)fin('fail')},8000);setTimeout(()=>fin('ok'),60000); /* не заиграло за 8 с — голос телефона; страховка 60 с */
+  a.play().catch(()=>fin(my!==sayGen?'stop':'fail'))})}
+/* Шарик говорит фразу: записи мамы → облачный голос → голос телефона. Возвращается после настоящего конца звука */
+async function shSpeak(text,el){
+  if(!text)return;const h3=()=>s3(el);const t0=G&&G.shT0;let first=false;
+  const mark=()=>{if(first||!t0)return;first=true;const ms=Date.now()-t0;G.shT0=0;S.shLat=(S.shLat||[]).concat(ms).slice(-20);save()}; /* задержка до первого звука */
+  const mom=S.myVoice&&REC.size&&splitParts(text).some(p=>REC.has(nk(p)));
+  if(!mom&&shTtsOn()){const my=sayGen;const b=await shTtsGet(text);if(my!==sayGen)return; /* пока ждали — остановили */
+    if(b){const r=await shPlay(b,el,mark);SH_HOW.push('tts:'+r);if(r!=='fail')return}}
+  SH_HOW.push(mom?'mom':'phone');if(SH_HOW.length>20)SH_HOW.splice(0,SH_HOW.length-20);
+  mark();el.classList.add('talk');if(h3())h3().talk(true);
+  try{await say(text)}finally{el.classList.remove('talk');if(h3())h3().talk(false)}}
+function shLatText(){const L=(S.shLat||[]).slice().sort((a,b)=>a-b);if(!L.length)return 'ещё не было занятий';
+  return `обычно ${(L[L.length>>1]/1000).toFixed(1)} с, самое долгое ${(L[L.length-1]/1000).toFixed(1)} с (последние ${L.length})`}
 function shPickLocal(){const av=new Set(shAvail());const L=SH_LOCAL.filter(g=>av.has(g)&&ROUNDS[g]&&g!==G.game);return pick(L.length?L:SH_LOCAL.filter(g=>ROUNDS[g]))}
 /* экран Шарика между заданиями: говорит и решает, что дальше. Возвращает false, если занятие закончилось */
 async function shStep(){
-  const first=!G.shStarted;G.shStarted=true;const mine=G;
+  const first=!G.shStarted;G.shStarted=true;const mine=G;G.shT0=Date.now(); /* от конца задания до первого звука Шарика */
   let ev;
   if(first)ev={type:'start'};
   else{const last=[...S.log].reverse().find(x=>x.t>=G.t0)||{};ev={type:'result',game:last.g,task:G.shTask||'',ok:!!last.ok,attempts:(last.w||0)+1,how:last.how==='camera'?'camera':last.how==='parent'?'parent':'tap'};
@@ -101,9 +152,9 @@ async function shStep(){
   let j=await shAsk(ev);if(G!==mine)return false;
   if(!j)j={say:ev.type==='start'?`Привет, ${S.name||'Лев'}! Я Шарик. Давай играть!`:ev.type==='parent_end'?'Ты молодец! Пока-пока!':pick(PRAISE)+' Играем дальше!',next:{kind:ev.type==='parent_end'?'end':'game',game:null,level:null},local:true};
   for(let nv=0;;nv++){
-    G.shHist.push({who:'sharik',text:j.say});bub.textContent=j.say;dog.classList.add('talk');
-    if(h3())h3().mood(['praise','invite','comfort','calm'].includes(j.tone)?j.tone:'calm').talk(true);
-    await say(j.say);dog.classList.remove('talk');if(h3())h3().talk(false);if(G!==mine)return false;
+    G.shHist.push({who:'sharik',text:j.say});bub.textContent=j.say;
+    if(h3())h3().mood(['praise','invite','comfort','calm'].includes(j.tone)?j.tone:'calm');
+    await shSpeak(j.say,dog);if(G!==mine)return false;
     /* после реплики Шарик слушает (не больше двух раз подряд, не на паузе и не в конце) */
     if(nv>=2||j.next.kind==='end'||j.next.kind==='wait'||!shVoiceOn())break;
     if(h3())h3().mood('listen');
@@ -130,6 +181,6 @@ async function shStep(){
 function startSharik(){ac();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
   $('#game').classList.remove('withnext');$('#game').classList.add('sharik');show('game');renderDots();nextRound()}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText()}
 
 
