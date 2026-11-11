@@ -490,6 +490,25 @@ with sync_playwright() as p:
             pg.wait_for_timeout(800)
             pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
 
+    # ---- v33: объёмный Шарик (three.js); без WebGL — прежний рисунок
+    if True:
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.dogHi=1;{R}.S.sh3d=true"); pg.click('.tile[data-game="dog"]')
+        try: pg.wait_for_selector('.dogbox', timeout=15000); pg.wait_for_timeout(2500)
+        except Exception: pass
+        loaded = pg.evaluate("!!window.Sharik3D")
+        sup = pg.evaluate("!!(window.Sharik3D&&Sharik3D.supported())")
+        has = pg.evaluate("!!document.querySelector('.dogbox.is3d canvas.sh3d')")
+        svg = pg.evaluate("!!document.querySelector('.dogbox svg')")
+        check(loaded and (has if sup else svg), f'объёмный Шарик в «Повторяй за Шариком» (загружен={loaded}, WebGL={sup}, 3D={has})')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.sh3d=false"); pg.click('.tile[data-game="dog"]')
+        try: pg.wait_for_selector('.dogbox', timeout=15000); pg.wait_for_timeout(1500)
+        except Exception: pass
+        check(not pg.evaluate("!!document.querySelector('.dogbox.is3d')") and pg.evaluate("!!document.querySelector('.dogbox svg')"),
+              'объёмный Шарик выключается в разделе для взрослых — прежний рисунок')
+        pg.evaluate(f"{R}.S.sh3d=true;document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
 print('\nИТОГ:', 'всё прошло' if not fails else f'{len(fails)} проблем(ы)')

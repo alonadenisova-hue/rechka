@@ -774,7 +774,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 32</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 33</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -983,6 +983,7 @@ body{background:#eaf3fb}
     <div class="row"><label for="set-shurl">Адрес сервера Шарика</label><input type="url" id="set-shurl" placeholder="https://rechka-sharik….workers.dev" style="width:220px"></div>
     <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
     <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
+    <div class="row"><label for="set-sh3d">Объёмный Шарик (3D: двигается, показывает упражнения; если телефон тормозит — выключить)</label><input type="checkbox" id="set-sh3d"></div>
     <div class="row"><label for="set-shvoice">Шарик слушает голос после вопроса и радуется попытке (только громкость)</label><input type="checkbox" id="set-shvoice"></div>
     <div class="row"><label for="set-shstt">Распознавать слова через сервер — показывать маме мелким шрифтом (не для оценки)</label><input type="checkbox" id="set-shstt"></div>
     <div class="row"><label for="set-wbask">Через секунду мягко предлагать: «Скажи: дай сок!»</label><input type="checkbox" id="set-wbask"></div>
@@ -2511,14 +2512,30 @@ const DOG_SVG=`<svg viewBox="0 0 200 220" class="dogsvg"><path d="M40 60q-30 30-
 <path d="M60 74q14-10 26-2M140 74q-14-10-26-2" stroke="#8a5a33" stroke-width="5" fill="none" stroke-linecap="round"/>
 <ellipse cx="100" cy="124" rx="15" ry="10" fill="#3a2418"/><path d="M100 134v8" stroke="#3a2418" stroke-width="4"/>
 <g class="dmouth">${DOG_MOUTH.m}</g><path d="M60 196q40 20 80 0" stroke="#ff6b5b" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="100" cy="204" r="8" fill="#ffc93c"/></svg>`;
+/* v33: объёмный Шарик (three.js, MIT; app/vendor/sharik3d, исходник tools/sharik3d). Выключатель в «Для взрослых».
+   Без WebGL, при ошибке или если выключен — прежний рисунок DOG_SVG. Холст один на всё приложение и переезжает. */
+const SH3_CSS=`.is3d>svg{display:none!important}
+.is3d>canvas.sh3d{display:block;width:100%;height:100%}
+.shg .shdog.is3d{aspect-ratio:10/11;width:min(80%,340px)}.shg .shdog.is3d.talk{animation:none}
+.dogbox.is3d{place-items:stretch;padding:0;overflow:hidden}
+.mirr .msh.is3d{aspect-ratio:10/11}
+.mirr .msh.big.is3d{right:auto;left:50%;transform:translateX(-50%);width:62%;max-width:300px;bottom:12px}`;
+document.head.insertAdjacentHTML('beforeend','<style>'+SH3_CSS+'</style>');
+let SH3P=null;
+function sh3Load(){if(window.Sharik3D)return Promise.resolve(window.Sharik3D);if(SH3P)return SH3P;
+  SH3P=new Promise(res=>{const s=document.createElement('script');s.src='vendor/sharik3d/sharik3d.js';s.onload=()=>res(window.Sharik3D||null);s.onerror=()=>{SH3P=null;res(null)};document.head.append(s)});return SH3P}
+async function sh3(el,opt){if(!el||S.sh3d===false)return null;
+  try{const L=await sh3Load();if(!L||!el.isConnected||S.sh3d===false||!L.supported())return null;const h=L.mount(el,opt);if(!h)return null;el.classList.add('is3d');el._s3=h;return h}
+  catch(e){console.warn('Шарик 3D:',e);return null}}
+const s3=el=>el&&el._s3&&el._s3.active?el._s3:null; /* управление Шариком, если он сейчас объёмный в этом месте */
 async function dogSay(el,word,rate){
-  const g=el.querySelector('.dmouth');const vs=vowels(word);let done=false;const p=say(word,{rate}).then(()=>{done=true});
+  const g=el.querySelector('.dmouth');const h3=s3(el);const vis=v=>{if(h3)h3.viseme(v)};const vs=vowels(word);let done=false;const p=say(word,{rate}).then(()=>{done=true});
   const t0=Date.now();
   const an=(async()=>{let k=0;while((!done||k<Math.max(1,vs.length))&&Date.now()-t0<6000){const v=vs[k%Math.max(1,vs.length)]||'a';
-    if(/^[мбп]/i.test(word)&&k===0){g.innerHTML=DOG_MOUTH.m;await wait(110)}
-    g.innerHTML=DOG_MOUTH[v];el.classList.add('talk');await wait(vs.length>1?260:420);g.innerHTML=DOG_MOUTH.m;await wait(90);k++;if(k>=vs.length&&vs.length>1)await wait(150)}
+    if(/^[мбп]/i.test(word)&&k===0){g.innerHTML=DOG_MOUTH.m;vis('m');await wait(110)}
+    g.innerHTML=DOG_MOUTH[v];vis(v);el.classList.add('talk');await wait(vs.length>1?260:420);g.innerHTML=DOG_MOUTH.m;vis('m');await wait(90);k++;if(k>=vs.length&&vs.length>1)await wait(150)}
     g.innerHTML=DOG_MOUTH.m;el.classList.remove('talk')})();
-  await Promise.all([p,an]);await wait(120);g.innerHTML=DOG_MOUTH.m;el.classList.remove('talk')}
+  await Promise.all([p,an]);await wait(120);g.innerHTML=DOG_MOUTH.m;vis(null);el.classList.remove('talk')}
 const RHY_LOGO=()=>RHY.filter(r=>r.src==='logo'&&r.w.every(w=>rpic(w)));
 const DOGLV={1:{t:3,n:2},2:{t:3,n:4},3:{t:3,n:6},4:{t:5,n:2},5:{t:5,n:4},6:{t:5,n:6}};
 /* ===================== v23: «Несёт или держит» (держит — новые картинки: двумя руками, стоит) и «Держит или даёт» ===================== */
@@ -2894,18 +2911,19 @@ async function dogRound(lvl){
   if(!await ask('Слушай Шарика!',first?'Это Шарик. Слушай и смотри на рот! Потом повтори.':intro))return;
   const st=$('#stage');st.innerHTML=`<div class="dogg"><div class="dogbox">${DOG_SVG}</div><div class="dogrow n${row.length}">${row.map((w,k)=>`<div class="dogc${w.i?'':' txt'}" data-k="${k}" style="--d:${k*90}ms">${w.i?`<img src="${w.i}" alt="">`:''}<span>${w.show||w.t}</span></div>`).join('')}</div><div class="doghint"></div></div>`;
   const dog=st.querySelector('.dogbox'),cs=[...st.querySelectorAll('.dogc')],hint=st.querySelector('.doghint');
+  await Promise.race([sh3(dog,{view:'face'}),wait(1500)]);if(R.dead)return;
   const rate=Math.max(.55,(S.rate||.85)-.2);
   const model=async()=>{for(let k=0;k<row.length;k++){if(R.dead)return;cs.forEach(c=>c.classList.remove('on'));cs[k].classList.add('on');await dogSay(dog,row[k].t,rate);await wait(mode==='syl'?120:250)}cs.forEach(c=>c.classList.remove('on'))};
   R.replay=async()=>{if(R.busy)return;R.busy=1;await model();R.busy=0};
   R.busy=1;await model();R.busy=0;if(R.dead)return;
-  await wait(300);await say('Теперь ты!');if(R.dead)return;setPrompt('Теперь ты!');hint.textContent='Повтори за Шариком';dog.classList.add('listen');
+  await wait(300);await say('Теперь ты!');if(R.dead)return;setPrompt('Теперь ты!');hint.textContent='Повтори за Шариком';dog.classList.add('listen');s3(dog)&&s3(dog).mood('listen');
   let k=0;const light=()=>{cs.forEach(c=>c.classList.remove('on'));if(k<cs.length){cs[k].classList.add('on','said')}k++};
   let usedMic=false;
   if(S.voiceGame&&MICX!==false&&await VM.start()){usedMic=true;let last=performance.now();
     const det=segDetector(()=>{light();last=performance.now();tone(660,0,.08,'triangle',.1)},()=>{last=performance.now()});
     await new Promise(res=>{VM.cb=(v,t)=>{det(v,t);if(R.dead)return res();if(k>=cs.length&&t-last>700)return res();if(t-last>(k?3500:7000))return res()}});VM.cb=null;VM.stop()}
   else{for(let j=0;j<cs.length;j++){if(R.dead)return;light();await wait(mode==='syl'?800:1100)}}
-  if(R.dead||!G)return;dog.classList.remove('listen');hint.textContent='';cs.forEach(c=>c.classList.add('ok'));
+  if(R.dead||!G)return;dog.classList.remove('listen');s3(dog)&&s3(dog).mood('praise');hint.textContent='';cs.forEach(c=>c.classList.add('ok'));
   sfx.good();confetti(80);R.good=row.map(x=>x.t).join(' — ');
   if(afterWin){cs[0].classList.add('win');await afterWin();if(R.dead)return}
   await dogSay(dog,pick(PRAISE),S.rate||.85);
@@ -3459,6 +3477,7 @@ const MIRR_EX={
   голова:{t:'pt',say:'Положи руку на голову!',p:'Рука на голове!',top:1}};
 const MIRR_LV={1:['улыбка','а','трубочка','глазки'],2:['улыбка','а','трубочка','глазки','щёки','брови','нос','рот','голова'],
   3:['нос','рот','глаз','ухо','щёчка','голова','улыбка','трубочка','щёки']};
+const MIRR_POSE={улыбка:'smile',трубочка:'tube',а:'open',щёки:'puff',глазки:'eyes',брови:'brows',нос:'nose',рот:'mouth',глаз:'eye',ухо:'ear',щёчка:'cheek',голова:'head'};
 const MIRR_GOOD=['Молодец!','Умница!','Вот это да!','Здорово!','Ура!'];
 let MP=null,MPP=null;
 /* загрузка MediaPipe один раз (из app/vendor/mediapipe, без интернета после первого раза) */
@@ -3507,16 +3526,18 @@ async function mirrRound(lvl){
   st.innerHTML=`<div class="mirr"><div class="mv"><div class="mbox"><video playsinline muted autoplay></video><div class="ring"></div>${ex.ic?`<div class="mico">${ex.ic}</div>`:''}<div class="msh">${DOG_SVG}</div></div></div>
     <div class="mbtn"><button class="big-btn mok">Получилось ✓</button></div></div>`;
   const box=st.querySelector('.mirr'),video=st.querySelector('video'),ring=st.querySelector('.ring');
+  const mSh=async()=>{const h=await sh3(st.querySelector('.msh'));if(h&&!R.dead)h.pose(MIRR_POSE[key]||null)}; /* объёмный Шарик показывает, как надо */
+  mSh();
   let cam=!!window.__mirrSim;
   if(!cam){if(!MIRR_STREAM||!MIRR_STREAM.active)MIRR_STREAM=await getCam(false);if(R.dead||!G||G.round!==R)return;
     if(MIRR_STREAM){mirrWatch();video.srcObject=MIRR_STREAM;try{await video.play()}catch(e){}cam=true}}
   if(cam&&!window.__mirrSim){try{await mpLoad()}catch(e){cam=false}}
   if(R.dead||!G||G.round!==R||!box.isConnected)return; /* ушли из игры, пока включалась камера */
-  if(!cam){mirrStop();st.querySelector('.mbox').innerHTML=`<div class="mnocam">${ex.ic?`<div style="font-size:72px">${ex.ic}</div>`:''}Камера недоступна — повторяй за Шариком, а мама нажмёт «Получилось».</div><div class="msh">${DOG_SVG}</div>`}
+  if(!cam){mirrStop();st.querySelector('.mbox').innerHTML=`<div class="mnocam">${ex.ic?`<div style="font-size:72px">${ex.ic}</div>`:''}Камера недоступна — повторяй за Шариком, а мама нажмёт «Получилось».</div><div class="msh big">${DOG_SVG}</div>`;mSh()}
   R.mirrReady=true;
   const ok=await new Promise(res=>{let done=false,held=0,lastT=performance.now(),t0=performance.now(),hinted=false;
     const finish=async(how)=>{if(done)return;done=true;box.classList.add('win');ring.style.setProperty('--p',1);sfx.good();confetti(70);
-      R.mirrHow=how;await say(pick(MIRR_GOOD));res(true)};
+      R.mirrHow=how;const h3=s3(st.querySelector('.msh'));if(h3)h3.pose(null).mood('praise');await say(pick(MIRR_GOOD));res(true)};
     st.querySelector('.mok').onclick=()=>{ac();finish('parent')};
     const loop=()=>{if(done||R.dead||!box.isConnected){return}
       const now=performance.now(),dt=now-lastT;lastT=now;
@@ -3605,17 +3626,21 @@ async function shStep(){
   $('#prompt').textContent='Шарик';const st=$('#stage');
   st.innerHTML=`<div class="shg"><div class="shdog">${DOG_SVG}</div><div class="shbub"></div><div class="shear" aria-hidden="true">${EAR}<span class="lv"><i></i></span></div><div class="shheard"></div></div>`;
   const dog=st.querySelector('.shdog'),bub=st.querySelector('.shbub'),heard=st.querySelector('.shheard');
+  sh3(dog);const h3=()=>s3(dog); /* объёмный Шарик: эмоция по tone ответа, рот — пока звучит речь */
   let j=await shAsk(ev);if(G!==mine)return false;
   if(!j)j={say:ev.type==='start'?`Привет, ${S.name||'Лев'}! Я Шарик. Давай играть!`:ev.type==='parent_end'?'Ты молодец! Пока-пока!':pick(PRAISE)+' Играем дальше!',next:{kind:ev.type==='parent_end'?'end':'game',game:null,level:null},local:true};
   for(let nv=0;;nv++){
     G.shHist.push({who:'sharik',text:j.say});bub.textContent=j.say;dog.classList.add('talk');
-    await say(j.say);dog.classList.remove('talk');if(G!==mine)return false;
+    if(h3())h3().mood(['praise','invite','comfort','calm'].includes(j.tone)?j.tone:'calm').talk(true);
+    await say(j.say);dog.classList.remove('talk');if(h3())h3().talk(false);if(G!==mine)return false;
     /* после реплики Шарик слушает (не больше двух раз подряд, не на паузе и не в конце) */
     if(nv>=2||j.next.kind==='end'||j.next.kind==='wait'||!shVoiceOn())break;
+    if(h3())h3().mood('listen');
     const v=await shListen(st,mine);if(G!==mine)return false;
+    if(h3())h3().mood(v?'praise':'calm');
     if(!v)break;
     /* мгновенная похвала за попытку — до ответа сервера */
-    sfx.good();dog.classList.remove('hop');void dog.offsetWidth;dog.classList.add('hop');confetti(30);
+    sfx.good();if(!h3()){dog.classList.remove('hop');void dog.offsetWidth;dog.classList.add('hop')}confetti(30);
     if(v.heard)heard.textContent='Маме: слышно «'+v.heard+'» (не оценивается)';
     const plan=j.next;G.shVoiceN=(G.shVoiceN||0)+1;
     G.shHist.push({who:'event',text:`Лев попытался сказать (голос ${(v.ms/1000).toFixed(1)} с)${v.heard?`, слышно «${v.heard}»`:''}`});
@@ -3634,7 +3659,7 @@ async function shStep(){
 function startSharik(){ac();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
   $('#game').classList.remove('withnext');$('#game').classList.add('sharik');show('game');renderDots();nextRound()}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false}
 
 const ROUNDS={mirr:mirrRound,body:bodyRound,home:homeRound,draw:drawRound,not:notRound,give:giveRound,dog:dogRound,voice:voiceRound,make:makeRound,rh:rhRound,pg:pgRound,br:brRound,dogs:dogsRound,tr:trRound,yn:ynRound,nes:nesRound,sl:slRound,ib:ibRound,food:foodRound,seq:seqRound,want:wantRound,num:numRound,world:worldRound,dress:dressRound,catch:catchRound,bal:balRound,odd:oddRound,verb:verbRound,color:colorRound,feed:feedRound,prep:prepRound,pair:pairRound,size:sizeRound,snd:sndRound,syl:sylRound,me:meRound,word:wordRound,dai:daiRound,many:manyRound,fly:flyRound,put:putRound};
 
@@ -4171,6 +4196,7 @@ $('#set-shcode').onchange=e=>{S.shCode=e.target.value.trim();save()};
 $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20));save()};
 $('#set-shvoice').onchange=e=>{S.shVoice=e.target.checked;save()};
 $('#set-shstt').onchange=e=>{S.shStt=e.target.checked;save()};
+$('#set-sh3d').onchange=e=>{S.sh3d=e.target.checked;save()};
 $('#btn-sharik').onclick=async()=>{ac();startSharik()};
 $('#set-myvoice').onchange=e=>{S.myVoice=e.target.checked;save()};
 $('#pz-gift').onclick=()=>{S.pz.ready=true;save();renderParent()};

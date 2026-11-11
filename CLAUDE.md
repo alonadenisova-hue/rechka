@@ -11,13 +11,15 @@
   - `app/data11.js` — подсказки «Сегодня дома»; `app/data14.js` — фото пазлов и их лицензии.
 - `audio-raw/` — полные исходные записи голосов животных (белка, ёж, мышь в приложение ещё не вошли), см. `audio-raw/README.md`.
 - `reference/source-v28/` — исходники сборки версии 28 (код по версиям, скрипты сборки); только для справки.
-- В репозитории версия 31 (кэш `rechka-v31`, внизу главного экрана написано «версия 31»).
+- В репозитории версия 33 (кэш `rechka-v33`, внизу главного экрана написано «версия 33»).
 - Проект «ИИ‑Шарик» (собеседник с камерой и голосом): план, решения — `docs/ai-sharik/README.md`,
   очередь задач (одна задача — один чат, по порядку) — `docs/ai-sharik/ROADMAP.md`,
   задания — `docs/ai-sharik/TASKS.md` (Шарик даёт только утверждённые). Камера: `app/vendor/mediapipe/` (на телефоне).
   Сервер Шарика — `cloud/sharik/` (Cloudflare Worker + Claude; проверки: `npm run check`, `npm test`; запуск — его README).
   После правок в `cloud/sharik/src/` выполнить `npm run bundle` и закоммитить `web/sharik-worker.js` — мама вставляет его в Cloudflare через браузер.
   Режим «Занятие с Шариком» в приложении — `shStep`/`startSharik` в `app/index.html`, включается в «Для взрослых».
+  Объёмный Шарик (3D, three.js): `app/vendor/sharik3d/sharik3d.js` собирается из `tools/sharik3d/sharik3d.src.js`
+  (`cd tools/sharik3d && npm install && npm run build`); в `app/index.html` — `sh3`/`s3`, выключатель «Объёмный Шарик».
 - Проверка после правок: `python3 tools/audit.py --only ui` — игры открываются, нет ошибок консоли.
 - Автотест всех игр на всех уровнях: `cd app && python3 -m http.server 8765` в фоне, затем
   `python3 tools/test.py nomic` и `python3 tools/test.py mic` (≈10 минут каждый; итог в последней строке).
