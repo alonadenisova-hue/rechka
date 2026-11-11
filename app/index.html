@@ -774,7 +774,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 36</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 37</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -986,6 +986,8 @@ body{background:#eaf3fb}
     <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
     <div class="row"><label for="set-sh3d">Объёмный Шарик (3D: двигается, показывает упражнения; если телефон тормозит — выключить)</label><input type="checkbox" id="set-sh3d"></div>
     <div class="row"><label for="set-shmem">Шарик помнит прошлые занятия (сводка за 7 дней считается на телефоне)</label><input type="checkbox" id="set-shmem"></div>
+    <div class="row"><label for="set-shtts">Живой голос Шарика через сервер (без ответа за 3,5 с или без интернета — голос телефона; записи мамы главнее)</label><input type="checkbox" id="set-shtts"></div>
+    <div class="row"><span>Шарик отвечает: <span id="sh-lat">—</span> (от конца задания до первого звука)</span><button class="small-btn" id="sh-ttstest">Проверить голос Шарика</button></div>
     <div class="row"><label for="set-shvoice">Шарик слушает голос после вопроса и радуется попытке (только громкость)</label><input type="checkbox" id="set-shvoice"></div>
     <div class="row"><label for="set-shstt">Распознавать слова через сервер — показывать маме мелким шрифтом (не для оценки)</label><input type="checkbox" id="set-shstt"></div>
     <div class="row"><label for="set-wbask">Через секунду мягко предлагать: «Скажи: дай сок!»</label><input type="checkbox" id="set-wbask"></div>

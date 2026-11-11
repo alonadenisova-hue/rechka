@@ -185,6 +185,11 @@ $('#set-shcode').onchange=e=>{S.shCode=e.target.value.trim();save()};
 $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20));save()};
 $('#set-shvoice').onchange=e=>{S.shVoice=e.target.checked;save()};
 $('#set-shstt').onchange=e=>{S.shStt=e.target.checked;save()};
+$('#set-shtts').onchange=e=>{S.shTts=e.target.checked;save()};
+$('#sh-ttstest').onclick=async e=>{ac();const b=e.target;if(!shOn()){b.textContent='Сначала включите «Занятие с Шариком»';return}b.disabled=true;b.textContent='Шарик говорит…';
+  SH_HOW.length=0;const el=document.createElement('div');el.style.cssText='position:fixed;left:-9999px;width:10px;height:10px';document.body.append(el);
+  try{await shSpeak('Привет, Лев! Я Шарик. Покажи, где у мальчика нос? Ура! Молодец!',el)}finally{el.remove();b.disabled=false}
+  const w=SH_HOW[0]||'';b.textContent=w==='tts:ok'?'✓ Живой голос с сервера':w==='mom'?'Звучала запись мамы':'Голос телефона (на сервере нет голоса или нет связи)'};
 $('#set-sh3d').onchange=e=>{S.sh3d=e.target.checked;save()};
 $('#set-shmem').onchange=e=>{S.shMem=e.target.checked;save()};
 $('#set-mirrbody').onchange=e=>{S.mirrBody=e.target.checked;save()};

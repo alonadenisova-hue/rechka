@@ -150,3 +150,80 @@ test("сводка: чужие игры, мусор и лишнее отбрас
   assert.equal(parseRequest({ event: { type: "start" }, memory: "строка" })?.memory, undefined);
   assert.doesNotMatch(userMessage({ event: { type: "start" } }), /Прошлые занятия/);
 });
+
+// ---- голос Шарика (/tts)
+import { cleanTtsText, ttsProvider, ttsCacheKey } from "../src/tts.ts";
+
+test("текст для синтеза чистится и укорачивается", () => {
+  assert.equal(cleanTtsText("  Да!\n Это  но́с! "), "Да! Это нос!");
+  assert.equal(cleanTtsText(42), "");
+  const long = cleanTtsText("Молодец! ".repeat(60));
+  assert.ok(long.length <= 300 && long.endsWith("!"));
+});
+
+test("сервис голоса выбирается только при ключе", () => {
+  assert.equal(ttsProvider({}), null);
+  assert.equal(ttsProvider({ TTS_PROVIDER: "openai" }), null);
+  assert.equal(ttsProvider({ TTS_PROVIDER: "OpenAI", OPENAI_API_KEY: "k" }), "openai");
+  assert.equal(ttsProvider({ TTS_PROVIDER: "elevenlabs", ELEVENLABS_API_KEY: "k" }), "elevenlabs");
+});
+
+test("ключ кэша зависит от голоса и текста", async () => {
+  const a = await ttsCacheKey({}, "openai", "Привет!");
+  assert.equal(a, await ttsCacheKey({}, "openai", "Привет!"));
+  assert.notEqual(a, await ttsCacheKey({ TTS_VOICE: "sage" }, "openai", "Привет!"));
+  assert.notEqual(a, await ttsCacheKey({}, "openai", "Пока!"));
+});
+
+const MP3 = new Uint8Array(1000).fill(7).buffer;
+async function withFetch<T>(fake: (url: string, init: RequestInit) => Promise<Response>, fn: () => Promise<T>): Promise<T> {
+  const orig = globalThis.fetch; const calls: unknown[] = [];
+  globalThis.fetch = (async (u: RequestInfo | URL, i?: RequestInit) => { calls.push([String(u), i]); return fake(String(u), i || {}); }) as typeof fetch;
+  try { return await fn(); } finally { globalThis.fetch = orig; }
+}
+const tts = (env: Partial<Env>, body: unknown, code = "1234") =>
+  worker.fetch(new Request("https://x/tts", { method: "POST", headers: { "X-Sharik-Code": code, "Content-Type": "application/json" }, body: JSON.stringify(body) }), { ANTHROPIC_API_KEY: "", SHARIK_CODE: "1234", ...env } as Env);
+
+test("/tts: OpenAI — MP3, стиль щенка, голос по умолчанию", async () => {
+  let sent: { url: string; body: Record<string, unknown>; auth: string } | null = null;
+  const r = await withFetch(async (url, init) => { sent = { url, body: JSON.parse(String(init.body)), auth: (init.headers as Record<string, string>).Authorization }; return new Response(MP3, { status: 200 }); },
+    () => tts({ TTS_PROVIDER: "openai", OPENAI_API_KEY: "sk-test" }, { text: "Привет, Лев!" }));
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("Content-Type"), "audio/mpeg");
+  assert.equal((await r.arrayBuffer()).byteLength, 1000);
+  assert.ok(sent);
+  const s = sent as unknown as { url: string; body: Record<string, unknown>; auth: string };
+  assert.match(s.url, /api\.openai\.com\/v1\/audio\/speech$/);
+  assert.equal(s.body.input, "Привет, Лев!");
+  assert.equal(s.body.voice, "coral");
+  assert.match(String(s.body.instructions), /щенок/);
+  assert.equal(s.auth, "Bearer sk-test");
+});
+
+test("/tts: ElevenLabs — голос из настройки, русский язык", async () => {
+  let url = "", body: Record<string, unknown> = {}, key = "";
+  const r = await withFetch(async (u, init) => { url = u; body = JSON.parse(String(init.body)); key = (init.headers as Record<string, string>)["xi-api-key"]; return new Response(MP3); },
+    () => tts({ TTS_PROVIDER: "elevenlabs", ELEVENLABS_API_KEY: "el", TTS_VOICE: "abc123" }, { text: "Ура!" }));
+  assert.equal(r.status, 200);
+  assert.match(url, /\/v1\/text-to-speech\/abc123\?output_format=mp3/);
+  assert.equal(body.language_code, "ru");
+  assert.equal(body.text, "Ура!");
+  assert.equal(key, "el");
+});
+
+test("/tts: без голоса, ошибка сервиса, неверный код, пустой текст", async () => {
+  assert.equal((await tts({}, { text: "Привет" })).status, 503);
+  assert.deepEqual(await (await tts({}, { text: "Привет" })).json(), { note: "no_tts" });
+  assert.equal((await tts({}, { text: "Привет" }, "0000")).status, 401);
+  assert.equal((await tts({ TTS_PROVIDER: "openai", OPENAI_API_KEY: "k" }, { text: "   " })).status, 400);
+  const bad = await withFetch(async () => new Response("no", { status: 401 }), () => tts({ TTS_PROVIDER: "openai", OPENAI_API_KEY: "k" }, { text: "Привет" }));
+  assert.equal(bad.status, 503);
+  assert.deepEqual(await bad.json(), { note: "bad_key" });
+  const down = await withFetch(async () => { throw new TypeError("fetch failed"); }, () => tts({ TTS_PROVIDER: "openai", OPENAI_API_KEY: "k" }, { text: "Привет" }));
+  assert.deepEqual(await down.json(), { note: "connection" });
+});
+
+test("/health показывает, включён ли голос", async () => {
+  const r = await worker.fetch(new Request("https://x/health"), { ANTHROPIC_API_KEY: "k", TTS_PROVIDER: "openai", OPENAI_API_KEY: "o" } as Env);
+  assert.equal((await r.json() as { tts: string }).tts, "openai");
+});

@@ -516,6 +516,28 @@ with sync_playwright() as p:
             pg.wait_for_timeout(800)
             pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
 
+    # ---- v37: живой голос Шарика — /tts подменяется (__shTtsSim): звук 1,2 с; без ответа — голос телефона
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shTts=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+      window.__shLog=[];window.__shVoiceSim=async()=>null;S.shLat=[];
+      const sr=16000,f=new Float32Array(sr*1.2);for(let i=0;i<f.length;i++)f[i]=Math.sin(i/sr*2*Math.PI*220)*.5*Math.abs(Math.sin(i/sr*Math.PI*4));
+      const wav=__ev('wavBlob')(f,sr);window.__ttsN=0;window.__shTtsSim=async t=>{{window.__ttsN++;return window.__ttsN===1?wav:null}};
+      window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
+        if(n>=2)return {{say:'Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+        return {{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
+    pg.click('#btn-sharik')
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000)
+        pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
+        pg.wait_for_selector('#finish', state='visible', timeout=30000)
+    except Exception as e_: print('    ', str(e_)[:120])
+    how = pg.evaluate("__ev('SH_HOW').slice(-2)")
+    lat = pg.evaluate(f"{R}.S.shLat||[]")
+    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 2, f'живой голос Шарика: фраза с сервера дослушана, без ответа — голос телефона ({how})')
+    check(len(lat) >= 2, f'живой голос Шарика: задержка до первого звука записана ({lat})')
+    if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
+    pg.evaluate(f"delete window.__shSim;delete window.__shTtsSim;delete window.__shVoiceSim;{R}.S.shOn=false;__ev('applyV21Home')()")
+
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
       S.log=[{{t:now-2*D,g:'body',l:1,ok:false,w:2,n:'ухо'}},{{t:now-D-5,g:'body',l:1,ok:true,w:1,n:'ухо'}},{{t:now-D,g:'body',l:1,ok:false,w:1,n:'ухо'}},

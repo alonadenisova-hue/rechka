@@ -1,13 +1,15 @@
 // Сервер ИИ‑Шарика (Cloudflare Worker).
 //   POST /sharik  — приложение присылает, что происходит на занятии, получает реплику Шарика и следующий шаг.
 //   POST /stt     — распознать короткую запись голоса Льва (WAV) — только подсказка для мамы, не оценка.
+//   POST /tts     — голос Шарика: текст → MP3 (облачный синтез; одинаковые фразы — из кэша).
 //   GET  /health  — проверка, что сервер жив (без обращения к модели).
 // Ключи хранятся в секретах Cloudflare (wrangler secret put …), не в коде и не в приложении.
 import Anthropic from "@anthropic-ai/sdk";
 import { STT_MAX_BYTES, STT_MODEL, STT_PROMPT, cleanTranscript, looksLikeWav, toBase64 } from "./stt.ts";
+import { TtsError, cleanTtsText, synthesize, ttsCacheKey, ttsProvider, type TtsEnv } from "./tts.ts";
 import { REPLY_SCHEMA, SYSTEM_PROMPT, fallbackReply, parseRequest, sanitize, userMessage, type SharikRequest } from "./sharik.ts";
 
-export interface Env {
+export interface Env extends TtsEnv {
   ANTHROPIC_API_KEY: string; // секрет
   SHARIK_CODE?: string; // секрет: «семейный код», его вводят в приложении в разделе для взрослых
   MODEL?: string; // по умолчанию claude-opus-5-5
@@ -18,6 +20,7 @@ export interface Env {
   USAGE?: KVNamespace; // счётчик обращений за день (необязательно)
   AI?: Ai; // Workers AI — распознавание речи для /stt (необязательно; без него /stt отвечает note: no_ai)
   STT_LIMIT?: string; // сколько распознаваний в сутки (по умолчанию 400)
+  TTS_LIMIT?: string; // сколько синтезов (без кэша) в сутки (по умолчанию 800)
 }
 
 const MODEL_DEFAULT = "claude-opus-5-5";
@@ -47,11 +50,11 @@ function sameCode(a: string, b: string): boolean {
   return d === 0;
 }
 
-async function underLimit(env: Env, kind: "day" | "stt" = "day"): Promise<boolean> {
+async function underLimit(env: Env, kind: "day" | "stt" | "tts" = "day"): Promise<boolean> {
   if (!env.USAGE) return true;
   const key = kind + ":" + new Date().toISOString().slice(0, 10);
   const n = parseInt((await env.USAGE.get(key)) || "0", 10);
-  const lim = parseInt((kind === "stt" ? env.STT_LIMIT || "400" : env.DAILY_LIMIT || "600"), 10);
+  const lim = parseInt((kind === "stt" ? env.STT_LIMIT || "400" : kind === "tts" ? env.TTS_LIMIT || "800" : env.DAILY_LIMIT || "600"), 10);
   if (n >= lim) return false;
   await env.USAGE.put(key, String(n + 1), { expirationTtl: 60 * 60 * 48 });
   return true;
@@ -112,16 +115,52 @@ async function sttRoute(request: Request, env: Env, h: Record<string, string>): 
   }
 }
 
+// Голос: приложение присылает {"text":"…"}, получает audio/mpeg. Если голоса нет или сервис не ответил —
+// JSON с note и код 503: приложение тогда говорит голосом телефона.
+const ttsCache = (): Cache | null => (typeof caches !== "undefined" && (caches as unknown as { default?: Cache }).default) || null;
+
+export async function ttsRoute(request: Request, env: Env, h: Record<string, string>, fetchImpl: typeof fetch = fetch): Promise<Response> {
+  const len = parseInt(request.headers.get("Content-Length") || "0", 10);
+  if (len > 4000) return json({ error: "too_big" }, 413, h);
+  let body: unknown;
+  try { body = await request.json(); } catch { return json({ error: "bad_json" }, 400, h); }
+  const text = cleanTtsText((body as { text?: unknown })?.text);
+  if (!text) return json({ error: "bad_request" }, 400, h);
+  const p = ttsProvider(env);
+  if (!p) return json({ note: "no_tts" }, 503, h);
+  const audio = (buf: ArrayBuffer | ReadableStream | null, hit: boolean) =>
+    new Response(buf, { status: 200, headers: { ...h, "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=2592000", "X-Tts-Cache": hit ? "hit" : "miss", "Access-Control-Expose-Headers": "X-Tts-Cache" } });
+  const cache = ttsCache();
+  const key = await ttsCacheKey(env, p, text);
+  if (cache) {
+    const c = await cache.match(key);
+    if (c) return audio(c.body, true);
+  }
+  if (!(await underLimit(env, "tts"))) return json({ note: "daily_limit" }, 503, h);
+  const t0 = Date.now();
+  try {
+    const buf = await synthesize(env, p, text, fetchImpl);
+    if (cache) await cache.put(key, new Response(buf.slice(0), { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=2592000" } }));
+    console.log(JSON.stringify({ ev: "tts", p, ms: Date.now() - t0, chars: text.length, bytes: buf.byteLength }));
+    return audio(buf, false);
+  } catch (e) {
+    const note = e instanceof TtsError ? e.note : (e as Error)?.name === "TimeoutError" ? "timeout" : "connection";
+    console.log(JSON.stringify({ ev: "tts", p, ms: Date.now() - t0, note, err: String(e).slice(0, 200) }));
+    return json({ note }, 503, h);
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const h = cors(request, env);
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
-    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY, stt: !!env.AI }, 200, h);
-    if ((url.pathname !== "/sharik" && url.pathname !== "/stt") || request.method !== "POST") return json({ error: "not_found" }, 404, h);
+    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY, stt: !!env.AI, tts: ttsProvider(env) || false }, 200, h);
+    if (!["/sharik", "/stt", "/tts"].includes(url.pathname) || request.method !== "POST") return json({ error: "not_found" }, 404, h);
     if (h["Access-Control-Allow-Origin"] === "null") return json({ error: "origin" }, 403, h);
     if (env.SHARIK_CODE && !sameCode(request.headers.get("X-Sharik-Code") || "", env.SHARIK_CODE)) return json({ error: "code" }, 401, h);
     if (url.pathname === "/stt") return sttRoute(request, env, h);
+    if (url.pathname === "/tts") return ttsRoute(request, env, h);
     const len = parseInt(request.headers.get("Content-Length") || "0", 10);
     if (len > 32000) return json({ error: "too_big" }, 413, h);
     let body: unknown;
