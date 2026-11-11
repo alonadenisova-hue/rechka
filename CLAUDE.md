@@ -16,6 +16,7 @@
   очередь задач (одна задача — один чат, по порядку) — `docs/ai-sharik/ROADMAP.md`,
   задания — `docs/ai-sharik/TASKS.md` (Шарик даёт только утверждённые). Камера: `app/vendor/mediapipe/` (на телефоне).
   Сервер Шарика — `cloud/sharik/` (Cloudflare Worker + Claude; проверки: `npm run check`, `npm test`; запуск — его README).
+  После правок в `cloud/sharik/src/` выполнить `npm run bundle` и закоммитить `web/sharik-worker.js` — мама вставляет его в Cloudflare через браузер.
   Режим «Занятие с Шариком» в приложении — `shStep`/`startSharik` в `app/index.html`, включается в «Для взрослых».
 - Проверка после правок: `python3 tools/audit.py --only ui` — игры открываются, нет ошибок консоли.
 - Автотест всех игр на всех уровнях: `cd app && python3 -m http.server 8765` в фоне, затем

@@ -3,3 +3,4 @@ node_modules/
 .dev.vars
 test/requests.log
 test/scenario.txt
+dist/

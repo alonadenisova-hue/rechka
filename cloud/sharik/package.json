@@ -8,7 +8,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "check": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test test/*.test.ts"
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "bundle": "wrangler deploy --dry-run --minify --outdir dist && node -e \"const fs=require('fs');fs.mkdirSync('web',{recursive:true});fs.writeFileSync('web/sharik-worker.js','// Сервер ИИ‑Шарика одним файлом — для вставки в редактор Cloudflare (см. README.md, вариант А).\\n// Собрано командой npm run bundle из src/. Не править вручную.\\n'+fs.readFileSync('dist/index.js','utf8'))\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.3.0"
