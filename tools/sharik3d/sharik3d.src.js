@@ -274,6 +274,9 @@ function frame(now) {
   if (!cur || !R.canvas.isConnected) { cur = cur && !R.canvas.isConnected ? null : cur; return; }
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now;
   if (!document.hidden) {
+    // слабый телефон: если кадры в среднем дольше 45 мс, рисуем менее чётко (один раз), чтобы было плавно
+    R.avg = R.avg ? R.avg * 0.95 + dt * 0.05 : dt;
+    if (!R.lowRes && R.frames++ > 90 && R.avg > 0.045) { R.lowRes = true; R.renderer.setPixelRatio(1); R.w = R.h = 0; }
     animate(R.P, cur.st, now / 1000, dt);
     resize();
     R.renderer.render(R.scene, R.camera);
@@ -306,7 +309,7 @@ function init() {
   let renderer;
   try { renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" }); }
   catch (e) { return false; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.setClearColor(0x000000, 0);
   const scene = new Scene();
   scene.add(new HemisphereLight(0xffffff, 0xb59a85, 1.6));
@@ -315,7 +318,7 @@ function init() {
   camera.position.set(0, 1.5, 6.6); camera.lookAt(0, 1.25, 0);
   const P = build(); scene.add(P.root);
   canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); R.lost = true; });
-  R = { canvas, renderer, scene, camera, P, w: 0, h: 0, lost: false };
+  R = { canvas, renderer, scene, camera, P, w: 0, h: 0, lost: false, frames: 0, avg: 0, lowRes: false };
   return true;
 }
 

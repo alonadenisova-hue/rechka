@@ -581,7 +581,9 @@ def run_ui(args, out: Path):
         return browser.new_context(**kw)
 
     def attach_logs(page, sink):
-        page.on("console", lambda m: m.type in ("error", "warning") and sink.append(f"{m.type}: {m.text[:200]}"))
+        # служебные сообщения программной графики Chromium при снимке экрана с 3D (объёмный Шарик) — не ошибки приложения
+        gl_noise = lambda t: "GL Driver Message" in t or "GPU stall due to ReadPixels" in t
+        page.on("console", lambda m: m.type in ("error", "warning") and not gl_noise(m.text) and sink.append(f"{m.type}: {m.text[:200]}"))
         page.on("pageerror", lambda e: sink.append(f"pageerror: {str(e)[:200]}"))
         page.on("requestfailed", lambda r: sink.append(f"404/failed: {r.url[:120]}"))
 
