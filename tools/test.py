@@ -410,6 +410,32 @@ with sync_playwright() as p:
                 except Exception: print('    не засчитано:', key)
                 pg.evaluate("delete window.__mirrSim")
             check(okc == 3, f'«Зеркало с Шариком» ур. {lv}: поза перед камерой засчитана ({okc} из 3)')
+        # v35: уровень 4 — всё тело и движения (поза подменяется: 33 точки MediaPipe Pose, движения — функцией времени)
+        POSE = """window.__P=(ch)=>{const P=Array.from({length:33},()=>({x:.5,y:.5,visibility:1}));
+          const set=(o)=>{for(const k in o)P[k]={x:o[k][0],y:o[k][1],visibility:1}};
+          set({0:[.5,.2],11:[.6,.32],12:[.4,.32],13:[.63,.45],14:[.37,.45],15:[.64,.58],16:[.36,.58],19:[.64,.61],20:[.36,.61],
+               23:[.57,.6],24:[.43,.6],25:[.57,.78],26:[.43,.78],27:[.57,.95],28:[.43,.95]});set(ch||{});return {b:{},f:null,h:[],p:P}}"""
+        PSIM = {'живот': "__P({19:[.5,.5]})", 'нога': "__P({19:[.57,.8]})", 'коленка': "__P({19:[.57,.77]})",
+                'плечи': "__P({19:[.4,.34],20:[.6,.34]})", 'руки вверх': "__P({15:[.62,.08],16:[.38,.08],19:[.62,.05],20:[.38,.05]})",
+                'присядь': "__P({23:[.57,.75],24:[.43,.75],25:[.65,.8],26:[.35,.8]})",
+                'помаши': "t=>__P({13:[.62,.3],15:[.6+.08*Math.sign(Math.sin(t/200)),.18],19:[.6+.08*Math.sign(Math.sin(t/200)),.15]})",
+                'хлопни': "t=>{const c=Math.sin(t/250)>0;return __P({15:[c?.52:.7,.45],16:[c?.48:.3,.45]})}"}
+        pg.evaluate(POSE)
+        start('mirr', 4); okc = 0; prev = None; seen = []
+        for r_ in range(4):
+            pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=60000); pg.wait_for_timeout(200)
+            prev = pg.evaluate(f"{R}.G.round.tStart")
+            i0 = pg.evaluate(f"{R}.G.i"); key = pg.evaluate("__ev('G.mirrLast').slice(-1)[0]"); seen.append(key)
+            pg.evaluate(f"window.__mirrSim=__P()"); pg.wait_for_timeout(700)
+            early = pg.evaluate(f"{R}.G.i!=={i0}")
+            pg.evaluate(f"window.__mirrSim={PSIM.get(key, '__P()')}")
+            try: pg.wait_for_function(f"{R}.G&&{R}.G.i!=={i0}", timeout=10000); okc += 0 if early else 1
+            except Exception: print('    не засчитано:', key)
+            pg.evaluate("delete window.__mirrSim")
+        check(okc == 4, f'«Зеркало с Шариком» ур. 4 (тело и движения): движение засчитано, спокойная поза — нет ({okc} из 4: {seen})')
+        # смотрит ли на экран: лицо прямо — да, отвернулся — нет
+        look = pg.evaluate(f"(()=>{{const f=Array.from({{length:478}},()=>({{x:.5,y:.5}}));f[234]={{x:.3,y:.5}};f[454]={{x:.7,y:.5}};f[1]={{x:.5,y:.5}};const a=__ev('mirrLook')({{f}});f[1]={{x:.66,y:.5}};const b=__ev('mirrLook')({{f}});return [a,b,__ev('mirrLook')({{f:null}})]}})()")
+        check(look == [True, False, False], f'«Зеркало»: смотрит ли на экран ({look})')
         start('mirr', 1); pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.mirrReady", timeout=60000)
         i0 = pg.evaluate(f"{R}.G.i"); pg.click('.mok')
         try: pg.wait_for_function(f"{R}.G.i!=={i0}", timeout=10000); okp = True
@@ -425,7 +451,7 @@ with sync_playwright() as p:
     if True:
         pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
         check(not pg.is_visible('#btn-sharik'), '«Занятие с Шариком» скрыто, пока не включено в разделе для взрослых')
-        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
           window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
             if(n>=3)return {{say:'Ты молодец! Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
             return {{say:n===1?'Привет! Покажи нос!':'Молодец!',next:{{kind:'game',game:n===1?'body':'yn',level:1}},tone:'praise'}}}}}})()""")
@@ -446,6 +472,80 @@ with sync_playwright() as p:
               f'«Занятие с Шариком»: Шарик выбирает игры, получает результаты и заканчивает занятие ({okg}, {evs}, конец={fin})')
         pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
         pg.click('#btn-finish-home'); pg.wait_for_timeout(800)
+
+        # ---- v32: Шарик слышит Льва — голос и распознавание подменяются (__shVoiceSim, __shSttSim)
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shStt=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+          window.__shLog=[];let nv=0;window.__shVoiceSim=async()=>{{nv++;return nv===1?{{ms:900,span:1200}}:null}};
+          window.__shSttSim=async()=>'нос';
+          window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
+            if(ev.type==='voice')return {{say:'Ух ты, ты сказал!',next:{{kind:'game',game:null,level:null}},tone:'praise'}};
+            if(n>=3)return {{say:'Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+            return {{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
+        pg.click('#btn-sharik')
+        try:
+            pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000); okb = True
+        except Exception: okb = False
+        evs = pg.evaluate("window.__shLog.map(e=>[e.type,e.game||'',e.voiceMs||0,e.heard||''])")
+        check(okb and evs[:2] == [['start', '', 0, ''], ['voice', 'body', 900, 'нос']],
+              f'«Занятие с Шариком»: голос Льва — событие voice с длительностью и heard, игра та, что задумана ({evs[:2]}, игра={okb})')
+        if okb:
+            i0 = pg.evaluate(f"{R}.G.i"); pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
+            try: pg.wait_for_selector('#finish', state='visible', timeout=30000); fin = True
+            except Exception: fin = False
+            check(fin, '«Занятие с Шариком»: после голоса занятие продолжается и заканчивается')
+            pg.click('#btn-finish-home'); pg.wait_for_timeout(800)
+        # выключатель: Шарик не слушает
+        pg.evaluate(f"""(()=>{{const S={R}.S;S.shVoice=false;window.__shLog=[];window.__shVoiceSim=async()=>({{ms:900,span:1200}})}})()""")
+        pg.click('#btn-sharik')
+        try: pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=30000)
+        except Exception: pass
+        evs = pg.evaluate("window.__shLog.map(e=>e.type)")
+        check(evs[:1] == ['start'] and 'voice' not in evs, f'«Занятие с Шариком»: слушание голоса выключается в разделе для взрослых ({evs})')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
+        pg.evaluate(f"delete window.__shSim;delete window.__shVoiceSim;delete window.__shSttSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shStt=false;__ev('applyV21Home')()")
+        if MODE == 'mic':  # настоящий микрофон Chromium (сигнал «бип») — Шарик слышит голос
+            pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+              window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);return ev.type==='voice'?{{say:'Ух ты!',next:{{kind:'end',game:null,level:null}},tone:'praise'}}:{{say:'Привет!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
+            pg.click('#btn-sharik')
+            try: pg.wait_for_selector('#finish', state='visible', timeout=30000)
+            except Exception: pass
+            evs = pg.evaluate("window.__shLog.map(e=>[e.type,e.voiceMs||0])")
+            check(len(evs) >= 2 and evs[1][0] == 'voice' and evs[1][1] > 100, f'«Занятие с Шариком»: микрофон слышит голос — событие voice ({evs})')
+            if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
+            else: pg.evaluate("document.querySelector('#btn-home').click()")
+            pg.wait_for_timeout(800)
+            pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;__ev('applyV21Home')()")
+
+    # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
+    mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
+      S.log=[{{t:now-2*D,g:'body',l:1,ok:false,w:2,n:'ухо'}},{{t:now-D-5,g:'body',l:1,ok:true,w:1,n:'ухо'}},{{t:now-D,g:'body',l:1,ok:false,w:1,n:'ухо'}},
+        {{t:now-3*D,g:'body',l:1,ok:true,w:1,n:'нос'}},{{t:now-D,g:'body',l:2,ok:true,w:0,n:'нос'}},{{t:now-D+9,g:'body',l:2,ok:true,w:0,n:'нос'}},
+        {{t:now-9*D,g:'body',l:1,ok:false,w:3,n:'рука'}},{{t:now-D,g:'hack',ok:true}}];
+      const keepG=window.__rechka.G;const m=__ev('shMemory')(now);S.shMem=false;const off=__ev('shMemory')(now);S.shMem=true;S.log=keep;
+      return {{m,off}}}})()""")
+    m = mem['m'] or {}
+    check(m.get('days') == 3 and m.get('lastDaysAgo') == 1 and [h['item'] for h in m.get('hard', [])] == ['ухо']
+          and [h['item'] for h in m.get('better', [])] == ['нос'] and [g['game'] for g in m.get('games', [])] == ['body'] and mem['off'] is None,
+          f'«Занятие с Шариком»: сводка прошлых занятий (трудно — ухо, получается — нос; выключается) {mem}')
+
+    # ---- v33: объёмный Шарик (three.js); без WebGL — прежний рисунок
+    if True:
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.dogHi=1;{R}.S.sh3d=true"); pg.click('.tile[data-game="dog"]')
+        try: pg.wait_for_selector('.dogbox', timeout=15000); pg.wait_for_timeout(2500)
+        except Exception: pass
+        loaded = pg.evaluate("!!window.Sharik3D")
+        sup = pg.evaluate("!!(window.Sharik3D&&Sharik3D.supported())")
+        has = pg.evaluate("!!document.querySelector('.dogbox.is3d canvas.sh3d')")
+        svg = pg.evaluate("!!document.querySelector('.dogbox svg')")
+        check(loaded and (has if sup else svg), f'объёмный Шарик в «Повторяй за Шариком» (загружен={loaded}, WebGL={sup}, 3D={has})')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.sh3d=false"); pg.click('.tile[data-game="dog"]')
+        try: pg.wait_for_selector('.dogbox', timeout=15000); pg.wait_for_timeout(1500)
+        except Exception: pass
+        check(not pg.evaluate("!!document.querySelector('.dogbox.is3d')") and pg.evaluate("!!document.querySelector('.dogbox svg')"),
+              'объёмный Шарик выключается в разделе для взрослых — прежний рисунок')
+        pg.evaluate(f"{R}.S.sh3d=true;document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
 
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()

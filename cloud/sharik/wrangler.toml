@@ -8,6 +8,7 @@ compatibility_flags = ["nodejs_compat"]
 MODEL = "claude-opus-5-5"
 EFFORT = "low"
 DAILY_LIMIT = "600"
+STT_LIMIT = "400"
 # адреса сайта «Речки» через запятую (пусто — разрешить всем, только для проверки)
 ALLOWED_ORIGINS = ""
 
@@ -16,3 +17,8 @@ ALLOWED_ORIGINS = ""
 # [[kv_namespaces]]
 # binding = "USAGE"
 # id = "…"
+
+# Распознавание речи для /stt (Whisper на Cloudflare Workers AI). Отдельный ключ не нужен,
+# бесплатной дневной квоты Workers AI хватает на занятия. Без этой привязки /stt отвечает note: "no_ai".
+[ai]
+binding = "AI"

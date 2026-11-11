@@ -1,0 +1,12 @@
+{
+  "name": "rechka-sharik3d",
+  "private": true,
+  "description": "Объёмный Шарик для «Речки»: собирается в app/vendor/sharik3d/sharik3d.js",
+  "scripts": {
+    "build": "esbuild sharik3d.src.js --bundle --minify --format=iife --target=es2019 --legal-comments=eof --outfile=../../app/vendor/sharik3d/sharik3d.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "three": "0.186.1"
+  }
+}
