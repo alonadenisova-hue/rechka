@@ -228,6 +228,48 @@ test("/health показывает, включён ли голос", async () =>
   assert.equal((await r.json() as { tts: string }).tts, "openai");
 });
 
+// ---- готовые фразы: память голоса, список для приложения
+import { PHRASE_LIST, canonical, sentences } from "../src/phrases.ts";
+
+test("готовые фразы: предложения и приведение к записанному виду", () => {
+  assert.deepEqual(sentences("Молодец! А теперь улыбнись! Ура"), ["Молодец!", "А теперь улыбнись!", "Ура"]);
+  assert.equal(canonical("молодец. Покажи, где ушко!"), "Молодец! Покажи, где ушко!");
+  assert.equal(canonical("пока пока"), "Пока-пока!");
+  assert.ok(PHRASE_LIST.length >= 40 && new Set(PHRASE_LIST).size === PHRASE_LIST.length);
+  assert.match(SYSTEM_PROMPT, /«Молодец!»/);
+  assert.equal(sanitize({ say: "умница! Покажи нос!", next: { kind: "game", game: "body", level: 1 }, tone: "praise" }, base).say, "Умница! Покажи нос!");
+  // все запасные реплики сервера состоят из готовых фраз
+  for (const t of ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause"] as const)
+    for (const s of sentences(fallbackReply({ event: { type: t } }).say)) assert.ok(PHRASE_LIST.includes(s), s);
+});
+
+function fakeKV() {
+  const m = new Map<string, unknown>(); let puts = 0;
+  return { m, get puts() { return puts; },
+    kv: { get: async (k: string, t?: string) => { const v = m.get(k); return v === undefined ? null : t === "arrayBuffer" ? v : String(v); },
+      put: async (k: string, v: unknown) => { puts++; m.set(k, v); } } as unknown as KVNamespace };
+}
+
+test("/phrases отдаёт список готовых фраз по семейному коду", async () => {
+  const ok = await worker.fetch(new Request("https://x/phrases", { headers: { "X-Sharik-Code": "1234" } }), { ANTHROPIC_API_KEY: "", SHARIK_CODE: "1234" } as Env);
+  assert.deepEqual((await ok.json() as { phrases: string[] }).phrases, PHRASE_LIST);
+  assert.equal((await worker.fetch(new Request("https://x/phrases"), { ANTHROPIC_API_KEY: "", SHARIK_CODE: "1234" } as Env)).status, 401);
+});
+
+test("/tts: голос фразы сохраняется в KV и второй раз не оплачивается", async () => {
+  const F = fakeKV(); let calls = 0;
+  const env = { TTS_PROVIDER: "elevenlabs", ELEVENLABS_API_KEY: "el", USAGE: F.kv };
+  const r1 = await withFetch(async () => { calls++; return new Response(MP3); }, () => tts(env, { text: "молодец" }));
+  assert.equal(r1.headers.get("X-Tts-Cache"), "miss");
+  const r2 = await withFetch(async () => { calls++; return new Response(MP3); }, () => tts(env, { text: "Молодец!" }));
+  assert.equal(r2.headers.get("X-Tts-Cache"), "hit");
+  assert.equal((await r2.arrayBuffer()).byteLength, 1000);
+  assert.equal(calls, 1, "сервис голоса вызван один раз");
+  const broken = { get: async () => { throw new Error("kv down"); }, put: async () => { throw new Error("kv down"); } } as unknown as KVNamespace;
+  const r3 = await withFetch(async () => new Response(MP3), () => tts({ ...env, USAGE: broken }, { text: "Ура!" }));
+  assert.equal(r3.status, 200, "хранилище сломалось — голос всё равно есть");
+});
+
 test("правила логопеда (ноябрь 2026) — в инструкции", () => {
   assert.match(SYSTEM_PROMPT, /Как учит логопед/);
   assert.match(SYSTEM_PROMPT, /то первым, то вторым/);

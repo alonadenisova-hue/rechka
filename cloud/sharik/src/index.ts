@@ -2,10 +2,12 @@
 //   POST /sharik  — приложение присылает, что происходит на занятии, получает реплику Шарика и следующий шаг.
 //   POST /stt     — распознать короткую запись голоса Льва (WAV) — только подсказка для мамы, не оценка.
 //   POST /tts     — голос Шарика: текст → MP3 (облачный синтез; одинаковые фразы — из кэша).
+//   GET  /phrases — готовые фразы Шарика (приложение заранее скачивает их голос).
 //   GET  /health  — проверка, что сервер жив (без обращения к модели).
 // Ключи хранятся в секретах Cloudflare (wrangler secret put …), не в коде и не в приложении.
 import Anthropic from "@anthropic-ai/sdk";
 import { STT_MAX_BYTES, STT_MODEL, STT_PROMPT, cleanTranscript, looksLikeWav, toBase64 } from "./stt.ts";
+import { PHRASE_LIST, canonical } from "./phrases.ts";
 import { TtsError, cleanTtsText, synthesize, ttsCacheKey, ttsProvider, type TtsEnv } from "./tts.ts";
 import { REPLY_SCHEMA, SYSTEM_PROMPT, fallbackReply, parseRequest, sanitize, userMessage, type SharikRequest } from "./sharik.ts";
 
@@ -17,7 +19,7 @@ export interface Env extends TtsEnv {
   ALLOWED_ORIGINS?: string; // адреса сайта через запятую, например https://rechka.netlify.app
   DAILY_LIMIT?: string; // сколько обращений к модели в сутки (по умолчанию 600)
   ANTHROPIC_BASE_URL?: string; // только для тестов
-  USAGE?: KVNamespace; // счётчик обращений за день (необязательно)
+  USAGE?: KVNamespace; // хранилище KV (необязательно): счётчик обращений за день и записанный голос фраз
   AI?: Ai; // Workers AI — распознавание речи для /stt (необязательно; без него /stt отвечает note: no_ai)
   STT_LIMIT?: string; // сколько распознаваний в сутки (по умолчанию 400)
   TTS_LIMIT?: string; // сколько синтезов (без кэша) в сутки (по умолчанию 800)
@@ -52,11 +54,16 @@ function sameCode(a: string, b: string): boolean {
 
 async function underLimit(env: Env, kind: "day" | "stt" | "tts" = "day"): Promise<boolean> {
   if (!env.USAGE) return true;
+  try { return await countUsage(env.USAGE, env, kind); } catch { return true; } // хранилище недоступно — не мешаем занятию
+}
+
+async function countUsage(kv: KVNamespace, env: Env, kind: "day" | "stt" | "tts"): Promise<boolean> {
+  const USAGE = kv;
   const key = kind + ":" + new Date().toISOString().slice(0, 10);
-  const n = parseInt((await env.USAGE.get(key)) || "0", 10);
+  const n = parseInt((await USAGE.get(key)) || "0", 10);
   const lim = parseInt((kind === "stt" ? env.STT_LIMIT || "400" : kind === "tts" ? env.TTS_LIMIT || "800" : env.DAILY_LIMIT || "600"), 10);
   if (n >= lim) return false;
-  await env.USAGE.put(key, String(n + 1), { expirationTtl: 60 * 60 * 48 });
+  await USAGE.put(key, String(n + 1), { expirationTtl: 60 * 60 * 48 });
   return true;
 }
 
@@ -124,7 +131,7 @@ export async function ttsRoute(request: Request, env: Env, h: Record<string, str
   if (len > 4000) return json({ error: "too_big" }, 413, h);
   let body: unknown;
   try { body = await request.json(); } catch { return json({ error: "bad_json" }, 400, h); }
-  const text = cleanTtsText((body as { text?: unknown })?.text);
+  const text = canonical(cleanTtsText((body as { text?: unknown })?.text));
   if (!text) return json({ error: "bad_request" }, 400, h);
   const p = ttsProvider(env);
   if (!p) return json({ note: "no_tts" }, 503, h);
@@ -132,15 +139,27 @@ export async function ttsRoute(request: Request, env: Env, h: Record<string, str
     new Response(buf, { status: 200, headers: { ...h, "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=2592000", "X-Tts-Cache": hit ? "hit" : "miss", "Access-Control-Expose-Headers": "X-Tts-Cache" } });
   const cache = ttsCache();
   const key = await ttsCacheKey(env, p, text);
+  const kvKey = "tts:" + key.slice(key.lastIndexOf("/") + 1, -4);
   if (cache) {
-    const c = await cache.match(key);
-    if (c) return audio(c.body, true);
+    try { const c = await cache.match(key); if (c) return audio(c.body, true); } catch { /* кэш недоступен */ }
+  }
+  // надёжная память: записанный голос в KV (не пропадает, в отличие от кэша)
+  if (env.USAGE) {
+    try {
+      const v = await env.USAGE.get(kvKey, "arrayBuffer");
+      if (v && v.byteLength > 200) {
+        if (cache) await cache.put(key, new Response(v.slice(0), { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=2592000" } })).catch(() => {});
+        return audio(v, true);
+      }
+    } catch { /* хранилище недоступно — синтезируем */ }
   }
   if (!(await underLimit(env, "tts"))) return json({ note: "daily_limit" }, 503, h);
   const t0 = Date.now();
   try {
     const buf = await synthesize(env, p, text, fetchImpl);
-    if (cache) await cache.put(key, new Response(buf.slice(0), { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=2592000" } }));
+    if (cache) await cache.put(key, new Response(buf.slice(0), { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=2592000" } })).catch(() => {});
+    // в KV — только короткие фразы (до 120 знаков): они повторяются; длинные реплики ИИ почти не повторяются
+    if (env.USAGE && text.length <= 120) await env.USAGE.put(kvKey, buf.slice(0), { metadata: { text: text.slice(0, 120), p } }).catch(() => {});
     console.log(JSON.stringify({ ev: "tts", p, ms: Date.now() - t0, chars: text.length, bytes: buf.byteLength }));
     return audio(buf, false);
   } catch (e) {
@@ -155,7 +174,12 @@ export default {
     const h = cors(request, env);
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: h });
-    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY, stt: !!env.AI, tts: ttsProvider(env) || false }, 200, h);
+    if (url.pathname === "/health") return json({ ok: true, model: env.MODEL || MODEL_DEFAULT, key: !!env.ANTHROPIC_API_KEY, stt: !!env.AI, tts: ttsProvider(env) || false, kv: !!env.USAGE }, 200, h);
+    if (url.pathname === "/phrases" && request.method === "GET") {
+      if (h["Access-Control-Allow-Origin"] === "null") return json({ error: "origin" }, 403, h);
+      if (env.SHARIK_CODE && !sameCode(request.headers.get("X-Sharik-Code") || "", env.SHARIK_CODE)) return json({ error: "code" }, 401, h);
+      return json({ phrases: PHRASE_LIST }, 200, h);
+    }
     if (!["/sharik", "/stt", "/tts"].includes(url.pathname) || request.method !== "POST") return json({ error: "not_found" }, 404, h);
     if (h["Access-Control-Allow-Origin"] === "null") return json({ error: "origin" }, 403, h);
     if (env.SHARIK_CODE && !sameCode(request.headers.get("X-Sharik-Code") || "", env.SHARIK_CODE)) return json({ error: "code" }, 401, h);

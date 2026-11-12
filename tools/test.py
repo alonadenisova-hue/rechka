@@ -363,9 +363,13 @@ with sync_playwright() as p:
 
     # ---- v29: «Покажи, где…» — нажать на часть тела мальчика
     if True:
-        PT = """(name)=>{const g=[...document.querySelectorAll('#stage [data-part]')].find(e=>e.dataset.part===name);
-          const e=[...g.children].find(c=>c.tagName!=='g'&&c.getAttribute('fill')!=='transparent')||g;const r=e.getBoundingClientRect();
-          return [r.x+r.width/2,r.y+r.height/2]}"""
+        # точка, которая действительно попадает в нужную часть (середина рамки может лежать на соседней: волосы → голова)
+        PT = """(name)=>{const gs=[...document.querySelectorAll('#stage [data-part]')].filter(e=>e.dataset.part===name);
+          const g=gs[0];const e=[...g.children].find(c=>c.tagName!=='g'&&c.getAttribute('fill')!=='transparent')||g;const r=e.getBoundingClientRect();
+          const c=[r.x+r.width/2,r.y+r.height/2];const hit=(x,y)=>{const el=document.elementFromPoint(x,y);const p=el&&el.closest&&el.closest('[data-part]');return p&&p.dataset.part===name};
+          if(hit(...c))return c;
+          for(let k=1;k<=8;k++)for(let a=0;a<12;a++){const x=c[0]+Math.cos(a*Math.PI/6)*r.width*k/16,y=c[1]+Math.sin(a*Math.PI/6)*r.height*k/16;if(hit(x,y))return [x,y]}
+          return c}"""
         for lv in (1, 2, 3):
             okr = okw = 0
             start('body', lv); prev = None
@@ -521,7 +525,7 @@ with sync_playwright() as p:
     pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=true;S.shTts=true;S.shUrl='https://example.invalid';__ev('applyV21Home')();
       window.__shLog=[];window.__shVoiceSim=async()=>null;S.shLat=[];
       const sr=16000,f=new Float32Array(sr*1.2);for(let i=0;i<f.length;i++)f[i]=Math.sin(i/sr*2*Math.PI*220)*.5*Math.abs(Math.sin(i/sr*Math.PI*4));
-      const wav=__ev('wavBlob')(f,sr);window.__ttsN=0;window.__shTtsSim=async t=>{{window.__ttsN++;return window.__ttsN===1?wav:null}};
+      const wav=__ev('wavBlob')(f,sr);window.__ttsN=0;window.__shTtsSim=async t=>{{window.__ttsN++;return t==='Пока!'?null:wav}};
       window.__shSim=ev=>{{window.__shLog.push(ev);const n=window.__shLog.length;
         if(n>=2)return {{say:'Пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
         return {{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}}}}}})()""")
@@ -533,7 +537,12 @@ with sync_playwright() as p:
     except Exception as e_: print('    ', str(e_)[:120])
     how = pg.evaluate("__ev('SH_HOW').slice(-2)")
     lat = pg.evaluate(f"{R}.S.shLat||[]")
-    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 2, f'живой голос Шарика: фраза с сервера дослушана, без ответа — голос телефона ({how})')
+    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 3, f'живой голос Шарика: реплика по предложениям с сервера дослушана, без ответа — голос телефона ({how})')
+    # v39: заранее скачать голос готовых фраз
+    pg.evaluate(f"{R}.S.shOn=true;window.__shPhrasesSim=async()=>['Молодец!','Ура!'];window.__shTtsSim=async t=>new Blob([new Uint8Array(500)],{{type:'audio/mpeg'}})")
+    dl = pg.evaluate("__ev('shPhrasesDownload')()")
+    check(dl == {'ok': 5, 'all': 5}, f'готовые фразы: скачиваются все (2 с сервера + 3 с именем) ({dl})')
+    pg.evaluate("delete window.__shPhrasesSim")
     check(len(lat) >= 2, f'живой голос Шарика: задержка до первого звука записана ({lat})')
     if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
     pg.evaluate(f"delete window.__shSim;delete window.__shTtsSim;delete window.__shVoiceSim;{R}.S.shOn=false;__ev('applyV21Home')()")

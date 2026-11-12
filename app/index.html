@@ -774,7 +774,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 37</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 39</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -973,23 +973,31 @@ body{background:#eaf3fb}
     <div id="vid-list"></div>
     <div class="row"><input type="text" id="vid-own-t" placeholder="Своя фраза" maxlength="40" style="flex:1;min-width:0;font:inherit;padding:8px;border-radius:10px;border:2px solid var(--line)"><button class="small-btn" id="vid-own">🎥 Записать</button></div>
   </details>
+  <details class="panel" id="pn-sharik">
+    <summary>Шарик</summary>
+    <p class="note">«Занятие с Шариком» — Шарик сам ведёт занятие через свой сервер (нужен интернет; инструкция — cloud/sharik/README.md). Без интернета все игры работают как обычно.</p>
+    <div class="row"><label for="set-shon">Включить «Занятие с Шариком» (кнопка на главном экране)</label><input type="checkbox" id="set-shon"></div>
+    <div class="row"><label for="set-shurl">Адрес сервера Шарика</label><input type="url" id="set-shurl" placeholder="https://rechka-sharik….workers.dev" style="width:220px"></div>
+    <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
+    <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
+    <h4 style="margin:12px 0 4px">Голос</h4>
+    <div class="row"><label for="set-shtts">Живой голос Шарика через сервер (без ответа за 3,5 с или без интернета — голос телефона; записи мамы главнее)</label><input type="checkbox" id="set-shtts"></div>
+    <div class="row"><span>Шарик отвечает: <span id="sh-lat">—</span> (от конца задания до первого звука)</span><button class="small-btn" id="sh-ttstest">Проверить голос Шарика</button></div>
+    <div class="row"><span>Готовые фразы (похвалы, приветствия…) — скачать голос один раз: дальше без оплаты и без интернета <small id="sh-phn"></small></span><button class="small-btn" id="sh-phdl">Скачать постоянные фразы</button></div>
+    <div class="row"><label for="set-shvoice">Шарик слушает голос после вопроса и радуется попытке (только громкость)</label><input type="checkbox" id="set-shvoice"></div>
+    <div class="row"><label for="set-shstt">Распознавать слова через сервер — показывать маме мелким шрифтом (не для оценки)</label><input type="checkbox" id="set-shstt"></div>
+    <h4 style="margin:12px 0 4px">Как Шарик выглядит и что помнит</h4>
+    <div class="row"><label for="set-sh3d">Объёмный Шарик (3D: двигается, показывает упражнения; если телефон тормозит — выключить)</label><input type="checkbox" id="set-sh3d"></div>
+    <div class="row"><label for="set-shmem">Шарик помнит прошлые занятия (сводка за 7 дней считается на телефоне)</label><input type="checkbox" id="set-shmem"></div>
+    <h4 style="margin:12px 0 4px">«Зеркало с Шариком» (камера)</h4>
+    <div class="row"><label for="set-mirr">Игра «Зеркало с Шариком» (камера)</label><input type="checkbox" id="set-mirr"></div>
+    <div class="row"><label for="set-mirrbody">«Зеркало», уровень 4: всё тело и движения (живот, коленка, помаши, хлопни, присядь…)</label><input type="checkbox" id="set-mirrbody"></div>
+  </details>
   <details class="panel" id="pn-wb">
     <summary>Доска «Хочу»</summary>
     <p class="note">Кнопка «Хочу» на главном экране — не игра: в ней нет заданий и оценок. Ребёнок нажимает карточку, телефон говорит просьбу, взрослый её выполняет. В статистике видно, что ребёнок просил сам.</p>
     <div class="row"><label for="set-wbon">Кнопка «Хочу» на главном экране</label><input type="checkbox" id="set-wbon"></div>
     <div class="row"><label for="set-body">Игра «Покажи, где…» (части тела)</label><input type="checkbox" id="set-body"></div>
-    <div class="row"><label for="set-mirr">Игра «Зеркало с Шариком» (камера)</label><input type="checkbox" id="set-mirr"></div>
-    <div class="row"><label for="set-mirrbody">«Зеркало», уровень 4: всё тело и движения (живот, коленка, помаши, хлопни, присядь…)</label><input type="checkbox" id="set-mirrbody"></div>
-    <div class="row"><label for="set-shon">«Занятие с Шариком» (ИИ, нужен интернет и сервер — docs/ai-sharik)</label><input type="checkbox" id="set-shon"></div>
-    <div class="row"><label for="set-shurl">Адрес сервера Шарика</label><input type="url" id="set-shurl" placeholder="https://rechka-sharik….workers.dev" style="width:220px"></div>
-    <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
-    <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
-    <div class="row"><label for="set-sh3d">Объёмный Шарик (3D: двигается, показывает упражнения; если телефон тормозит — выключить)</label><input type="checkbox" id="set-sh3d"></div>
-    <div class="row"><label for="set-shmem">Шарик помнит прошлые занятия (сводка за 7 дней считается на телефоне)</label><input type="checkbox" id="set-shmem"></div>
-    <div class="row"><label for="set-shtts">Живой голос Шарика через сервер (без ответа за 3,5 с или без интернета — голос телефона; записи мамы главнее)</label><input type="checkbox" id="set-shtts"></div>
-    <div class="row"><span>Шарик отвечает: <span id="sh-lat">—</span> (от конца задания до первого звука)</span><button class="small-btn" id="sh-ttstest">Проверить голос Шарика</button></div>
-    <div class="row"><label for="set-shvoice">Шарик слушает голос после вопроса и радуется попытке (только громкость)</label><input type="checkbox" id="set-shvoice"></div>
-    <div class="row"><label for="set-shstt">Распознавать слова через сервер — показывать маме мелким шрифтом (не для оценки)</label><input type="checkbox" id="set-shstt"></div>
     <div class="row"><label for="set-wbask">Через секунду мягко предлагать: «Скажи: дай сок!»</label><input type="checkbox" id="set-wbask"></div>
     <div class="row"><label for="set-wbn">Карточек на экране</label><select id="set-wbn"><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option></select></div>
     <div id="wb-list"></div>
