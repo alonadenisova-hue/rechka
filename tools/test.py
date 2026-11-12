@@ -363,9 +363,13 @@ with sync_playwright() as p:
 
     # ---- v29: «Покажи, где…» — нажать на часть тела мальчика
     if True:
-        PT = """(name)=>{const g=[...document.querySelectorAll('#stage [data-part]')].find(e=>e.dataset.part===name);
-          const e=[...g.children].find(c=>c.tagName!=='g'&&c.getAttribute('fill')!=='transparent')||g;const r=e.getBoundingClientRect();
-          return [r.x+r.width/2,r.y+r.height/2]}"""
+        # точка, которая действительно попадает в нужную часть (середина рамки может лежать на соседней: волосы → голова)
+        PT = """(name)=>{const gs=[...document.querySelectorAll('#stage [data-part]')].filter(e=>e.dataset.part===name);
+          const g=gs[0];const e=[...g.children].find(c=>c.tagName!=='g'&&c.getAttribute('fill')!=='transparent')||g;const r=e.getBoundingClientRect();
+          const c=[r.x+r.width/2,r.y+r.height/2];const hit=(x,y)=>{const el=document.elementFromPoint(x,y);const p=el&&el.closest&&el.closest('[data-part]');return p&&p.dataset.part===name};
+          if(hit(...c))return c;
+          for(let k=1;k<=8;k++)for(let a=0;a<12;a++){const x=c[0]+Math.cos(a*Math.PI/6)*r.width*k/16,y=c[1]+Math.sin(a*Math.PI/6)*r.height*k/16;if(hit(x,y))return [x,y]}
+          return c}"""
         for lv in (1, 2, 3):
             okr = okw = 0
             start('body', lv); prev = None
