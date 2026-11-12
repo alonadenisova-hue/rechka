@@ -547,6 +547,23 @@ with sync_playwright() as p:
     if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
     pg.evaluate(f"delete window.__shSim;delete window.__shTtsSim;delete window.__shVoiceSim;{R}.S.shOn=false;__ev('applyV21Home')()")
 
+    # ---- v40: Шарик думает, пока ждёт сервер; выход домой отменяет запросы, поздний ответ ничего не делает
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shTts=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+      window.__shLog=[];window.__shSim=ev=>new Promise(r=>setTimeout(()=>{{window.__shLog.push(ev);r({{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}})}},2500))}})()""")
+    pg.click('#btn-sharik'); pg.wait_for_timeout(700)
+    think = pg.evaluate("!!document.querySelector('#stage .shbub.think')&&!!document.querySelector('#stage .shdog.think')")
+    try: pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=15000); went = True
+    except Exception: went = False
+    check(think and went and not pg.evaluate("!!document.querySelector('#stage .shbub.think')"), f'«Занятие с Шариком»: пока ждёт ответ — Шарик думает («…»), потом игра (думает={think}, игра={went})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.click('#btn-sharik'); pg.wait_for_timeout(600)
+    sig = pg.evaluate("(window.__oldSig=__ev('SH_CTL').signal, window.__oldSig.aborted)")
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(3500)
+    late = pg.evaluate(f"({{aborted:window.__oldSig.aborted,G:!!{R}.G,game:document.querySelector('#game').hidden,log:window.__shLog.length}})")
+    check(sig is False and late['aborted'] and not late['G'] and late['game'], f'«Занятие с Шариком»: выход домой отменяет запросы, поздний ответ ничего не делает ({late})')
+    pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
+
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
       S.log=[{{t:now-2*D,g:'body',l:1,ok:false,w:2,n:'ухо'}},{{t:now-D-5,g:'body',l:1,ok:true,w:1,n:'ухо'}},{{t:now-D,g:'body',l:1,ok:false,w:1,n:'ухо'}},

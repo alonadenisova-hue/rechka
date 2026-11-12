@@ -143,7 +143,7 @@ function makeState() {
 // «покажи на себе»: поворот правой лапы [вперёд-вверх, вбок]
 // точки (в координатах Шарика), куда тянется правая лапа; углы считаются из направления от плеча
 const TOUCH_PT = { nose: [0, 1.62, 0.98], mouth: [0, 1.36, 0.86], eye: [0.24, 1.84, 0.7], cheek: [0.42, 1.52, 0.66], ear: [0.78, 1.72, 0.45], head: [0.12, 2.2, 0.72],
-  belly: [0.02, 0.72, 0.62], leg: [0.5, 0.45, 0.5], knee: [0.48, 0.34, 0.62], shoulder: [-0.3, 1.08, 0.5] };
+  chin: [0.1, 1.2, 0.86], belly: [0.02, 0.72, 0.62], leg: [0.5, 0.45, 0.5], knee: [0.48, 0.34, 0.62], shoulder: [-0.3, 1.08, 0.5] };
 const SHOULDER = [0.2, 0.98, 0.3], LEG = 0.92;
 const TOUCH = {};
 for (const k in TOUCH_PT) {
@@ -176,12 +176,12 @@ function animate(P, st, t, dt) {
   const sh = 1 - jumpY * 0.8; P.shadow.scale.set(sh, sh, 1);
 
   // голова: покачивание, наклон по настроению
-  const tilt = m === "listen" ? 0.28 : m === "comfort" ? 0.18 : m === "invite" ? -0.1 : 0;
+  const tilt = m === "think" ? -0.22 : m === "listen" ? 0.28 : m === "comfort" ? 0.18 : m === "invite" ? -0.1 : 0;
   const nod = m === "comfort" ? Math.sin(t * 3) * 0.06 : 0;
   const hz = MathUtils.lerp(P.head.rotation.z, tilt + Math.sin(t * 0.7) * 0.04, Math.min(1, dt * 5));
   P.head.rotation.z = hz;
   P.head.rotation.y = Math.sin(t * 0.45) * 0.15 + (st.talk ? Math.sin(t * 2.7) * 0.05 : 0);
-  P.head.rotation.x = -0.05 + nod + (st.talk ? Math.sin(t * 5.3) * 0.03 : 0) + (m === "praise" ? -0.08 : 0);
+  P.head.rotation.x = -0.05 + nod + (st.talk ? Math.sin(t * 5.3) * 0.03 : 0) + (m === "praise" ? -0.08 : 0) + (m === "think" ? -0.14 : 0); // думает — смотрит вверх
 
   // рот: по визему (слог), по громкости или «болтовня», пока звучит речь
   let target = 0, width = 1;
@@ -219,11 +219,12 @@ function animate(P, st, t, dt) {
   if (pose === "smile") ey = Math.min(ey, 0.8);
   for (const e of [P.eyeL, P.eyeR]) {
     e.g.scale.y = MathUtils.lerp(e.g.scale.y, ey, Math.min(1, dt * 25));
-    e.pu.position.x = Math.sin(t * 0.45) * 0.015; // взгляд чуть следует за поворотом головы
+    e.pu.position.x = m === "think" ? 0.025 : Math.sin(t * 0.45) * 0.015; // взгляд чуть следует за поворотом головы
+    e.pu.position.y = MathUtils.lerp(e.pu.position.y, m === "think" ? 0.035 : -0.015, Math.min(1, dt * 8)); // думает — глаза вверх
   }
   // брови: радость — выше, утешение — «домиком», слушает — одна выше
-  const bL = pose === "brows" ? [0.14, -0.1] : m === "praise" ? [0.08, -0.25] : m === "comfort" ? [0.03, 0.3] : m === "listen" ? [0.08, -0.15] : [0, -0.15];
-  const bR = pose === "brows" ? [0.14, 0.1] : m === "praise" ? [0.08, 0.25] : m === "comfort" ? [0.03, -0.3] : m === "listen" ? [0, 0.1] : [0, 0.15];
+  const bL = m === "think" ? [0.1, -0.2] : pose === "brows" ? [0.14, -0.1] : m === "praise" ? [0.08, -0.25] : m === "comfort" ? [0.03, 0.3] : m === "listen" ? [0.08, -0.15] : [0, -0.15];
+  const bR = m === "think" ? [-0.02, 0.05] : pose === "brows" ? [0.14, 0.1] : m === "praise" ? [0.08, 0.25] : m === "comfort" ? [0.03, -0.3] : m === "listen" ? [0, 0.1] : [0, 0.15];
   P.browL.position.y = MathUtils.lerp(P.browL.position.y, 0.75 + bL[0], dt * 8); P.browL.rotation.z = MathUtils.lerp(P.browL.rotation.z, bL[1], dt * 8);
   P.browR.position.y = MathUtils.lerp(P.browR.position.y, 0.75 + bR[0], dt * 8); P.browR.rotation.z = MathUtils.lerp(P.browR.rotation.z, bR[1], dt * 8);
 
@@ -240,13 +241,13 @@ function animate(P, st, t, dt) {
   });
 
   // хвост: виляет — быстрее, когда радуется
-  const wagSpeed = m === "praise" ? 16 : m === "invite" ? 10 : m === "listen" ? 7 : m === "comfort" ? 3 : 5;
+  const wagSpeed = m === "think" ? 2.5 : m === "praise" ? 16 : m === "invite" ? 10 : m === "listen" ? 7 : m === "comfort" ? 3 : 5;
   const wagAmp = m === "praise" ? 0.7 : m === "comfort" ? 0.25 : 0.45;
   st.wag = (st.wag || 0) + dt * wagSpeed;
   P.tail.forEach((s, i) => { s.rotation.z = Math.sin(st.wag - i * 0.6) * wagAmp * (0.6 + i * 0.25); });
 
   // лапы: взмах правой (машет), при радости обе чуть вверх; «покажи на себе» — правая лапа к части тела
-  const touch = pose && TOUCH[pose];
+  const touch = (pose && TOUCH[pose]) || (m === "think" && !wave ? TOUCH.chin : null); // думает — лапа у подбородка
   if (touch && !wave) {
     P.legR.rotation.x = MathUtils.lerp(P.legR.rotation.x, touch[0], Math.min(1, dt * 8));
     P.legR.rotation.z = MathUtils.lerp(P.legR.rotation.z, touch[1] + Math.sin(t * 6) * 0.03, Math.min(1, dt * 8));
@@ -324,7 +325,8 @@ function init() {
 
 function api(st) {
   const h = {
-    mood(m) { if (st.mood !== m) { st.mood = m; st.moodT = 0; } if (m === "praise") h.jump(); if (m === "invite") h.wave(); return h; },
+    mood(m) { // calm | praise | invite | comfort | listen | think
+      if (st.mood !== m) { st.mood = m; st.moodT = 0; } if (m === "praise") h.jump(); if (m === "invite") h.wave(); return h; },
     talk(on) { st.talk = !!on; if (!on) { st.vis = null; st.lvl = 0; st.lvlOn = false; } return h; },
     pose(p) { st.pose = p || null; return h; }, // smile, tube, open, puff, eyes, brows, nose, mouth, eye, cheek, ear, head,
     // belly, leg, knee, shoulder, wave, clap, armsup, squat
