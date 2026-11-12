@@ -269,3 +269,20 @@ test("/tts: голос фразы сохраняется в KV и второй �
   const r3 = await withFetch(async () => new Response(MP3), () => tts({ ...env, USAGE: broken }, { text: "Ура!" }));
   assert.equal(r3.status, 200, "хранилище сломалось — голос всё равно есть");
 });
+
+test("правила логопеда (ноябрь 2026) — в инструкции", () => {
+  assert.match(SYSTEM_PROMPT, /Как учит логопед/);
+  assert.match(SYSTEM_PROMPT, /то первым, то вторым/);
+  assert.match(SYSTEM_PROMPT, /из двух слов/);
+  assert.match(SYSTEM_PROMPT, /- pair: Похожие действия/);
+  assert.match(SYSTEM_PROMPT, /- put: Положи.*Я положил/);
+});
+
+test("выключенные в каталоге игры Шарик не включит, даже если приложение их прислало", () => {
+  assert.doesNotMatch(SYSTEM_PROMPT, /- me: /);
+  const req: SharikRequest = { ...base, available: ["body", "me", "world"] };
+  for (const g of ["me", "world"]) {
+    const r = sanitize({ say: "Давай!", next: { kind: "game", game: g, level: 1 }, tone: "invite" }, req);
+    assert.equal(r.next.game, null);
+  }
+});

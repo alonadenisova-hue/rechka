@@ -24,6 +24,7 @@
   Режим «Занятие с Шариком» в приложении — `shStep`/`startSharik` в `app/js/6-sharik.js`, включается в «Для взрослых».
   Объёмный Шарик (3D, three.js): `app/vendor/sharik3d/sharik3d.js` собирается из `tools/sharik3d/sharik3d.src.js`
   (`cd tools/sharik3d && npm install && npm run build`); в `app/js/3-games-b.js` — `sh3`/`s3`, выключатель «Объёмный Шарик».
+- Разборы занятий с логопедом и идеи из них — `docs/logoped/` (ноябрь 2026: `2026-11-zanyatiya.md`).
 - Проверка после правок: `python3 tools/audit.py --only ui` — игры открываются, нет ошибок консоли.
 - Автотест всех игр на всех уровнях: `cd app && python3 -m http.server 8765` в фоне, затем
   `python3 tools/test.py nomic` и `python3 tools/test.py mic` (≈10 минут каждый; итог в последней строке).
