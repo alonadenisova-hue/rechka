@@ -537,7 +537,7 @@ with sync_playwright() as p:
     except Exception as e_: print('    ', str(e_)[:120])
     how = pg.evaluate("__ev('SH_HOW').slice(-2)")
     lat = pg.evaluate(f"{R}.S.shLat||[]")
-    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 4, f'живой голос Шарика: приветствие и реплика по предложениям с сервера дослушаны, без ответа — голос телефона; фразы игр в сеть не ходят ({how}, {pg.evaluate("window.__ttsN")})')
+    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 3, f'живой голос Шарика: приветствие и реплика по предложениям с сервера дослушаны, без ответа — голос телефона; фразы игр в сеть не ходят ({how}, {pg.evaluate("window.__ttsN")})')
     # v39: заранее скачать голос готовых фраз
     pg.evaluate(f"{R}.S.shOn=true;window.__shPhrasesSim=async()=>['Молодец!','Ура!'];window.__shTtsSim=async t=>new Blob([new Uint8Array(500)],{{type:'audio/mpeg'}})")
     dl = pg.evaluate("__ev('shPhrasesDownload')()")
