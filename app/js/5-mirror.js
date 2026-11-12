@@ -133,7 +133,7 @@ async function mirrRound(lvl){
   const ok=await new Promise(res=>{let done=false,held=0,lastT=performance.now(),t0=performance.now(),hinted=false;
     const mst={},body=ex.t==='bp'||ex.t==='mv';let lastLook=t0,lastSeen=t0,farSaid=false,away=0,busy=false;
     const finish=async(how)=>{if(done)return;done=true;box.classList.add('win');ring.style.setProperty('--p',1);sfx.good();confetti(70);
-      R.mirrHow=how;const h3=s3(st.querySelector('.msh'));if(h3)h3.pose(null).mood('praise');await say(pick(MIRR_GOOD));res(true)};
+      R.mirrHow=how;const h3=s3(st.querySelector('.msh'));if(h3)h3.pose(null).mood('praise');const pr=pick(MIRR_GOOD);if(G&&G.sharik)await shSpeak(pr,st.querySelector('.msh'));else await say(pr);res(true)};
     st.querySelector('.mok').onclick=()=>{ac();finish('parent')};
     const loop=()=>{if(done||R.dead||!box.isConnected){return}
       const now=performance.now(),dt=now-lastT;lastT=now;

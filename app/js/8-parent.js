@@ -186,6 +186,10 @@ $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20)
 $('#set-shvoice').onchange=e=>{S.shVoice=e.target.checked;save()};
 $('#set-shstt').onchange=e=>{S.shStt=e.target.checked;save()};
 $('#set-shtts').onchange=e=>{S.shTts=e.target.checked;save()};
+$('#sh-phdl').onclick=async e=>{ac();const b=e.target;if(!shOn()){b.textContent='Сначала включите «Занятие с Шариком»';return}b.disabled=true;b.textContent='Получаю список…';
+  try{const r=await shPhrasesDownload((i,n)=>{b.textContent=`Скачиваю ${i} из ${n}…`});
+    b.textContent=r.err?'Нет связи с сервером — попробуйте позже':r.ok===r.all?`✓ Готово: ${r.ok} фраз`:`Скачано ${r.ok} из ${r.all} — нажмите ещё раз`}
+  finally{b.disabled=false;const pc=$('#sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}};
 $('#sh-ttstest').onclick=async e=>{ac();const b=e.target;if(!shOn()){b.textContent='Сначала включите «Занятие с Шариком»';return}b.disabled=true;b.textContent='Шарик говорит…';
   SH_HOW.length=0;const el=document.createElement('div');el.style.cssText='position:fixed;left:-9999px;width:10px;height:10px';document.body.append(el);
   try{await shSpeak('Привет, Лев! Я Шарик. Покажи, где у мальчика нос? Ура! Молодец!',el)}finally{el.remove();b.disabled=false}

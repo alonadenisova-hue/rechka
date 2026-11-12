@@ -129,11 +129,26 @@ async function shSpeak(text,el){
   if(!text)return;const h3=()=>s3(el);const t0=G&&G.shT0;let first=false;
   const mark=()=>{if(first||!t0)return;first=true;const ms=Date.now()-t0;G.shT0=0;S.shLat=(S.shLat||[]).concat(ms).slice(-20);save()}; /* задержка до первого звука */
   const mom=S.myVoice&&REC.size&&splitParts(text).some(p=>REC.has(nk(p)));
-  if(!mom&&shTtsOn()){const my=sayGen;const b=await shTtsGet(text);if(my!==sayGen)return; /* пока ждали — остановили */
-    if(b){const r=await shPlay(b,el,mark);SH_HOW.push('tts:'+r);if(r!=='fail')return}}
+  /* v39: голос по предложениям — готовые фразы («Молодец!») берутся из памяти, синтезируется только новое */
+  if(!mom&&shTtsOn()){const my=sayGen;const parts=splitParts(text);const bs=await Promise.all(parts.map(shTtsGet));if(my!==sayGen)return; /* пока ждали — остановили */
+    if(bs.every(Boolean)){let r='ok';for(const b of bs){r=await shPlay(b,el,mark);if(r!=='ok')break}SH_HOW.push('tts:'+r);if(r!=='fail')return}}
   SH_HOW.push(mom?'mom':'phone');if(SH_HOW.length>20)SH_HOW.splice(0,SH_HOW.length-20);
   mark();el.classList.add('talk');if(h3())h3().talk(true);
   try{await say(text)}finally{el.classList.remove('talk');if(h3())h3().talk(false)}}
+/* v39: заранее скачать голос готовых фраз (список — на сервере, GET /phrases): дальше они звучат с телефона,
+   без обращения к сервису голоса и даже без интернета. Хранятся в Cache Storage «sharik-tts» (не стираются при обновлении). */
+async function shPhrasesGet(){if(window.__shPhrasesSim)return window.__shPhrasesSim();
+  const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),8000);
+  try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/phrases',{headers:{'X-Sharik-Code':S.shCode||''},signal:ctl.signal});
+    if(!r.ok)return null;const j=await r.json();return Array.isArray(j.phrases)?j.phrases.filter(x=>typeof x==='string').slice(0,300):null}
+  catch(e){return null}finally{clearTimeout(tm)}}
+async function shPhrasesDownload(onProgress){
+  const L=await shPhrasesGet();if(!L)return {ok:0,all:0,err:'no_list'};
+  const name=S.name||'Лев';const all=[...new Set(L.concat(`Привет, ${name}!`,`${name}, смотри!`,`${name}, я тут!`))];
+  try{navigator.storage&&navigator.storage.persist&&await navigator.storage.persist()}catch(e){} /* попросить телефон не чистить */
+  let ok=0;for(let i=0;i<all.length;i++){const b=await shTtsGet(all[i]);if(b)ok++;onProgress&&onProgress(i+1,all.length,ok)}
+  return {ok,all:all.length}}
+async function shPhrasesCount(){try{const c=await caches.open('sharik-tts');return (await c.keys()).length}catch(e){return 0}}
 function shLatText(){const L=(S.shLat||[]).slice().sort((a,b)=>a-b);if(!L.length)return 'ещё не было занятий';
   return `обычно ${(L[L.length>>1]/1000).toFixed(1)} с, самое долгое ${(L[L.length-1]/1000).toFixed(1)} с (последние ${L.length})`}
 function shPickLocal(){const av=new Set(shAvail());const L=SH_LOCAL.filter(g=>av.has(g)&&ROUNDS[g]&&g!==G.game);return pick(L.length?L:SH_LOCAL.filter(g=>ROUNDS[g]))}
@@ -181,6 +196,6 @@ async function shStep(){
 function startSharik(){ac();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
   $('#game').classList.remove('withnext');$('#game').classList.add('sharik');show('game');renderDots();nextRound()}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText()}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
 
 
