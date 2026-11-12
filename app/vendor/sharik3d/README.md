@@ -10,7 +10,7 @@
 Пересобрать после правок: `cd tools/sharik3d && npm install && npm run build`.
 
 Что умеет (вызовы из `app/js/*.js`): `Sharik3D.mount(элемент, {view:'full'|'face'})` →
-`mood('calm'|'praise'|'invite'|'comfort'|'listen')` — настроение (прыгает, машет лапой, гладит, слушает, наклонив голову),
+`mood('calm'|'praise'|'invite'|'comfort'|'listen'|'think')` — настроение (прыгает, машет лапой, гладит, слушает, наклонив голову; думает — глаза вверх, лапа у подбородка),
 `talk(true|false)` — говорит, `viseme('a'|'o'|'u'|'i'|'e'|'m'|null)` — рот на звуке (для «Повторяй за Шариком»),
 `pose(…)` — показывает упражнение «Зеркала»: `smile`, `tube`, `open`, `puff`, `eyes`, `brows` и «покажи на себе»:
 `nose`, `mouth`, `eye`, `cheek`, `ear`, `head`; `level(0…1)` — рот по громкости звука (для живого голоса из задачи 2).

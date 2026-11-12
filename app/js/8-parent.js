@@ -228,7 +228,7 @@ $('#puz-home').onclick=()=>{stopVoice();renderHome()};
 $('#puz-album').onclick=()=>openAlbum();
 $('#album-home').onclick=()=>{stopVoice();renderHome()};
 $('#album-puz').onclick=()=>openReward();
-$('#btn-home').onclick=()=>{stopVoice();VM.stop();$('#sayit').hidden=true;$('#nextbar').hidden=true;if(G&&G.round)G.round.dead=true;$('#stage').innerHTML='';G=null;renderHome()};
+$('#btn-home').onclick=()=>{stopVoice();shAbort();VM.stop();$('#sayit').hidden=true;$('#nextbar').hidden=true;if(G&&G.round)G.round.dead=true;$('#stage').innerHTML='';G=null;renderHome()};
 $('#btn-say').onclick=()=>{if(G&&G.round&&G.round.replay){G.round.replay();return}if(G&&G.round&&G.round.prompt)say(G.round.prompt==='Лопни шарик!'?'Лопни шарик!':G.round.prompt)};
 $('#btn-again').onclick=()=>G&&G.plan?startMix():startGame(G.game);
 $('#btn-finish-home').onclick=renderHome;

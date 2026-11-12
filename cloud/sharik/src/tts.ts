@@ -14,7 +14,7 @@ export interface TtsEnv {
 }
 
 export const TTS_MAX_CHARS = 300;
-export const TTS_TIMEOUT_MS = 6000;
+export const TTS_TIMEOUT_MS = 3000; // приложение ждёт голос 3,5 с — сервер сдаётся раньше
 
 export const TTS_DEFAULTS = {
   openai: { model: "gpt-4o-mini-tts", voice: "coral" },

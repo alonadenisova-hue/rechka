@@ -27,6 +27,15 @@ export interface Env extends TtsEnv {
 
 const MODEL_DEFAULT = "claude-opus-5-5";
 
+// Сколько ждать сервисы. Приложение ждёт /sharik 9 с, /stt 5 с, /tts 3,5 с — сервер сдаётся РАНЬШЕ и успевает
+// вернуть запасной ответ: поздний ответ модели всё равно оплачивается, но его уже никто не услышит.
+export const WAIT = { model: 6500, stt: 4000 } as const;
+
+// Ждать обещание не дольше ms, иначе — ошибка «timeout».
+function within<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((res, rej) => { const t = setTimeout(() => rej(new Error("timeout")), ms); p.then((v) => { clearTimeout(t); res(v); }, (e) => { clearTimeout(t); rej(e); }); });
+}
+
 function cors(req: Request, env: Env): Record<string, string> {
   const origin = req.headers.get("Origin") || "";
   const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -68,7 +77,7 @@ async function countUsage(kv: KVNamespace, env: Env, kind: "day" | "stt" | "tts"
 }
 
 export async function askModel(env: Env, req: SharikRequest) {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}), maxRetries: 1, timeout: 15000 });
+  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}), maxRetries: 0, timeout: WAIT.model }); // без повторной попытки: на неё уже нет времени
   const effort = (["low", "medium", "high", "xhigh", "max"].includes(env.EFFORT || "") ? env.EFFORT : "low") as "low" | "medium" | "high" | "xhigh" | "max";
   const res = await client.beta.messages.create({
     model: env.MODEL || MODEL_DEFAULT,
@@ -91,14 +100,14 @@ export async function askModel(env: Env, req: SharikRequest) {
 // Текст показывается маме мелко и уходит в поле heard. Шарик по нему не поправляет и не оценивает Льва.
 export async function transcribe(env: Env, wav: ArrayBuffer): Promise<{ text: string; note: string }> {
   if (!env.AI) return { text: "", note: "no_ai" };
-  const r = (await env.AI.run(STT_MODEL, {
+  const r = (await within(env.AI.run(STT_MODEL, {
     audio: toBase64(wav),
     language: "ru",
     task: "transcribe",
     vad_filter: true,
     initial_prompt: STT_PROMPT,
     condition_on_previous_text: false,
-  })) as { text?: string };
+  }), WAIT.stt)) as { text?: string };
   const text = cleanTranscript(r?.text);
   return { text, note: text ? "ok" : "empty" };
 }
@@ -203,6 +212,7 @@ export default {
       let note = "error";
       if (e instanceof Anthropic.AuthenticationError) note = "bad_key";
       else if (e instanceof Anthropic.RateLimitError) note = "rate_limited";
+      else if (e instanceof Anthropic.APIConnectionTimeoutError) note = "timeout"; // модель не успела — запасная реплика
       else if (e instanceof Anthropic.APIConnectionError) note = "connection"; // проверять до APIError: это его подкласс
       else if (e instanceof Anthropic.APIError) note = `api_${e.status}`;
       console.log(JSON.stringify({ ev: req.event.type, ms: Date.now() - t0, note, err: String(e).slice(0, 200) }));

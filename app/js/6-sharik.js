@@ -6,7 +6,7 @@
    игрой. Без интернета или при ошибке сервера Шарик хвалит сам и игры выбираются по кругу — занятие не прерывается. */
 const SH_CSS=`
 #btn-sharik{width:100%;background:linear-gradient(135deg,#dff1ff,#e9e3ff);box-shadow:0 6px 0 #c6c9f0}
-.shg{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.shg{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .shg .shdog{width:min(62%,280px)}
 .shg .shdog svg{width:100%;height:auto}
 .shg .shbub{position:relative;background:#fff;border-radius:24px;padding:16px 20px;font-family:var(--display);font-size:clamp(22px,6vw,32px);text-align:center;box-shadow:0 6px 0 var(--line);max-width:92%;min-height:1.4em}
@@ -21,6 +21,13 @@ const SH_CSS=`
 .shg .shear .lv{width:110px;height:12px;border-radius:6px;background:#e7e3f7;overflow:hidden}
 .shg .shear .lv i{display:block;height:100%;width:0;background:#7b61ff;border-radius:6px;transition:width .08s}
 .shg .shear .lv i.on{background:#3cbf7a}
+.shg .shbub.think{visibility:visible!important;padding:18px 28px}
+.shg .shbub .thd{display:inline-flex;gap:10px;align-items:center;height:1em}
+.shg .shbub .thd i{width:14px;height:14px;border-radius:50%;background:#7b61ff;opacity:.35;animation:shdot 1.2s ease-in-out infinite}
+.shg .shbub .thd i:nth-child(2){animation-delay:.2s}.shg .shbub .thd i:nth-child(3){animation-delay:.4s}
+@keyframes shdot{40%{opacity:1;transform:translateY(-6px)}}
+.shg .shdog.think:not(.is3d){animation:shthink 2.4s ease-in-out infinite}
+@keyframes shthink{50%{transform:rotate(-6deg) translateY(-3px)}}
 .shg .shdog.hop{animation:shhop .6s ease-out}
 @keyframes shhop{30%{transform:translateY(-26px) scale(1.04)}60%{transform:translateY(0) scale(.98)}}
 .shg .shheard{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:13px;color:#8a8fa3;padding:0 12px}
@@ -30,13 +37,24 @@ document.head.insertAdjacentHTML('beforeend','<style>'+SH_CSS+'</style>');
 const SH_LOCAL=['body','mirr','verb','color','size','prep','feed','snd','yn','ib','dress','bal'];
 function shOn(){return !!(S.shOn&&S.shUrl)}
 function shAvail(){return [...document.querySelectorAll('.tile[data-game]')].filter(t=>!t.hidden).map(t=>t.dataset.game)}
-async function shAsk(ev){if(window.__shSim)return window.__shSim(ev);
+/* v40: запросы занятия отменяются при выходе домой и при новом занятии; поздние ответы не используются (G!==mine) */
+let SH_CTL=new AbortController();
+function shAbort(){try{SH_CTL.abort()}catch(e){}SH_CTL=new AbortController()}
+/* сигнал запроса: тайм-аут ms или отмена занятия — что раньше */
+function shSignal(ms){const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),ms),own=SH_CTL.signal;
+  if(own.aborted)ctl.abort();else own.addEventListener('abort',()=>ctl.abort(),{once:true});return {signal:ctl.signal,done:()=>clearTimeout(tm)}}
+const SH_WAIT=9000; /* сколько приложение ждёт ответа /sharik (сервер сдаётся раньше — через ~6,5 с — и присылает запасную реплику) */
+async function shAsk(ev){if(window.__shSim){const own=SH_CTL.signal,j=await window.__shSim(ev);return own.aborted?null:j}
   const body={child:{name:S.name||'Лев'},minutes:(Date.now()-G.t0)/60000,plannedMinutes:+S.shMin||20,levels:S.lvl,available:shAvail(),history:(G.shHist||[]).slice(-12),event:ev};
   if(G.shMem===undefined)G.shMem=shMemory();if(G.shMem)body.memory=G.shMem;
-  try{const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),9000);
-    const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/sharik',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify(body),signal:ctl.signal});
-    clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&typeof j.say==='string'&&j.next)return j}}catch(e){}
+  const q=shSignal(SH_WAIT);
+  try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/sharik',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify(body),signal:q.signal});
+    if(r.ok){const j=await r.json();if(j&&typeof j.say==='string'&&j.next)return j}}catch(e){}finally{q.done()}
   return null}
+/* Шарик думает, пока ждёт ответ: «…» в облачке, объёмный — наклон головы, глаза вверх, лапа у подбородка */
+function shThink(dog,bub,on){bub.classList.toggle('think',on);dog.classList.toggle('think',on);if(on)bub.innerHTML='<span class="thd" aria-label="Шарик думает"><i></i><i></i><i></i></span>';
+  const h=s3(dog);if(h&&on)h.mood('think');else if(on)sh3Ready(dog).then(x=>{if(x&&dog.classList.contains('think'))x.mood('think')})}
+function sh3Ready(el){return el._s3p||Promise.resolve(s3(el))}
 /* v32: Шарик слушает Льва после своей реплики. Засчитывается сама попытка (голос громче порога), слова не оцениваются.
    Распознавание (по желанию мамы) — только подсказка ей внизу экрана и поле heard для сервера. */
 const SHV={wait:3000,max:6000,tail:800,stt:5000}; // сколько ждать голос, максимум слушать, тишина после голоса, ожидание распознавания (мс)
@@ -61,9 +79,9 @@ async function shListen(st,mine){
   if(r&&clip&&clip.length>1000)r.heard=await shStt(clip);
   return r}
 async function shStt(f32){if(window.__shSttSim)return window.__shSttSim();
-  try{const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),SHV.stt);
-    const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/stt',{method:'POST',headers:{'Content-Type':'audio/wav','X-Sharik-Code':S.shCode||''},body:wavBlob(f32,VM.sr),signal:ctl.signal});
-    clearTimeout(tm);if(r.ok){const j=await r.json();if(j&&typeof j.text==='string')return j.text.slice(0,80)}}catch(e){}
+  const q=shSignal(SHV.stt);
+  try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/stt',{method:'POST',headers:{'Content-Type':'audio/wav','X-Sharik-Code':S.shCode||''},body:wavBlob(f32,VM.sr),signal:q.signal});
+    if(r.ok){const j=await r.json();if(j&&typeof j.text==='string')return j.text.slice(0,80)}}catch(e){}finally{q.done()}
   return ''}
 /* v34: память между занятиями. Сводка за 7 дней считается здесь, на телефоне, по журналу S.log (до начала этого
    занятия) и уходит на сервер вместе с запросом; сервер её не хранит. Выключатель в «Для взрослых». */
@@ -99,7 +117,7 @@ async function shTtsGet(text){
   let cache=null;try{cache=await caches.open('sharik-tts')}catch(e){}
   const req=new Request(location.origin+'/__sharik_tts/'+encodeURIComponent(key).slice(0,1800));
   if(cache){try{const c=await cache.match(req);if(c){const b=await c.blob();SHT_MEM.set(key,b);return b}}catch(e){}}
-  const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),SHT.wait);
+  const ctl=shSignal(SHT.wait);
   try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/tts',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify({text:key}),signal:ctl.signal});
     if(!r.ok||!/audio/.test(r.headers.get('Content-Type')||'')){
       if(r.status===503){try{const j=await r.json();if(j&&j.note==='no_tts'&&G)G.shNoTts=true}catch(e){}} /* на сервере голос не настроен — больше не спрашивать */
@@ -108,7 +126,7 @@ async function shTtsGet(text){
     SHT_MEM.set(key,b);if(SHT_MEM.size>80)SHT_MEM.delete(SHT_MEM.keys().next().value);
     if(cache)cache.put(req,new Response(b,{headers:{'Content-Type':'audio/mpeg'}})).catch(()=>{});
     return b}
-  catch(e){return null}finally{clearTimeout(tm)}}
+  catch(e){return null}finally{ctl.done()}}
 /* проиграть MP3 Шарика: 'ok' — дослушали, 'stop' — остановили, 'fail' — не заиграло (тогда голос телефона) */
 function shPlay(blob,el,onStart){return new Promise(res=>{
   stopVoice();const my=sayGen;const u=URL.createObjectURL(blob);const a=new Audio();a.preload='auto';a.src=u;curAudio=a;
@@ -163,8 +181,8 @@ async function shStep(){
   $('#prompt').textContent='Шарик';const st=$('#stage');
   st.innerHTML=`<div class="shg"><div class="shdog">${DOG_SVG}</div><div class="shbub"></div><div class="shear" aria-hidden="true">${EAR}<span class="lv"><i></i></span></div><div class="shheard"></div></div>`;
   const dog=st.querySelector('.shdog'),bub=st.querySelector('.shbub'),heard=st.querySelector('.shheard');
-  sh3(dog);const h3=()=>s3(dog); /* объёмный Шарик: эмоция по tone ответа, рот — пока звучит речь */
-  let j=await shAsk(ev);if(G!==mine)return false;
+  dog._s3p=sh3(dog);const h3=()=>s3(dog); /* объёмный Шарик: эмоция по tone ответа, рот — пока звучит речь */
+  shThink(dog,bub,true);let j=await shAsk(ev);if(G!==mine)return false;shThink(dog,bub,false);
   if(!j)j={say:ev.type==='start'?`Привет, ${S.name||'Лев'}! Я Шарик. Давай играть!`:ev.type==='parent_end'?'Ты молодец! Пока-пока!':pick(PRAISE)+' Играем дальше!',next:{kind:ev.type==='parent_end'?'end':'game',game:null,level:null},local:true};
   for(let nv=0;;nv++){
     G.shHist.push({who:'sharik',text:j.say});bub.textContent=j.say;
@@ -182,7 +200,7 @@ async function shStep(){
     const plan=j.next;G.shVoiceN=(G.shVoiceN||0)+1;
     G.shHist.push({who:'event',text:`Лев попытался сказать (голос ${(v.ms/1000).toFixed(1)} с)${v.heard?`, слышно «${v.heard}»`:''}`});
     const ve={type:'voice',voiceMs:v.ms};if(plan.game)ve.game=plan.game;if(v.heard)ve.heard=v.heard;
-    let j2=await shAsk(ve);if(G!==mine)return false;
+    shThink(dog,bub,true);let j2=await shAsk(ve);if(G!==mine)return false;shThink(dog,bub,false);
     if(!j2)j2={say:pick(['Ух ты! Как здорово!','Ура! Ты сказал!','Как громко! Молодец!']),next:plan,local:true};
     if((j2.next.kind==='game'||j2.next.kind==='break')&&!j2.next.game&&plan.game)j2.next={...j2.next,game:plan.game,level:j2.next.level??plan.level};
     j=j2}
@@ -193,7 +211,7 @@ async function shStep(){
   const av=new Set(shAvail());let g=j.next.game&&ROUNDS[j.next.game]&&av.has(j.next.game)?j.next.game:shPickLocal();
   if(j.next.level&&MAXL[g]){const cur=S.lvl[g]||1;const want=Math.min(MAXL[g],Math.max(1,j.next.level|0));if(Math.abs(want-cur)<=1)S.lvl[g]=want}
   G.game=g;G.shTask=GN[g]||g;await wait(300);return G===mine}
-function startSharik(){ac();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
+function startSharik(){ac();shAbort();G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
   $('#game').classList.remove('withnext');$('#game').classList.add('sharik');show('game');renderDots();nextRound()}
 /* настройки в разделе для взрослых */
 function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}

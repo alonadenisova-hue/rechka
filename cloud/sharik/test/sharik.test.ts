@@ -286,3 +286,30 @@ test("выключенные в каталоге игры Шарик не вкл
     assert.equal(r.next.game, null);
   }
 });
+
+// ---- задача 8: сервер сдаётся раньше приложения
+import http from "node:http";
+import { WAIT } from "../src/index.ts";
+import { TTS_TIMEOUT_MS } from "../src/tts.ts";
+
+test("сервер ждёт сервисы меньше, чем приложение ждёт сервер", () => {
+  assert.ok(WAIT.model + 1500 <= 9000, "модель: приложение ждёт 9 с");
+  assert.ok(WAIT.stt < 5000, "распознавание: приложение ждёт 5 с");
+  assert.ok(TTS_TIMEOUT_MS < 3500, "голос: приложение ждёт 3,5 с");
+});
+
+test("медленная модель: запасная реплика раньше, чем приложение сдастся", async () => {
+  const srv = http.createServer((_q, r) => { setTimeout(() => { r.writeHead(200, { "content-type": "application/json" }); r.end("{}"); }, 12000); });
+  await new Promise<void>((ok) => srv.listen(0, "127.0.0.1", () => ok()));
+  const port = (srv.address() as { port: number }).port;
+  const t0 = Date.now();
+  try {
+    const r = await worker.fetch(new Request("https://x/sharik", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: { type: "result", ok: true } }) }),
+      { ANTHROPIC_API_KEY: "k", ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}` } as Env);
+    const j = await r.json() as { note: string; say: string };
+    const ms = Date.now() - t0;
+    assert.equal(j.note, "timeout");
+    assert.equal(j.say, fallbackReply({ event: { type: "result" } }).say);
+    assert.ok(ms < 8000, `ответ за ${ms} мс`);
+  } finally { srv.closeAllConnections(); srv.close(); }
+});

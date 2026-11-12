@@ -20,6 +20,7 @@ http.createServer((req, res) => {
     }
     const sc = fs.existsSync(dir + "scenario.txt") ? fs.readFileSync(dir + "scenario.txt", "utf8").trim() : "ok";
     const msg = (content, stop = "end_turn") => ({ id: "msg_test", type: "message", role: "assistant", model: "claude-opus-5-5", content, stop_reason: stop, stop_sequence: null, usage: { input_tokens: 900, output_tokens: 40, cache_read_input_tokens: 0 } });
+    if (sc === "slow") { setTimeout(() => { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(msg([{ type: "text", text: JSON.stringify({ say: "Поздно!", next: { kind: "wait", game: null, level: null }, tone: "calm" }) }]))); }, 9000); return; }
     if (sc === "error") { res.writeHead(500, { "content-type": "application/json" }); return res.end(JSON.stringify({ type: "error", error: { type: "api_error", message: "boom" } })); }
     if (sc === "badkey") { res.writeHead(401, { "content-type": "application/json" }); return res.end(JSON.stringify({ type: "error", error: { type: "authentication_error", message: "bad key" } })); }
     let out;
