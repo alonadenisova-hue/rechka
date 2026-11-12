@@ -313,3 +313,13 @@ test("медленная модель: запасная реплика рань�
     assert.ok(ms < 8000, `ответ за ${ms} мс`);
   } finally { srv.closeAllConnections(); srv.close(); }
 });
+
+test("v41: после задания реплика может быть пустой, событие несёт «Шарик уже сказал»", () => {
+  const req = { event: { type: "result", game: "body", task: "Покажи, где нос!", good: "Это нос.", ok: true } } as const;
+  const r = sanitize({ say: "", next: { kind: "game", game: "body", level: null }, tone: "calm" }, req as never);
+  assert.equal(r.say, "");
+  assert.equal(r.next.game, "body");
+  assert.match(userMessage(req as never), /Шарик уже сказал: «Это нос\.»/);
+  // на старте пустая реплика заменяется запасной
+  assert.notEqual(sanitize({ say: "", next: { kind: "game", game: null, level: null }, tone: "calm" }, { event: { type: "start" } } as never).say, "");
+});

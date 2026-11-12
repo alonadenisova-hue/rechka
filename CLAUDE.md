@@ -15,13 +15,15 @@
   - `app/data11.js` — подсказки «Сегодня дома»; `app/data14.js` — фото пазлов и их лицензии.
 - `audio-raw/` — полные исходные записи голосов животных (белка, ёж, мышь в приложение ещё не вошли), см. `audio-raw/README.md`.
 - `reference/source-v28/` — исходники сборки версии 28 (код по версиям, скрипты сборки); только для справки.
-- В репозитории версия 40 (кэш `rechka-v40`, внизу главного экрана написано «версия 40»).
+- В репозитории версия 41 (кэш `rechka-v41`, внизу главного экрана написано «версия 41»).
 - Проект «ИИ‑Шарик» (собеседник с камерой и голосом): план, решения — `docs/ai-sharik/README.md`,
   очередь задач (одна задача — один чат, по порядку) — `docs/ai-sharik/ROADMAP.md`,
   задания — `docs/ai-sharik/TASKS.md` (Шарик даёт только утверждённые). Камера: `app/vendor/mediapipe/` (на телефоне).
   Сервер Шарика — `cloud/sharik/` (Cloudflare Worker + Claude; проверки: `npm run check`, `npm test`; запуск — его README).
   После правок в `cloud/sharik/src/` выполнить `npm run bundle` и закоммитить `web/sharik-worker.js` — мама вставляет его в Cloudflare через браузер.
   Режим «Занятие с Шариком» в приложении — `shStep`/`startSharik` в `app/js/6-sharik.js`, включается в «Для взрослых».
+  С версии 41 Шарик — ведущий внутри задания: в занятии `say` и `sfx.good/bad` подменены в `6-sharik.js` (говорит и реагирует Шарик, `#shc`),
+  `roundDone` вызывает `shFire` (результат серверу в фоне). План переделки — `docs/ai-sharik/ROADMAP.md`, задача 10.
   Объёмный Шарик (3D, three.js): `app/vendor/sharik3d/sharik3d.js` собирается из `tools/sharik3d/sharik3d.src.js`
   (`cd tools/sharik3d && npm install && npm run build`); в `app/js/3-games-b.js` — `sh3`/`s3`, выключатель «Объёмный Шарик».
 - Разборы занятий с логопедом и идеи из них — `docs/logoped/` (ноябрь 2026: `2026-11-zanyatiya.md`).

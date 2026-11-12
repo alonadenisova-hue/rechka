@@ -537,7 +537,7 @@ with sync_playwright() as p:
     except Exception as e_: print('    ', str(e_)[:120])
     how = pg.evaluate("__ev('SH_HOW').slice(-2)")
     lat = pg.evaluate(f"{R}.S.shLat||[]")
-    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 3, f'живой голос Шарика: реплика по предложениям с сервера дослушана, без ответа — голос телефона ({how})')
+    check(how == ['tts:ok', 'phone'] and pg.evaluate("window.__ttsN") == 4, f'живой голос Шарика: приветствие и реплика по предложениям с сервера дослушаны, без ответа — голос телефона; фразы игр в сеть не ходят ({how}, {pg.evaluate("window.__ttsN")})')
     # v39: заранее скачать голос готовых фраз
     pg.evaluate(f"{R}.S.shOn=true;window.__shPhrasesSim=async()=>['Молодец!','Ура!'];window.__shTtsSim=async t=>new Blob([new Uint8Array(500)],{{type:'audio/mpeg'}})")
     dl = pg.evaluate("__ev('shPhrasesDownload')()")
@@ -551,11 +551,12 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shTts=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
       window.__shLog=[];window.__shSim=ev=>new Promise(r=>setTimeout(()=>{{window.__shLog.push(ev);r({{say:'Привет! Покажи нос!',next:{{kind:'game',game:'body',level:1}},tone:'invite'}})}},2500))}})()""")
-    pg.click('#btn-sharik'); pg.wait_for_timeout(700)
-    think = pg.evaluate("!!document.querySelector('#stage .shbub.think')&&!!document.querySelector('#stage .shdog.think')")
+    pg.click('#btn-sharik')
+    try: pg.wait_for_selector('#shc .shbub.think', timeout=4000); think = pg.evaluate("!!document.querySelector('#shc .shdog.think')")
+    except Exception: think = False
     try: pg.wait_for_function(f"{R}.G&&{R}.G.game==='body'&&{R}.G.round&&{R}.G.round.lvl!==undefined", timeout=15000); went = True
     except Exception: went = False
-    check(think and went and not pg.evaluate("!!document.querySelector('#stage .shbub.think')"), f'«Занятие с Шариком»: пока ждёт ответ — Шарик думает («…»), потом игра (думает={think}, игра={went})')
+    check(think and went and not pg.evaluate("!!document.querySelector('#shc .shbub.think')"), f'«Занятие с Шариком»: пока ждёт ответ — Шарик думает («…»), потом игра (думает={think}, игра={went})')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     pg.click('#btn-sharik'); pg.wait_for_timeout(600)
     sig = pg.evaluate("(window.__oldSig=__ev('SH_CTL').signal, window.__oldSig.aborted)")
@@ -563,6 +564,29 @@ with sync_playwright() as p:
     late = pg.evaluate(f"({{aborted:window.__oldSig.aborted,G:!!{R}.G,game:document.querySelector('#game').hidden,log:window.__shLog.length}})")
     check(sig is False and late['aborted'] and not late['G'] and late['game'], f'«Занятие с Шариком»: выход домой отменяет запросы, поздний ответ ничего не делает ({late})')
     pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
+
+    # ---- v41: Шарик — ведущий внутри задания: на экране рядом с игрой, сервер не задерживает занятие
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shTts=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+      window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);return ev.type==='start'?{{say:'Давай играть!',next:{{kind:'game',game:'yn',level:1}},tone:'invite'}}:new Promise(()=>{{}})}}}})()""")
+    pg.click('#btn-sharik')
+    try: pg.wait_for_function(f"{R}.G&&{R}.G.game==='yn'&&{R}.G.round&&{R}.G.round.prompt", timeout=30000); in_game = True
+    except Exception: in_game = False
+    comp = pg.evaluate("(()=>{const c=document.querySelector('#shc'),st=document.querySelector('#stage');if(!c)return null;const r=c.getBoundingClientRect(),q=st.getBoundingClientRect();return {vis:r.height>60&&q.height>200,below:r.top>=q.bottom-1,big:document.querySelector('#game').classList.contains('shbig')}})()")
+    check(in_game and comp and comp['vis'] and comp['below'] and not comp['big'], f'«Занятие с Шариком»: Шарик на экране рядом с заданием и не закрывает его ({comp})')
+    t0 = time.time(); i0 = pg.evaluate(f"{R}.G.i")
+    pg.evaluate(f"{R}.G.round&&__ev('roundDone')(true,{{n:'тест'}})")
+    try: pg.wait_for_function(f"{R}.G&&{R}.G.i==={i0}+1&&{R}.G.round&&!{R}.G.round.finished&&{R}.G.round.prompt", timeout=15000); nxt = True
+    except Exception: nxt = False
+    dt = time.time() - t0
+    ev1 = pg.evaluate("window.__shLog[1]||null")
+    check(nxt and dt < 6 and ev1 and ev1.get('type') == 'result' and len(ev1.get('task') or '') > 3 and pg.evaluate(f"{R}.G.game") == 'yn',
+          f'«Занятие с Шариком»: сервер молчит — следующее задание всё равно начинается (за {dt:.1f} с), серверу ушёл текст задания ({ev1})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
+    pg.evaluate(f"__ev('startGame')('yn')"); pg.wait_for_timeout(500)
+    check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'обычная игра: Шарика-ведущего на экране нет')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
 
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;

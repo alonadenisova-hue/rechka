@@ -179,6 +179,7 @@ async function roundDone(ok,meta){
   const R=G.round;if(R.finished)return;R.finished=true;
   const g=G.game;G.results[G.i]=ok;G.i++;renderDots();
   S.log.push(Object.assign({t:Date.now(),g,l:R.lvl,ok,w:R.wrong,picks:R.picks},meta));
+  if(G.sharik)shFire(S.log[S.log.length-1]); /* v41: результат уходит Шарику в фоне */
   let up=false;
   if(ok){S.streak[g]++;S.errs[g]=0;if(S.streak[g]>=(UPG[g]||UP)&&S.lvl[g]<MAXL[g]){S.lvl[g]++;S.streak[g]=0;up=true}}
   else{S.streak[g]=0;S.errs[g]++;if(S.errs[g]>=2&&S.lvl[g]>1){S.lvl[g]--;S.errs[g]=0}}
