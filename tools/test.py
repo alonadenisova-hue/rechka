@@ -617,6 +617,34 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
     pg.evaluate(f"delete {R}.S.shMv;{R}.S.shVoice=true;{R}.S.shOn=false;__ev('applyV21Home')()")
 
+    # ---- v45: «Сказать Шарику» — родители командуют текстом; итог занятия для мамы
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shTts=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+      window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);
+        if(ev.type==='start')return {{say:'Давай играть!',next:{{kind:'game',game:'yn',level:1}},tone:'invite'}};
+        if(ev.type==='parent_say')return /Хватит/.test(ev.text)?{{say:'Пока-пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}}:{{say:'Включаю цвета.',next:{{kind:'game',game:'color',level:1}},tone:'calm'}};
+        if(ev.type==='summary')return {{say:'Дома поиграйте в «да — нет».',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+        return new Promise(()=>{{}})}}}})()""")
+    pg.click('#btn-sharik')
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.game==='yn'&&{R}.G.round&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=30000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'тест'}})")
+        pg.wait_for_function(f"{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=20000)
+        pg.click('#shc .shask'); pg.fill('#shp input', 'включи игру про цвета'); pg.click('#shp .go')
+        pg.wait_for_function(f"{R}.G&&{R}.G.game==='color'&&{R}.G.round&&!{R}.G.round.dead&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=20000); jumped = True
+    except Exception as e_: jumped = False; print('    ', str(e_)[:120])
+    psay = pg.evaluate("window.__shLog.filter(e=>e.type==='parent_say').map(e=>e.text)")
+    check(jumped and psay == ['включи игру про цвета'], f'«Сказать Шарику»: команда родителей уходит серверу и включает игру (игра={jumped}, {psay})')
+    try:
+        pg.click('#shc .shask'); pg.click('#shp .chips button:nth-child(5)')
+        pg.wait_for_selector('#finish', state='visible', timeout=20000)
+        pg.wait_for_function("document.querySelector('#sh-sum')&&/да — нет/.test(document.querySelector('#sh-sum').textContent)", timeout=8000); summ = pg.evaluate("document.querySelector('#sh-sum').textContent")
+    except Exception: summ = pg.evaluate("(document.querySelector('#sh-sum')||{}).textContent||''")
+    check('Заданий: 1' in summ and 'да — нет' in summ, f'итог занятия для мамы: счёт с телефона и фразы сервера ({summ[:90]})')
+    if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
+    pg.wait_for_timeout(500)
+    pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
+
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
       S.log=[{{t:now-2*D,g:'body',l:1,ok:false,w:2,n:'ухо'}},{{t:now-D-5,g:'body',l:1,ok:true,w:1,n:'ухо'}},{{t:now-D,g:'body',l:1,ok:false,w:1,n:'ухо'}},

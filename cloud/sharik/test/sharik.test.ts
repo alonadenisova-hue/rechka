@@ -325,3 +325,21 @@ test("v41: после задания реплика может быть пуст
   // на старте пустая реплика заменяется запасной
   assert.notEqual(sanitize({ say: "", next: { kind: "game", game: null, level: null }, tone: "calm" }, { event: { type: "start" } } as never).say, "");
 });
+
+test("v45: родитель обращается к Шарику — команда включает игру, ответ может быть длиннее", () => {
+  const req = { available: ["body", "color", "bal"], event: { type: "parent_say", text: "включи игру про цвета", game: "body" } } as never;
+  assert.ok(parseRequest({ event: { type: "parent_say", text: "привет" } }));
+  assert.match(userMessage(req), /слова родителя: «включи игру про цвета»/);
+  const long = "Хорошо, включаю цвета. ".repeat(12);
+  const r = sanitize({ say: long, next: { kind: "game", game: "color", level: 2 }, tone: "calm" }, req);
+  assert.equal(r.next.game, "color"); assert.ok(r.say.length > 220 && r.say.length <= 400);
+  assert.match(fallbackReply(req).say, /Повторите/);
+  assert.match(SYSTEM_PROMPT, /parent_say/);
+});
+
+test("v45: итог занятия для мамы — длинный текст, занятие закончено", () => {
+  const req = { event: { type: "summary", text: "Заданий: 12, с первой попытки: 9. Трудно: Покажи, где… «ухо»." } } as never;
+  assert.match(userMessage(req), /итоги: Заданий: 12/);
+  const r = sanitize({ say: "Сегодня Лев хорошо показывал части тела. ".repeat(10), next: { kind: "game", game: null, level: null }, tone: "calm" }, req);
+  assert.equal(r.next.kind, "end"); assert.ok(r.say.length > 220 && r.say.length <= 700);
+});
