@@ -588,7 +588,7 @@ with sync_playwright() as p:
     check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'Шарик выключен: в обычной игре его на экране нет')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     # v42: Шарик включён — он рядом и в обычной игре (без сервера); выключатель «в обычных играх» его убирает
-    pg.evaluate(f"{R}.S.shOn=true;{R}.S.shUrl='';__ev('startGame')('yn')"); pg.wait_for_timeout(700)
+    pg.evaluate(f"{R}.S.shOn=true;{R}.S.shHost=true;{R}.S.shUrl='';__ev('startGame')('yn')"); pg.wait_for_timeout(700)
     on = pg.evaluate(f"!!{R}.G.host&&!!document.querySelector('#shc')&&document.querySelector('#shc').getBoundingClientRect().height>60")
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
     pg.evaluate(f"{R}.S.shHost=false;__ev('startGame')('yn')"); pg.wait_for_timeout(500)
@@ -596,7 +596,7 @@ with sync_playwright() as p:
     check(on and off, f'Шарик рядом в обычной игре и выключается в разделе для взрослых (есть={on}, убран={off})')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
     # v44: ходы героя — «А у тебя где?» после «Покажи, где…», показ лапой на подсказку; выключаются
-    pg.evaluate(f"delete {R}.S.shHost;{R}.S.shOn=true;{R}.S.shUrl='';{R}.S.shVoice=false;{R}.S.hero='cat';__ev('startGame')('body')")
+    pg.evaluate(f"{R}.S.shHost=true;{R}.S.shOn=true;{R}.S.shUrl='';{R}.S.shVoice=false;{R}.S.hero='cat';__ev('startGame')('body')")
     try:
         pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.prompt", timeout=15000)
         pg.evaluate(f"__ev('roundDone')(true,{{n:'нос'}})")
@@ -616,7 +616,7 @@ with sync_playwright() as p:
     except Exception: offm = False
     check(offm, 'ходы героя выключаются в разделе для взрослых')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
-    pg.evaluate(f"delete {R}.S.shMv;{R}.S.shVoice=true;{R}.S.shOn=false;__ev('applyV21Home')()")
+    pg.evaluate(f"delete {R}.S.shMv;delete {R}.S.shHost;{R}.S.shVoice=true;{R}.S.shOn=false;__ev('applyV21Home')()")
 
     # ---- v45: «Сказать Шарику» — родители командуют текстом; итог занятия для мамы
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
@@ -645,6 +645,34 @@ with sync_playwright() as p:
     if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
     pg.wait_for_timeout(500)
     pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
+
+    # ---- v46: «Играем с Шариком» — задания с самим героем; все пять видов проходят без микрофона
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    tile = pg.is_visible('.tile[data-game="cat"]')
+    pg.evaluate(f"{R}.S.shVoice=false;{R}.S.lvl.cat=2")
+    donem = []
+    for mode in ('do', 'give', 'part', 'where', 'call'):
+        try:
+            pg.evaluate(f"(()=>{{__ev('startGame')('cat');const G={R}.G;G.round.dead=true;G.hgSeq=['{mode}'];__ev('nextRound')()}})()")
+            pg.wait_for_function(f"{R}.G&&{R}.G.hgLast==='{mode}'&&{R}.G.round&&{R}.G.round.prompt", timeout=10000); pg.wait_for_timeout(2500)
+            pg.evaluate(f"""(async()=>{{const R={R}.G.round,st=document.querySelector('#stage'),i0={R}.G.i,w=ms=>new Promise(r=>setTimeout(r,ms));
+              if('{mode}'==='do'||'{mode}'==='give'){{for(const x of [...st.querySelectorAll('.hgopt')]){{x.click();await w(2200);if(x.classList.contains('good')||{R}.G.i!==i0)break}}}}
+              if('{mode}'==='part'){{const t=R.prompt.match(/Шарика (.+)\?/)[1];st.querySelector('[data-part="'+t+'"]').dispatchEvent(new MouseEvent('click',{{bubbles:true}}))}}
+              if('{mode}'==='where')st.querySelector(/на стол/.test(R.prompt)?'.zone.on':'.zone.under').click();
+              if('{mode}'==='call')st.querySelector('.hgmom').click()}})()""")
+            pg.wait_for_function(f"{R}.G&&{R}.G.i>=1", timeout=15000)
+            last = pg.evaluate(f"{R}.S.log[{R}.S.log.length-1]")
+            if last.get('g') == 'cat' and last.get('m') == mode: donem.append(mode)
+        except Exception as e_: print('    ', mode, str(e_)[:120])
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(400)
+    check(tile and donem == ['do', 'give', 'part', 'where', 'call'], f'«Играем с Шариком»: плитка есть, все задания с героем проходятся и записываются в журнал ({donem})')
+    pg.evaluate(f"{R}.S.hgOn=false;__ev('applyV21Home')()"); hid = not pg.is_visible('.tile[data-game="cat"]')
+    pg.evaluate(f"delete {R}.S.hgOn;{R}.S.shVoice=true;{R}.S.lvl.cat=1;__ev('applyV21Home')()")
+    check(hid, '«Играем с Шариком» выключается в разделе для взрослых')
+    fit = pg.evaluate(f"""(async()=>{{{R}.S.dogHi=1;{R}.S.hero='cat';__ev('startGame')('dog');await new Promise(r=>setTimeout(r,1500));const d=document.querySelector('.dogbox');d.classList.add('listen');
+      const b=d.getBoundingClientRect(),s=d.querySelector('.hero2d svg').getBoundingClientRect();return {{bw:Math.round(b.width),sw:Math.round(s.width),inside:s.height<=b.height+1&&s.width<=b.width+1,wide:b.width>innerWidth*.6}}}})()""")
+    check(fit['inside'] and fit['wide'], f'«Повторяй за Шариком»: герой целиком помещается в окно, окно не сжимается, когда он слушает ({fit})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
 
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;

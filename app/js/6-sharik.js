@@ -64,7 +64,7 @@ const SH_CSS=`
 #game.withsh.shbig #shc .shheard{bottom:6px}
 `;
 document.head.insertAdjacentHTML('beforeend','<style>'+SH_CSS+'</style>');
-const SH_LOCAL=['body','mirr','verb','color','size','prep','feed','snd','yn','ib','dress','bal'];
+const SH_LOCAL=['cat','body','mirr','verb','color','size','prep','feed','snd','yn','ib','dress','bal'];
 function shOn(){return !!(S.shOn&&S.shUrl)} /* «Занятие с Шариком»: включён и есть сервер */
 function shAvail(){return [...document.querySelectorAll('.tile[data-game]')].filter(t=>!t.hidden).map(t=>t.dataset.game)}
 /* v40: запросы занятия отменяются при выходе домой и при новом занятии; поздние ответы не используются (G!==mine) */
@@ -203,7 +203,7 @@ async function shPhrasesCount(){try{const c=await caches.open('sharik-tts');retu
 function shLatText(){const L=(S.shLat||[]).slice().sort((a,b)=>a-b);if(!L.length)return 'ещё не было занятий';
   return `обычно ${(L[L.length>>1]/1000).toFixed(1)} с, самое долгое ${(L[L.length-1]/1000).toFixed(1)} с (последние ${L.length})`}
 /* ---------- v41: Шарик — ведущий внутри задания ---------- */
-const SH_OWN=['dog','mirr']; /* в этих играх на экране свой Шарик — нижний прячется */
+const SH_OWN=['dog','mirr','cat']; /* в этих играх на экране свой Шарик — нижний прячется */
 const SH_GRACE={start:4000,result:2500,slow:700,voice:4000}; /* сколько ждём ответ сервера от момента запроса (мс); дальше — без него */
 function shC(){return G&&(G.sharik||G.host)?document.getElementById('shc'):null}
 function shDogEl(){const c=shC();return c&&!c.classList.contains('own')?c.querySelector('.shdog'):null}
@@ -314,7 +314,9 @@ async function shStep(){
   if(k==='end'){await wait(400);if(G===mine){shBig(false);finish();shSummary(mine)}return false}
   if(k==='wait'){shBig(true);c.insertAdjacentHTML('beforeend','<button class="big-btn shgo">Продолжить ›</button>');
     await new Promise(r=>c.querySelector('.shgo').onclick=()=>{ac();r()});const b=c.querySelector('.shgo');if(b)b.remove();if(G!==mine)return false}
-  const av=new Set(shAvail());const g=j.next.game&&ROUNDS[j.next.game]&&av.has(j.next.game)?j.next.game:shPickLocal();
+  const av=new Set(shAvail());let g=j.next.game&&ROUNDS[j.next.game]&&av.has(j.next.game)?j.next.game:shPickLocal();
+  /* v46: каждое третье задание — с самим героем («Играем с Шариком»), чтобы занятие было общением с ним */
+  if(g==='cat')G.shCatGap=0;else if(av.has('cat')&&k!=='break'&&(j.local||!j.next.game)){if(g==='cat')G.shCatGap=0;else if((G.shCatGap=(G.shCatGap||0)+1)>=3||first){g='cat';G.shCatGap=0}}
   if(j.next.level&&MAXL[g]){const cur=S.lvl[g]||1;const want=Math.min(MAXL[g],Math.max(1,j.next.level|0));if(Math.abs(want-cur)<=1)S.lvl[g]=want}
   G.shSame=g===G.game?(G.shSame||0)+1:1;G.game=g;
   if(h3())h3().mood('calm');
@@ -383,13 +385,13 @@ function startSharik(){ac();shAbort();{const os=document.getElementById('sh-sum'
   const gm=$('#game');gm.classList.remove('withnext');gm.classList.add('sharik');$('#stage').innerHTML='';shMountComp();
   show('game');renderDots();nextRound()}
 /* v42: Шарик рядом и в обычных играх (без сервера): задаёт вопрос, радуется и сочувствует. Выключатели — «Для взрослых» → «Шарик» */
-function shHostOn(){return !!S.shOn&&S.shHost!==false}
+function shHostOn(){return !!S.shOn&&S.shHost===true} /* v46: по умолчанию выключено — в углу герой мало помогает */
 function shHostStart(){const os=document.getElementById('sh-sum');if(os)os.remove();const gm=$('#game');gm.classList.remove('withsh','shbig');const old=document.getElementById('shc');if(old)old.remove();
   if(!G||G.sharik||!shHostOn())return;G.host=true;shMountComp();shHostSync()}
 /* перед каждым заданием: в играх со своим Шариком нижний прячется, после них — возвращается */
 function shHostSync(){if(!G||!G.host)return;const c=document.getElementById('shc');if(!c)return;const own=SH_OWN.includes(G.game);
   c.classList.toggle('own',own);const dog=c.querySelector('.shdog');if(!own&&!s3(dog)&&dog.classList.contains('is3d')){dog.classList.remove('is3d');dog._s3p=sh3(dog)}}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost!==false;q('set-hero').value=heroKind();q('set-shask').checked=S.shAskBtn!==false;q('set-shsum').checked=S.shSum!==false;for(const k in SH_MOVES){const e=q('set-mv-'+k);if(e)e.checked=shMv(k)}q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost===true;q('set-hgon').checked=S.hgOn!==false;q('set-hero').value=heroKind();q('set-shask').checked=S.shAskBtn!==false;q('set-shsum').checked=S.shSum!==false;for(const k in SH_MOVES){const e=q('set-mv-'+k);if(e)e.checked=shMv(k)}q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
 
 
