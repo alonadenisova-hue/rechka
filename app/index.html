@@ -774,7 +774,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 42</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 43</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -978,6 +978,7 @@ body{background:#eaf3fb}
     <p class="note">Шарик — ведущий: стоит рядом с заданием, сам задаёт вопрос и радуется ответу. Выключите — и приложение работает без него, как раньше. «Занятие с Шариком» (кнопка на главном экране) идёт через свой сервер (нужен интернет; инструкция — cloud/sharik/README.md).</p>
     <div class="row"><label for="set-shon"><b>Шарик включён</b> (выключить — приложение без Шарика)</label><input type="checkbox" id="set-shon"></div>
     <div class="row"><label for="set-shhost">Шарик рядом и в обычных играх (без сервера и интернета)</label><input type="checkbox" id="set-shhost"></div>
+    <div class="row"><label for="set-hero">Герой (как выглядит Шарик)</label><select id="set-hero"><option value="cat">Рыжий кот (рисованный)</option><option value="dog">Собака (объёмная)</option></select></div>
     <div class="row"><label for="set-shurl">Адрес сервера Шарика</label><input type="url" id="set-shurl" placeholder="https://rechka-sharik….workers.dev" style="width:220px"></div>
     <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
     <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
@@ -1050,6 +1051,7 @@ body{background:#eaf3fb}
 <script src="js/1-core.js"></script>
 <script src="js/2-games-a.js"></script>
 <script src="js/3-games-b.js"></script>
+<script src="js/hero-cat.js"></script>
 <script src="js/4-games-c.js"></script>
 <script src="js/5-mirror.js"></script>
 <script src="js/6-sharik.js"></script>

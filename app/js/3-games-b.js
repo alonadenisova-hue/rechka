@@ -277,7 +277,7 @@ const DOG_SVG=`<svg viewBox="0 0 200 220" class="dogsvg"><path d="M40 60q-30 30-
 /* v33: объёмный Шарик (three.js, MIT; app/vendor/sharik3d, исходник tools/sharik3d). Выключатель в «Для взрослых».
    Без WebGL, при ошибке или если выключен — прежний рисунок DOG_SVG. Холст один на всё приложение и переезжает. */
 const SH3_CSS=`.is3d>svg{display:none!important}
-.is3d>canvas.sh3d{display:block;width:100%;height:100%}
+.is3d>canvas.sh3d,.is3d>.hero2d{display:block;width:100%;height:100%}
 .shg .shdog.is3d{aspect-ratio:10/11;width:min(80%,340px)}.shg .shdog.is3d.talk{animation:none}
 .dogbox.is3d{place-items:stretch;padding:0;overflow:hidden}
 .mirr .msh.is3d{aspect-ratio:10/11}
@@ -286,7 +286,12 @@ document.head.insertAdjacentHTML('beforeend','<style>'+SH3_CSS+'</style>');
 let SH3P=null;
 function sh3Load(){if(window.Sharik3D)return Promise.resolve(window.Sharik3D);if(SH3P)return SH3P;
   SH3P=new Promise(res=>{const s=document.createElement('script');s.src='vendor/sharik3d/sharik3d.js';s.onload=()=>res(window.Sharik3D||null);s.onerror=()=>{SH3P=null;res(null)};document.head.append(s)});return SH3P}
-async function sh3(el,opt){if(!el||S.sh3d===false)return null;
+/* v43: герой — рисованный кот (app/js/hero-cat.js) или объёмная собака; выбор в «Для взрослых» → «Шарик» */
+function heroKind(){return S.hero==='dog'?'dog':'cat'}
+function heroSvg(){return heroKind()==='cat'&&window.Cat2D?Cat2D.svg():DOG_SVG}
+async function sh3(el,opt){if(!el)return null;
+  if(heroKind()==='cat'&&window.Cat2D){const h=Cat2D.mount(el,opt);if(h){el.classList.add('is3d');el._s3=h}return h} /* сразу, без ожидания — рисунок собаки не мелькает */
+  if(S.sh3d===false)return null;
   try{const L=await sh3Load();if(!L||!el.isConnected||S.sh3d===false||!L.supported())return null;const h=L.mount(el,opt);if(!h)return null;el.classList.add('is3d');el._s3=h;return h}
   catch(e){console.warn('Шарик 3D:',e);return null}}
 const s3=el=>el&&el._s3&&el._s3.active?el._s3:null; /* управление Шариком, если он сейчас объёмный в этом месте */

@@ -11,6 +11,7 @@ const SH_CSS=`
 #btn-sharik{width:100%;background:linear-gradient(135deg,#dff1ff,#e9e3ff);box-shadow:0 6px 0 #c6c9f0}
 #game.sharik .dots{display:none}
 #shc{display:none}
+#game.withsh #shc{pointer-events:none}#game.withsh.shbig #shc,#game.withsh #shc .shgo{pointer-events:auto}
 #game.withsh #shc{display:flex;flex:none;align-items:center;gap:14px;height:128px;position:relative;transition:height .25s}
 #game.withsh #shc.own{display:none}
 #shc .shdog{flex:none;width:116px;height:128px}
@@ -61,7 +62,7 @@ function shSignal(ms){const ctl=new AbortController(),tm=setTimeout(()=>ctl.abor
   if(own.aborted)ctl.abort();else own.addEventListener('abort',()=>ctl.abort(),{once:true});return {signal:ctl.signal,done:()=>clearTimeout(tm)}}
 const SH_WAIT=9000; /* сколько приложение ждёт ответа /sharik (сервер сдаётся раньше — через ~6,5 с — и присылает запасную реплику) */
 async function shAsk(ev){if(window.__shSim){const own=SH_CTL.signal,j=await window.__shSim(ev);return own.aborted?null:j}
-  const body={child:{name:S.name||'Лев'},minutes:(Date.now()-G.t0)/60000,plannedMinutes:+S.shMin||20,levels:S.lvl,available:shAvail(),history:(G.shHist||[]).slice(-12),event:ev};
+  const body={child:{name:S.name||'Лев'},hero:heroKind(),minutes:(Date.now()-G.t0)/60000,plannedMinutes:+S.shMin||20,levels:S.lvl,available:shAvail(),history:(G.shHist||[]).slice(-12),event:ev};
   if(G.shMem===undefined)G.shMem=shMemory();if(G.shMem)body.memory=G.shMem;
   const q=shSignal(SH_WAIT);
   try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/sharik',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify(body),signal:q.signal});
@@ -288,6 +289,6 @@ function shHostStart(){const gm=$('#game');gm.classList.remove('withsh','shbig')
 function shHostSync(){if(!G||!G.host)return;const c=document.getElementById('shc');if(!c)return;const own=SH_OWN.includes(G.game);
   c.classList.toggle('own',own);const dog=c.querySelector('.shdog');if(!own&&!s3(dog)&&dog.classList.contains('is3d')){dog.classList.remove('is3d');dog._s3p=sh3(dog)}}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost!==false;q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost!==false;q('set-hero').value=heroKind();q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
 
 
