@@ -181,6 +181,8 @@ $('#set-ask').onchange=e=>{S.askFirst=e.target.checked;save()};
 $('#set-name').onchange=e=>{S.name=e.target.value.trim()||'Лев';save()};
 $('#set-shon').onchange=e=>{S.shOn=e.target.checked;save();applyV21Home()};
 $('#set-shhost').onchange=e=>{S.shHost=e.target.checked;save()};
+{const box=$('#sh-moves');if(box){box.innerHTML=Object.entries(SH_MOVES).map(([k,t])=>`<div class="row"><label for="set-mv-${k}">${t}</label><input type="checkbox" id="set-mv-${k}"></div>`).join('');
+  for(const k in SH_MOVES)$('#set-mv-'+k).onchange=e=>{S.shMv=Object.assign({},S.shMv,{[k]:e.target.checked});save()}}}
 $('#set-hero').onchange=e=>{S.hero=e.target.value==='dog'?'dog':'cat';save();applyV21Home();$('#art-dog').innerHTML=heroSvg()};
 $('#set-shurl').onchange=e=>{S.shUrl=e.target.value.trim();save();applyV21Home()};
 $('#set-shcode').onchange=e=>{S.shCode=e.target.value.trim();save()};

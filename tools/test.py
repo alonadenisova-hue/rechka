@@ -595,7 +595,27 @@ with sync_playwright() as p:
     off = pg.evaluate(f"!{R}.G.host&&!document.querySelector('#shc')")
     check(on and off, f'Шарик рядом в обычной игре и выключается в разделе для взрослых (есть={on}, убран={off})')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
-    pg.evaluate(f"delete {R}.S.shHost;{R}.S.shOn=false;__ev('applyV21Home')()")
+    # v44: ходы героя — «А у тебя где?» после «Покажи, где…», показ лапой на подсказку; выключаются
+    pg.evaluate(f"delete {R}.S.shHost;{R}.S.shOn=true;{R}.S.shUrl='';{R}.S.shVoice=false;{R}.S.hero='cat';__ev('startGame')('body')")
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.prompt", timeout=15000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'нос'}})")
+        pg.wait_for_function("document.querySelector('#game').classList.contains('shbig')&&/у тебя где нос/.test(document.querySelector('#shc .shbub').textContent)", timeout=8000); mv = True
+        pg.wait_for_function(f"!document.querySelector('#game').classList.contains('shbig')&&{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished", timeout=20000); back = True
+    except Exception: mv = locals().get('mv', False); back = False
+    pt = pg.evaluate("(()=>{const h=__ev('shHero')();if(!h||!h.point)return false;let got=null;const o=h.point;h.point=d=>{got=d;return o(d)};const e=document.createElement('div');e.className='hint';e.style.cssText='position:fixed;left:10px;top:200px;width:60px;height:60px';document.querySelector('#stage').append(e);__ev('shPointHint')();return new Promise(r=>setTimeout(()=>{e.remove();h.point(null);r(got)},1200))})()")
+    check(mv and back and pt == 'left', f'ходы героя: «А у тебя где нос?» после «Покажи, где…», потом игра продолжается; после подсказки показывает лапой (ход={mv}, дальше={back}, лапа={pt})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"{R}.S.shMv={{self:false}};__ev('startGame')('body')")
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.prompt", timeout=15000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'нос'}})")
+        pg.wait_for_function(f"{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished", timeout=15000)
+        offm = not pg.evaluate("/у тебя где/.test(document.querySelector('#shc .shbub').textContent)")
+    except Exception: offm = False
+    check(offm, 'ходы героя выключаются в разделе для взрослых')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"delete {R}.S.shMv;{R}.S.shVoice=true;{R}.S.shOn=false;__ev('applyV21Home')()")
 
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;

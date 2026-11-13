@@ -646,6 +646,7 @@ async function ynRound(lvl){
   st.innerHTML=`<div class="yn"><button class="ynb yes" disabled>${YN_UP}<b>ДА</b></button><div class="yncard"><img src="${IMG[src]||src}" alt=""></div><button class="ynb no" disabled>${YN_UP}<b>НЕТ</b></button></div>`;
   const box=st.firstChild,card=box.querySelector('.yncard'),bY=box.querySelector('.yes'),bN=box.querySelector('.no');
   await wait(500);if(R.dead)return;await say(q);if(R.dead||!G)return;
+  if(lvl===1)shNod(yes); /* v44: герой подсказывает кивком (выключатель «Ходы Шарика») */
   bY.disabled=bN.disabled=false;R.good=yes?'Да, это '+t.n+'.':'Нет, это не '+ask_n+'. Это '+t.n+'.';
   let wrong=0,locked=false;
   const ok=await new Promise(res=>{

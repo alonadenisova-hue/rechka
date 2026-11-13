@@ -152,6 +152,7 @@ function renderDots(){$('#dots').innerHTML=Array.from({length:G.max||S.rounds},(
 async function nextRound(){
   if(!G)return;
   if(G.i>=(G.max||S.rounds)){finish();return}
+  if(G.sharik||G.host){if(!await shMoves())return} /* v44: ходы героя между заданиями */
   if(G.sharik){if(!await shStep())return}
   if(G.plan)G.game=G.plan[G.i%G.plan.length];
   if(G.host)shHostSync();

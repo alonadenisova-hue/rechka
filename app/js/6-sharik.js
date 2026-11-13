@@ -202,10 +202,45 @@ function shMood(m,back){const d=shDogEl();if(!d)return;const h=s3(d);if(h)h.mood
 const say0=say;
 say=function(text,opt){const d=shDogEl();
   if(!d||!text||!S.voice||(opt&&Object.keys(opt).length))return say0(text,opt||{});
+  if(shMv('soft'))text=text.replace(/^Нет\. /,()=>pick(['Ой! ','Почти! ','Посмотри ещё. ']));
   noteRecent(text);const b=shC().querySelector('.shbub');const t=text.replace(/\u0301/g,'').trim();b.classList.remove('think');b.textContent=t===$('#prompt').textContent.trim()?'':t; /* вопрос уже написан сверху — в облачке только слова самого Шарика */
   return shSpeak(text,d,{game:true})};
 /* мгновенная реакция на ответ Льва: верно — радуется, ошибка — сочувствует (звуки игры остаются прежними) */
-{const g0=sfx.good,b0=sfx.bad;sfx.good=function(){shMood('praise',1800);return g0.apply(sfx,arguments)};sfx.bad=function(){shMood('comfort',1800);return b0.apply(sfx,arguments)}}
+{const g0=sfx.good,b0=sfx.bad;sfx.good=function(){shMood('praise',1800);return g0.apply(sfx,arguments)};sfx.bad=function(){shMood('comfort',1800);shPointHint();return b0.apply(sfx,arguments)}}
+/* ---------- v44: ходы героя — приёмы логопеда (docs/logoped/2026-11-zanyatiya.md). Каждый выключается в «Для взрослых» ---------- */
+const SH_MOVES={soft:'Ошибка — мягко: «Ой!», «Почти!» вместо «Нет.»',point:'После двух ошибок показывает лапой на верный ответ',nod:'«Да или нет?», уровень 1: подсказывает кивком',
+  who:'Иногда спрашивает «Кто молодец?» — «Я молодец!»',self:'После «Покажи, где…» — «А у тебя где?» и показывает на себе',did:'После «Положи» — «Что ты сделал?» — «Я положил!»'};
+function shMv(k){return !(S.shMv&&S.shMv[k]===false)}
+const SH_SELF={нос:'nose',рот:'mouth',глаз:'eye',глаза:'eye',ухо:'ear',уши:'ear',щека:'cheek',щёки:'cheek',голова:'head',волосы:'head',живот:'belly',нога:'leg',ноги:'leg',колено:'knee',коленка:'knee',плечо:'shoulder',плечи:'shoulder'};
+function shHero(){const d=shDogEl();return d?s3(d):null}
+function shNod(yes){const h=shHero();if(h&&h.nod&&shMv('nod'))setTimeout(()=>{yes?h.nod():h.shake()},250)}
+/* после двух ошибок игра подсвечивает верный ответ (.hint) — герой показывает на него лапой */
+function shPointHint(){if(!shMv('point'))return;const R=G&&G.round;setTimeout(()=>{const h=shHero();if(!h||!h.point||!G||G.round!==R)return;
+  const el=document.querySelector('#stage .hint');if(!el)return;const r=el.getBoundingClientRect(),x=(r.left+r.width/2)/innerWidth;h.point(x<.38?'left':x>.62?'right':'up')},900)}
+function shPause(c,ms){return new Promise(r=>{const t=setTimeout(fin,ms);function fin(){clearTimeout(t);c.onclick=null;r()}c.onclick=fin})}
+/* разговор один на один: герой крупно, вопрос — пауза (слушает, если есть микрофон) — образец ответа через «я» */
+async function shTalk(mv,mine){const c=shC(),dog=c.querySelector('.shdog'),bub=c.querySelector('.shbub');const h3=()=>s3(dog);
+  shBig(true);bub.classList.remove('think');bub.textContent=mv.q;if(h3())h3().mood('invite');
+  if(G.sharik)G.shHist.push({who:'sharik',text:mv.q});
+  await shSpeak(mv.q,dog,{game:true});if(G!==mine)return false;
+  let v=null;
+  if(mv.pose){if(h3())h3().mood('calm').pose(mv.pose);await shPause(c,3500);if(G!==mine)return false}
+  else if(shVoiceOn()){if(h3())h3().mood('listen');v=await shListen(c,mine);if(G!==mine)return false}
+  else{await shPause(c,1800);if(G!==mine)return false}
+  if(v){sfx.good();confetti(30);if(G.sharik)G.shHist.push({who:'event',text:`Лев попытался сказать (голос ${(v.ms/1000).toFixed(1)} с)`})}
+  if(h3())h3().mood('praise');bub.textContent=mv.a;if(G.sharik)G.shHist.push({who:'sharik',text:mv.a});
+  await shSpeak(mv.a,dog,{game:true});if(G!==mine)return false;
+  if(h3())h3().pose(null).mood('calm');await wait(250);if(G!==mine)return false;shBig(false);return true}
+/* между заданиями (вызывается из nextRound): выбрать ход по только что сделанному заданию. false — занятие закончилось */
+async function shMoves(){const mine=G,c=shC();if(!c||!G.i||G.shMvI===G.i)return true;G.shMvI=G.i;
+  const h=shHero();if(h&&h.point)h.point(null);
+  if(!shDogEl())return true; /* в играх со своим Шариком ходов нет */
+  const e=S.log[S.log.length-1];if(!e||e.t<G.t0||!e.ok)return true;
+  let mv=null;
+  if(e.g==='put'&&shMv('did')){if((G.shDidN=(G.shDidN||0)+1)%2===1)mv={q:'Что ты сделал?',a:'Я положил!'}}
+  else if(e.g==='body'&&SH_SELF[e.n]&&shMv('self')){if((G.shSelfN=(G.shSelfN||0)+1)%2===1)mv={q:`А у тебя где ${e.n}? Покажи!`,a:`Вот ${e.n}! Молодец!`,pose:SH_SELF[e.n]}}
+  if(!mv&&shMv('who')&&(G.shOkN=(G.shOkN||0)+1)%6===0)mv={q:'Кто молодец?',a:'Я молодец!'};
+  return mv?shTalk(mv,mine):true}
 /* задание закончено (вызывается из roundDone): результат уходит серверу в фоне, занятие не ждёт */
 function shFire(e){if(!G||!G.sharik||!e)return;const R=G.round||{};
   let ev={type:'result',game:e.g,task:String(R.prompt||GN[e.g]||e.g||'').slice(0,80),ok:!!e.ok,attempts:(e.w||0)+1,how:e.how==='camera'?'camera':e.how==='parent'?'parent':'tap'};
@@ -289,6 +324,6 @@ function shHostStart(){const gm=$('#game');gm.classList.remove('withsh','shbig')
 function shHostSync(){if(!G||!G.host)return;const c=document.getElementById('shc');if(!c)return;const own=SH_OWN.includes(G.game);
   c.classList.toggle('own',own);const dog=c.querySelector('.shdog');if(!own&&!s3(dog)&&dog.classList.contains('is3d')){dog.classList.remove('is3d');dog._s3p=sh3(dog)}}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost!==false;q('set-hero').value=heroKind();q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost!==false;q('set-hero').value=heroKind();for(const k in SH_MOVES){const e=q('set-mv-'+k);if(e)e.checked=shMv(k)}q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
 
 
