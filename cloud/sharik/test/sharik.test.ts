@@ -236,7 +236,9 @@ test("готовые фразы: предложения и приведение 
   assert.equal(canonical("молодец. Покажи, где ушко!"), "Молодец! Покажи, где ушко!");
   assert.equal(canonical("пока пока"), "Пока-пока!");
   assert.ok(PHRASE_LIST.length >= 40 && new Set(PHRASE_LIST).size === PHRASE_LIST.length);
-  assert.match(SYSTEM_PROMPT, /«Молодец!»/);
+  // v42: экономию на готовых фразах отменили — модель говорит своими словами, список остаётся для голоса без интернета
+  assert.doesNotMatch(SYSTEM_PROMPT, /ТОЛЬКО из этого списка/);
+  assert.match(SYSTEM_PROMPT, /разнообразно/);
   assert.equal(sanitize({ say: "умница! Покажи нос!", next: { kind: "game", game: "body", level: 1 }, tone: "praise" }, base).say, "Умница! Покажи нос!");
   // все запасные реплики сервера состоят из готовых фраз
   for (const t of ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause"] as const)
@@ -322,4 +324,22 @@ test("v41: после задания реплика может быть пуст
   assert.match(userMessage(req as never), /Шарик уже сказал: «Это нос\.»/);
   // на старте пустая реплика заменяется запасной
   assert.notEqual(sanitize({ say: "", next: { kind: "game", game: null, level: null }, tone: "calm" }, { event: { type: "start" } } as never).say, "");
+});
+
+test("v45: родитель обращается к Шарику — команда включает игру, ответ может быть длиннее", () => {
+  const req = { available: ["body", "color", "bal"], event: { type: "parent_say", text: "включи игру про цвета", game: "body" } } as never;
+  assert.ok(parseRequest({ event: { type: "parent_say", text: "привет" } }));
+  assert.match(userMessage(req), /слова родителя: «включи игру про цвета»/);
+  const long = "Хорошо, включаю цвета. ".repeat(12);
+  const r = sanitize({ say: long, next: { kind: "game", game: "color", level: 2 }, tone: "calm" }, req);
+  assert.equal(r.next.game, "color"); assert.ok(r.say.length > 220 && r.say.length <= 400);
+  assert.match(fallbackReply(req).say, /Повторите/);
+  assert.match(SYSTEM_PROMPT, /parent_say/);
+});
+
+test("v45: итог занятия для мамы — длинный текст, занятие закончено", () => {
+  const req = { event: { type: "summary", text: "Заданий: 12, с первой попытки: 9. Трудно: Покажи, где… «ухо»." } } as never;
+  assert.match(userMessage(req), /итоги: Заданий: 12/);
+  const r = sanitize({ say: "Сегодня Лев хорошо показывал части тела. ".repeat(10), next: { kind: "game", game: null, level: null }, tone: "calm" }, req);
+  assert.equal(r.next.kind, "end"); assert.ok(r.say.length > 220 && r.say.length <= 700);
 });

@@ -1,11 +1,12 @@
 // Логика Шарика без привязки к Cloudflare: инструкция для модели, разбор запроса приложения,
 // проверка ответа модели. Вынесена отдельно, чтобы проверять её тестами без сети.
 import { TASK_IDS, TASKS, catalogText } from "./tasks.ts";
-import { canonical, phrasesText } from "./phrases.ts";
+import { canonical } from "./phrases.ts";
 
 // ---- что присылает приложение
 export interface SharikEvent {
-  type: "start" | "result" | "silence" | "voice" | "tired" | "parent_end" | "parent_pause";
+  type: "start" | "result" | "silence" | "voice" | "tired" | "parent_end" | "parent_pause" | "parent_say" | "summary";
+  text?: string; // parent_say: слова родителя; summary: итоги занятия, посчитанные на телефоне
   game?: string; // игра, к которой относится событие
   task?: string; // конкретное задание («Покажи, где нос»)
   good?: string; // что Шарик уже сказал после верного ответа («Это нос.»)
@@ -28,6 +29,7 @@ export interface SharikMemory {
 export interface SharikRequest {
   memory?: SharikMemory; // необязательно: Шарик помнит прошлые занятия
   child?: { name?: string };
+  hero?: string; // кто на экране: "cat" — рисованный кот, "dog" — собака
   minutes?: number; // сколько минут идёт занятие
   plannedMinutes?: number; // сколько минут задумано
   levels?: Record<string, number>; // текущий уровень по играм
@@ -65,7 +67,7 @@ export const REPLY_SCHEMA = {
 } as const;
 
 // Постоянная часть инструкции — одинакова для всех запросов (кэшируется у Anthropic, дешевле и быстрее).
-export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый пёс из детского приложения «Речка». Ты ведёшь занятие с мальчиком Львом (5,5 лет, сенсомоторная алалия: понимает много, говорит мало). Рядом всегда мама или папа.
+export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый герой детского приложения «Речка» (на экране ты кот или пёс — см. «Герой»; говори о себе соответственно: «мяу» или «гав», лапы, хвост). Ты ведёшь занятие с мальчиком Львом (5,5 лет, сенсомоторная алалия: понимает много, говорит мало). Рядом всегда мама или папа.
 
 Как ты говоришь:
 - По-русски, очень коротко: 1–2 предложения, до 12 слов. Простые частые слова, одна мысль за раз.
@@ -106,8 +108,21 @@ export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый �
 - Признаки усталости: молчит на простое, «пока», много ошибок подряд — предложи перерыв (break) или закончи, не настаивай.
 - Говори спокойно и уверенно, без спешки. Длинные трудные слова (велосипед, бегемоты) не проси повторять.
 
-Готовые фразы (их голос уже записан — звучат сразу). Для простых переходов, утешения и прощания сначала ищи подходящую фразу в этом списке и бери её дословно, отдельным предложением. Своими словами говори, когда это по делу: вопрос Льву один на один, ответ на его попытку сказать, название новой игры, воспоминание о прошлых занятиях.
-${phrasesText()}
+Родители рядом и могут обратиться к тебе (event parent_say, поле «слова родителя» — сказано голосом или написано, расшифровка может быть неточной):
+- Отвечай взрослому: коротко и по делу, 1–3 предложения обычным языком. Это единственный случай, когда say обращено не к Льву.
+- Команда «включи игру про …», «давай цвета», «другую игру» — next.kind=game и id подходящей игры из каталога (только из включённых). Скажи, что включаешь.
+- «Полегче» / «посложнее» — та же игра (поле игра в событии) и next.level на 1 ниже / выше текущего уровня; если уже крайний уровень — предложи другую игру полегче / потруднее.
+- «Перерыв», «отдохнём» — kind=break с игрой-перерывом. «Хватит», «заканчиваем» — kind=end и тёплое прощание с Львом. «Подожди», «пауза» — kind=wait.
+- Вопрос («что ему трудно?», «как он сегодня?», «что повторить дома?») — ответь по событиям занятия и сводке прошлых занятий; next.kind=game, next.game=null (занятие продолжается как шло). Не выдумывай того, чего нет в данных. Речь Льва не оценивай.
+- Если не понял слова — переспроси одной фразой, next.kind=game, next.game=null.
+
+Итог занятия для мамы (event summary, поле «итоги» — посчитано на телефоне): напиши маме 3–4 коротких предложения обычным языком: что сегодня получилось, что было трудно, что стоит повторить дома (один-два простых совета в духе логопеда: выбор из двух, образец из двух слов, не заставлять). Только по данным, без выдумок и без оценки речи. next.kind=end.
+
+Говори живо и разнообразно (решение мамы, ноябрь 2026 — экономию на готовых фразах отменили):
+- Говори своими словами, как добрый друг. Не повторяй одну и ту же фразу: посмотри в «Последнее», что ты уже говорил, и скажи иначе.
+- Меняй слова радости и переходов: «Вот это да!», «Ловко!», «Ты быстрый!», «Мне нравится с тобой играть!», «А сейчас будет интересно!», «Хочешь ещё?».
+- Замечай конкретное: что было в задании, что получилось с первой попытки, что вчера было трудно.
+- При этом правила выше остаются: коротко, простые слова, одна мысль.
 
 Что ты отвечаешь (JSON по схеме):
 - say — что сказать вслух сейчас: короткий переход, вопрос Льву или пустая строка (см. «Как устроено занятие»).
@@ -159,9 +174,12 @@ export function userMessage(req: SharikRequest): string {
     e.how ? `как ответил: ${e.how}` : "",
     e.voiceMs ? `голос: ${(e.voiceMs / 1000).toFixed(1)} с` : "",
     e.heard ? `heard: «${String(e.heard).slice(0, 60)}»` : "",
+    e.type === "parent_say" && e.text ? `слова родителя: «${String(e.text).replace(/[«»]/g, '"').slice(0, 300)}»` : "",
+    e.type === "summary" && e.text ? `итоги: ${String(e.text).slice(0, 1500)}` : "",
   ].filter(Boolean).join("; ");
   return [
     `Имя ребёнка: ${name}.`,
+    `Герой: ${req.hero === "dog" ? "пёс Шарик" : "рыжий кот Шарик в синем шарфе"}.`,
     `Занятие идёт ${Math.round(req.minutes || 0)} мин из ${Math.round(req.plannedMinutes || 20)}.`,
     `Включённые игры: ${avail.length ? avail.join(", ") : "все из каталога"}.`,
     `Уровни сейчас: ${Object.entries(lv).filter(([g]) => TASK_IDS.has(g)).map(([g, l]) => `${g}=${l}`).join(", ") || "нет данных"}.`,
@@ -180,13 +198,15 @@ const FALLBACK_SAY: Record<SharikEvent["type"], string> = {
   tired: "Давай отдохнём!",
   parent_end: "Ты молодец! Пока-пока!",
   parent_pause: "Жду тебя!",
+  parent_say: "Не расслышал. Повторите, пожалуйста.",
+  summary: "",
 };
 
 // Запасной ответ, если модель недоступна или ответила не по правилам: приложение продолжает само.
 export function fallbackReply(req: SharikRequest): SharikReply {
   const t = req.event?.type || "result";
   const end = t === "parent_end";
-  return { say: FALLBACK_SAY[t] || FALLBACK_SAY.result, next: { kind: end ? "end" : t === "parent_pause" ? "wait" : "game", game: null, level: null }, tone: end ? "calm" : "praise" };
+  return { say: FALLBACK_SAY[t] ?? FALLBACK_SAY.result, next: { kind: end || t === "summary" ? "end" : t === "parent_pause" ? "wait" : "game", game: null, level: null }, tone: end ? "calm" : "praise" };
 }
 
 // Проверка ответа модели: только игры из каталога и включённые в приложении, уровень в допустимых пределах.
@@ -197,7 +217,8 @@ export function sanitize(raw: unknown, req: SharikRequest): SharikReply {
   let say = typeof r.say === "string" ? r.say.replace(/\s+/g, " ").trim() : "";
   if (!say && !(req.event?.type === "result" && typeof r.say === "string")) say = fb.say; // после задания реплика может быть пустой: остаёмся в игре
   say = canonical(say); // готовые фразы — ровно в записанном виде, чтобы голос взялся из памяти
-  if (say.length > 220) say = say.slice(0, 220).replace(/[^.!?…]*$/, "") || say.slice(0, 220);
+  const maxLen = req.event?.type === "summary" ? 700 : req.event?.type === "parent_say" ? 400 : 220; // взрослым можно длиннее
+  if (say.length > maxLen) say = say.slice(0, maxLen).replace(/[^.!?…]*$/, "") || say.slice(0, maxLen);
   const kinds: NextKind[] = ["game", "wait", "break", "end"];
   let kind: NextKind = r.next && kinds.includes(r.next.kind as NextKind) ? (r.next.kind as NextKind) : fb.next.kind;
   const avail = new Set((req.available && req.available.length ? req.available : [...TASK_IDS]).filter((g) => TASK_IDS.has(g)));
@@ -212,6 +233,7 @@ export function sanitize(raw: unknown, req: SharikRequest): SharikReply {
   }
   if (req.event?.type === "parent_end") { if (kind !== "end") say = fb.say; kind = "end"; }
   if (req.event?.type === "parent_pause") kind = "wait";
+  if (req.event?.type === "summary") kind = "end";
   const tones = ["praise", "invite", "comfort", "calm"] as const;
   const tone = tones.includes(r.tone as (typeof tones)[number]) ? (r.tone as SharikReply["tone"]) : fb.tone;
   return { say, next: { kind, game: kind === "game" || kind === "break" ? game : null, level: kind === "game" || kind === "break" ? level : null }, tone };
@@ -221,7 +243,7 @@ export function sanitize(raw: unknown, req: SharikRequest): SharikReply {
 export function parseRequest(body: unknown): SharikRequest | null {
   if (!body || typeof body !== "object") return null;
   const b = body as SharikRequest;
-  const types = ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause"];
+  const types = ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause", "parent_say", "summary"];
   if (!b.event || !types.includes(b.event.type)) return null;
   if (b.history && (!Array.isArray(b.history) || b.history.length > 50)) return null;
   if (b.available && !Array.isArray(b.available)) return null;

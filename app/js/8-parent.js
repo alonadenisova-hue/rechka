@@ -4,7 +4,7 @@
 /* таблица всех игр: ключ плитки → функция раунда (функции объявлены в файлах 1–7) */
 const ROUNDS={mirr:mirrRound,body:bodyRound,home:homeRound,draw:drawRound,not:notRound,give:giveRound,dog:dogRound,voice:voiceRound,make:makeRound,rh:rhRound,pg:pgRound,br:brRound,dogs:dogsRound,tr:trRound,yn:ynRound,nes:nesRound,sl:slRound,ib:ibRound,food:foodRound,seq:seqRound,want:wantRound,num:numRound,world:worldRound,dress:dressRound,catch:catchRound,bal:balRound,odd:oddRound,verb:verbRound,color:colorRound,feed:feedRound,prep:prepRound,pair:pairRound,size:sizeRound,snd:sndRound,syl:sylRound,me:meRound,word:wordRound,dai:daiRound,many:manyRound,fly:flyRound,put:putRound};
 /* ---------- главный экран и настройки v21 */
-function applyV21Home(){{const sb=$('#btn-sharik');if(sb){sb.hidden=!shOn();const ic=sb.querySelector('.shico');if(ic&&!ic.innerHTML)ic.innerHTML=DOG_SVG}}{const bt=$('.tile[data-game="body"]');if(bt)bt.hidden=S.bodyOn===false}{const mt=$('.tile[data-game="mirr"]');if(mt)mt.hidden=S.mirrOn===false}const vt=$('.tile[data-game="voice"]');if(vt)vt.hidden=true;const wb=$('#btn-wb');if(wb)wb.hidden=!S.wbOn;
+function applyV21Home(){{const sb=$('#btn-sharik');if(sb){sb.hidden=!shOn();const ic=sb.querySelector('.shico');if(ic&&ic.dataset.hero!==heroKind()){ic.dataset.hero=heroKind();ic.innerHTML=heroSvg()}}}{const bt=$('.tile[data-game="body"]');if(bt)bt.hidden=S.bodyOn===false}{const mt=$('.tile[data-game="mirr"]');if(mt)mt.hidden=S.mirrOn===false}const vt=$('.tile[data-game="voice"]');if(vt)vt.hidden=true;const wb=$('#btn-wb');if(wb)wb.hidden=!S.wbOn;
   $('#home .toprow').classList.toggle('three',!!S.wbOn)}
 let vthrTest=false;
 function renderV21Parent(){
@@ -180,6 +180,11 @@ $('#set-sayit').onchange=e=>{S.sayit=e.target.value;save()};
 $('#set-ask').onchange=e=>{S.askFirst=e.target.checked;save()};
 $('#set-name').onchange=e=>{S.name=e.target.value.trim()||'Лев';save()};
 $('#set-shon').onchange=e=>{S.shOn=e.target.checked;save();applyV21Home()};
+$('#set-shhost').onchange=e=>{S.shHost=e.target.checked;save()};
+{const box=$('#sh-moves');if(box){box.innerHTML=Object.entries(SH_MOVES).map(([k,t])=>`<div class="row"><label for="set-mv-${k}">${t}</label><input type="checkbox" id="set-mv-${k}"></div>`).join('');
+  for(const k in SH_MOVES)$('#set-mv-'+k).onchange=e=>{S.shMv=Object.assign({},S.shMv,{[k]:e.target.checked});save()}}}
+$('#set-shask').onchange=e=>{S.shAskBtn=e.target.checked;save()};$('#set-shsum').onchange=e=>{S.shSum=e.target.checked;save()};
+$('#set-hero').onchange=e=>{S.hero=e.target.value==='dog'?'dog':'cat';save();applyV21Home();$('#art-dog').innerHTML=heroSvg()};
 $('#set-shurl').onchange=e=>{S.shUrl=e.target.value.trim();save();applyV21Home()};
 $('#set-shcode').onchange=e=>{S.shCode=e.target.value.trim();save()};
 $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20));save()};
@@ -228,7 +233,7 @@ $('#puz-home').onclick=()=>{stopVoice();renderHome()};
 $('#puz-album').onclick=()=>openAlbum();
 $('#album-home').onclick=()=>{stopVoice();renderHome()};
 $('#album-puz').onclick=()=>openReward();
-$('#btn-home').onclick=()=>{stopVoice();shAbort();VM.stop();$('#sayit').hidden=true;$('#nextbar').hidden=true;if(G&&G.round)G.round.dead=true;$('#stage').innerHTML='';G=null;renderHome()};
+$('#btn-home').onclick=()=>{stopVoice();shAbort();shParentClose();VM.stop();$('#sayit').hidden=true;$('#nextbar').hidden=true;if(G&&G.round)G.round.dead=true;$('#stage').innerHTML='';G=null;renderHome()};
 $('#btn-say').onclick=()=>{if(G&&G.round&&G.round.replay){G.round.replay();return}if(G&&G.round&&G.round.prompt)say(G.round.prompt==='Лопни шарик!'?'Лопни шарик!':G.round.prompt)};
 $('#btn-again').onclick=()=>G&&G.plan?startMix():startGame(G.game);
 $('#btn-finish-home').onclick=renderHome;

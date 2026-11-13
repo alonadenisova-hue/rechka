@@ -585,8 +585,66 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
     pg.evaluate(f"__ev('startGame')('yn')"); pg.wait_for_timeout(500)
-    check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'обычная игра: Шарика-ведущего на экране нет')
+    check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'Шарик выключен: в обычной игре его на экране нет')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    # v42: Шарик включён — он рядом и в обычной игре (без сервера); выключатель «в обычных играх» его убирает
+    pg.evaluate(f"{R}.S.shOn=true;{R}.S.shUrl='';__ev('startGame')('yn')"); pg.wait_for_timeout(700)
+    on = pg.evaluate(f"!!{R}.G.host&&!!document.querySelector('#shc')&&document.querySelector('#shc').getBoundingClientRect().height>60")
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"{R}.S.shHost=false;__ev('startGame')('yn')"); pg.wait_for_timeout(500)
+    off = pg.evaluate(f"!{R}.G.host&&!document.querySelector('#shc')")
+    check(on and off, f'Шарик рядом в обычной игре и выключается в разделе для взрослых (есть={on}, убран={off})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    # v44: ходы героя — «А у тебя где?» после «Покажи, где…», показ лапой на подсказку; выключаются
+    pg.evaluate(f"delete {R}.S.shHost;{R}.S.shOn=true;{R}.S.shUrl='';{R}.S.shVoice=false;{R}.S.hero='cat';__ev('startGame')('body')")
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.prompt", timeout=15000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'нос'}})")
+        pg.wait_for_function("document.querySelector('#game').classList.contains('shbig')&&/у тебя где нос/.test(document.querySelector('#shc .shbub').textContent)", timeout=8000); mv = True
+        pg.wait_for_function(f"!document.querySelector('#game').classList.contains('shbig')&&{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished", timeout=20000); back = True
+    except Exception: mv = locals().get('mv', False); back = False
+    pg.wait_for_timeout(2500)  # вопрос задан, экран задания больше не перерисовывается
+    pt = pg.evaluate("(()=>{const h=__ev('shHero')();if(!h||!h.point)return false;let got=null;const o=h.point;h.point=d=>{got=d;return o(d)};const e=document.createElement('div');e.className='hint';e.style.cssText='position:fixed;left:10px;top:200px;width:60px;height:60px';document.querySelector('#stage').append(e);__ev('shPointHint')();return new Promise(r=>setTimeout(()=>{const g=got;e.remove();h.point(null);r(g)},1200))})()")
+    check(mv and back and pt == 'left', f'ходы героя: «А у тебя где нос?» после «Покажи, где…», потом игра продолжается; после подсказки показывает лапой (ход={mv}, дальше={back}, лапа={pt})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"{R}.S.shMv={{self:false}};__ev('startGame')('body')")
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.prompt", timeout=15000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'нос'}})")
+        pg.wait_for_function(f"{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished", timeout=15000)
+        offm = not pg.evaluate("/у тебя где/.test(document.querySelector('#shc .shbub').textContent)")
+    except Exception: offm = False
+    check(offm, 'ходы героя выключаются в разделе для взрослых')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"delete {R}.S.shMv;{R}.S.shVoice=true;{R}.S.shOn=false;__ev('applyV21Home')()")
+
+    # ---- v45: «Сказать Шарику» — родители командуют текстом; итог занятия для мамы
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    pg.evaluate(f"""(()=>{{const S={R}.S;S.shOn=true;S.shVoice=false;S.shTts=false;S.shUrl='https://example.invalid';__ev('applyV21Home')();
+      window.__shLog=[];window.__shSim=ev=>{{window.__shLog.push(ev);
+        if(ev.type==='start')return {{say:'Давай играть!',next:{{kind:'game',game:'yn',level:1}},tone:'invite'}};
+        if(ev.type==='parent_say')return /Хватит/.test(ev.text)?{{say:'Пока-пока!',next:{{kind:'end',game:null,level:null}},tone:'calm'}}:{{say:'Включаю цвета.',next:{{kind:'game',game:'color',level:1}},tone:'calm'}};
+        if(ev.type==='summary')return {{say:'Дома поиграйте в «да — нет».',next:{{kind:'end',game:null,level:null}},tone:'calm'}};
+        return new Promise(()=>{{}})}}}})()""")
+    pg.click('#btn-sharik')
+    try:
+        pg.wait_for_function(f"{R}.G&&{R}.G.game==='yn'&&{R}.G.round&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=30000)
+        pg.evaluate(f"__ev('roundDone')(true,{{n:'тест'}})")
+        pg.wait_for_function(f"{R}.G.i===1&&{R}.G.round&&!{R}.G.round.finished&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=20000)
+        pg.click('#shc .shask'); pg.fill('#shp input', 'включи игру про цвета'); pg.click('#shp .go')
+        pg.wait_for_function(f"{R}.G&&{R}.G.game==='color'&&{R}.G.round&&!{R}.G.round.dead&&{R}.G.round.prompt&&!document.querySelector('#game').classList.contains('shbig')", timeout=20000); jumped = True
+    except Exception as e_: jumped = False; print('    ', str(e_)[:120])
+    psay = pg.evaluate("window.__shLog.filter(e=>e.type==='parent_say').map(e=>e.text)")
+    check(jumped and psay == ['включи игру про цвета'], f'«Сказать Шарику»: команда родителей уходит серверу и включает игру (игра={jumped}, {psay})')
+    try:
+        pg.click('#shc .shask'); pg.click('#shp .chips button:nth-child(5)')
+        pg.wait_for_selector('#finish', state='visible', timeout=20000)
+        pg.wait_for_function("document.querySelector('#sh-sum')&&/да — нет/.test(document.querySelector('#sh-sum').textContent)", timeout=8000); summ = pg.evaluate("document.querySelector('#sh-sum').textContent")
+    except Exception: summ = pg.evaluate("(document.querySelector('#sh-sum')||{}).textContent||''")
+    check('Заданий: 1' in summ and 'да — нет' in summ, f'итог занятия для мамы: счёт с телефона и фразы сервера ({summ[:90]})')
+    if pg.is_visible('#btn-finish-home'): pg.click('#btn-finish-home')
+    pg.wait_for_timeout(500)
+    pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
 
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;
@@ -603,7 +661,12 @@ with sync_playwright() as p:
     # ---- v33: объёмный Шарик (three.js); без WebGL — прежний рисунок
     if True:
         pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
-        pg.evaluate(f"{R}.S.dogHi=1;{R}.S.sh3d=true"); pg.click('.tile[data-game="dog"]')
+        # v43: герой по умолчанию — рисованный кот; он же в «Повторяй за Шариком»
+        pg.evaluate(f"{R}.S.dogHi=1;{R}.S.hero='cat'"); pg.click('.tile[data-game="dog"]'); pg.wait_for_timeout(1500)
+        cat = pg.evaluate("(()=>{const d=document.querySelector('.dogbox');const h=d&&d._s3;return !!(d&&d.classList.contains('is3d')&&d.querySelector('.hero2d svg')&&h&&h.active&&h.kind==='cat'&&!window.Sharik3D)})()")
+        check(cat, 'герой — рисованный кот: показывается в «Повторяй за Шариком» без загрузки 3D')
+        pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.dogHi=1;{R}.S.sh3d=true;{R}.S.hero='dog'"); pg.click('.tile[data-game="dog"]')
         try: pg.wait_for_selector('.dogbox', timeout=15000); pg.wait_for_timeout(2500)
         except Exception: pass
         loaded = pg.evaluate("!!window.Sharik3D")
@@ -617,7 +680,7 @@ with sync_playwright() as p:
         except Exception: pass
         check(not pg.evaluate("!!document.querySelector('.dogbox.is3d')") and pg.evaluate("!!document.querySelector('.dogbox svg')"),
               'объёмный Шарик выключается в разделе для взрослых — прежний рисунок')
-        pg.evaluate(f"{R}.S.sh3d=true;document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+        pg.evaluate(f"{R}.S.sh3d=true;{R}.S.hero='cat';document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
 
     check(not errors, 'ошибок в консоли нет' + ('' if not errors else ': ' + ' | '.join(errors[:5])[:600]))
     b.close()
