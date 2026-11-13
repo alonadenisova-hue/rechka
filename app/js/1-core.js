@@ -25,7 +25,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- storage */
 const KEY='rechka-v1';
-const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',bodyOn:true,mirrOn:true,shOn:false,hero:'cat',shUrl:'',shCode:'',shMin:20,sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{home:1,draw:1,rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1,body:1,mirr:1},streak:{home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},errs:{home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
+const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',bodyOn:true,mirrOn:true,shOn:false,hero:'cat',shUrl:'',shCode:'',shMin:20,sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{cat:1,home:1,draw:1,rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1,body:1,mirr:1},streak:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},errs:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
 let S;
 try{S=Object.assign(structuredClone(defaults),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(defaults)}
 for(const k of ['lvl','streak','errs','pz'])S[k]=Object.assign({},defaults[k],S[k]);
@@ -35,7 +35,7 @@ if((S.ver||0)<22){S.lvl.num=1;S.lvl.food=1;S.lvl.seq=Math.min(S.lvl.seq||1,3);S.
 if((S.ver||0)<21){S.sayit=S.sayit||'some';S.ver=Math.max(S.ver||0,21)}
 if((S.ver||0)<18){if((S.dogL||0)>=4)S.dogL+=5;S.ver=18} /* v18: +5 лёгких уровней щенков после тренировки */ /* v14: «Повтори!» теперь начинается с 3 картинок */
 const save=()=>{try{S.log=S.log.slice(-3000);localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const MAXL={mirr:4,body:3,home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
+const MAXL={cat:3,mirr:4,body:3,home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
 for(const g in MAXL)if(S.lvl[g]>MAXL[g])S.lvl[g]=MAXL[g];
 const UPG={syl:5,snd:4}; // для этих игр уровень поднимается медленнее
 const UP=3; // верных подряд с первой попытки, чтобы уровень поднялся
@@ -188,8 +188,8 @@ async function roundDone(ok,meta){
   save();
   await nextGate();if(!G||G.round!==R||R.dead)return;
   {const step=(G.max||S.rounds)>=10?5:4;if(G.i%step===0&&G.i<(G.max||S.rounds)&&S.bonus!==false){await bonusPop();if(!G||G.round!==R||R.dead)return}}
-  if(up)await levelUp();
-  await wait(250);nextRound();
+  if(up){await levelUp();if(!G||G.round!==R||R.dead)return} /* v46: пока звучало «Новый уровень!», могли выйти домой и открыть другую игру */
+  await wait(250);if(!G||G.round!==R||R.dead)return;nextRound();
 }
 async function levelUp(){sfx.up();confetti(120);const d=document.createElement('div');d.className='levelup';d.textContent='Новый уровень!';document.body.append(d);await say('Новый уровень!');await wait(900);d.remove()}
 /* generic choice: options [{html, ok, key}], cls grid n */

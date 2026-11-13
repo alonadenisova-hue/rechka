@@ -13,18 +13,18 @@ const MOUTHS={a:[.95,0],o:[.65,-.7],u:[.4,-1],i:[.28,.9],e:[.5,.5],y:[.32,.35],m
 function markup(){return `
 <ellipse cx="100" cy="209" rx="58" ry="7" fill="#3a2a4022"/>
 <g class="c-all">
- <g class="c-tail"><path d="M136 190Q188 194 180 150Q176 132 162 140" fill="none" stroke="${C.line}" stroke-width="19" stroke-linecap="round"/><path d="M136 190Q188 194 180 150Q176 132 162 140" fill="none" stroke="${C.fur}" stroke-width="14" stroke-linecap="round"/><path d="M180 152Q176 132 162 140" fill="none" stroke="${C.dark}" stroke-width="14" stroke-linecap="round"/></g>
+ <g class="c-tail" data-part="хвост"><path d="M136 190Q188 194 180 150Q176 132 162 140" fill="none" stroke="${C.line}" stroke-width="19" stroke-linecap="round"/><path d="M136 190Q188 194 180 150Q176 132 162 140" fill="none" stroke="${C.fur}" stroke-width="14" stroke-linecap="round"/><path d="M180 152Q176 132 162 140" fill="none" stroke="${C.dark}" stroke-width="14" stroke-linecap="round"/></g>
  <g class="c-body">
   <ellipse cx="100" cy="162" rx="43" ry="46" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/>
-  <ellipse cx="100" cy="168" rx="26" ry="32" fill="${C.cream}"/>
+  <ellipse cx="100" cy="168" rx="26" ry="32" fill="${C.cream}" data-part="живот"/>
   <ellipse cx="72" cy="200" rx="19" ry="11" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/><ellipse cx="128" cy="200" rx="19" ry="11" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/>
   <path d="M62 198v6M70 200v6M130 200v6M138 198v6" stroke="${C.line}" stroke-width="2" stroke-linecap="round"/>
  </g>
  <g class="c-scarf"><path d="M134 126l14 30q-8 6-16 2l-8-28z" fill="${C.scarf2}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/>
   <path d="M64 118Q100 140 136 118L138 130Q100 154 62 130Z" fill="${C.scarf}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M80 130l-2 10M100 136v10M120 130l2 10" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></g>
  <g class="c-head">
-  <g class="c-earL"><path d="M56 56L48 12L88 38Z" fill="${C.fur}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M60 46L56 24L76 38Z" fill="${C.pink}"/></g>
-  <g class="c-earR"><path d="M144 56L152 12L112 38Z" fill="${C.fur}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M140 46L144 24L124 38Z" fill="${C.pink}"/></g>
+  <g class="c-earL" data-part="ухо"><path d="M56 56L48 12L88 38Z" fill="${C.fur}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M60 46L56 24L76 38Z" fill="${C.pink}"/></g>
+  <g class="c-earR" data-part="ухо"><path d="M144 56L152 12L112 38Z" fill="${C.fur}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M140 46L144 24L124 38Z" fill="${C.pink}"/></g>
   <ellipse cx="100" cy="80" rx="53" ry="46" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/>
   <path d="M100 36v14M86 38l3 12M114 38l-3 12" stroke="${C.dark}" stroke-width="5" stroke-linecap="round"/>
   <path d="M50 78l12 3M51 90l11-1M150 78l-12 3M149 90l-11-1" stroke="${C.dark}" stroke-width="4" stroke-linecap="round"/>
@@ -40,9 +40,13 @@ function markup(){return `
   <path class="c-brL" d="M68 58q11-7 22-2" fill="none" stroke="${C.line}" stroke-width="3.5" stroke-linecap="round"/><path class="c-brR" d="M132 58q-11-7-22-2" fill="none" stroke="${C.line}" stroke-width="3.5" stroke-linecap="round"/>
   <path d="M94 89h12l-6 7z" fill="${C.pink}" stroke="${C.line}" stroke-width="2" stroke-linejoin="round"/>
   <g class="c-mouth"></g>
+  <circle cx="80" cy="76" r="15" fill="transparent" data-part="глаз"/><circle cx="120" cy="76" r="15" fill="transparent" data-part="глаз"/>
+  <circle cx="100" cy="91" r="9" fill="transparent" data-part="нос"/><ellipse cx="100" cy="108" rx="17" ry="9" fill="transparent" data-part="рот"/>
+  <text class="c-zzz" x="150" y="40" font-size="26" font-weight="700" fill="#7b61ff" style="display:none">z z</text>
  </g>
- <g class="c-armL"><path class="o" fill="none" stroke="${C.line}" stroke-width="21" stroke-linecap="round"/><path class="f" fill="none" stroke="${C.fur}" stroke-width="15" stroke-linecap="round"/><circle class="p" r="10.5" fill="${C.cream}" stroke="${C.line}" stroke-width="3"/></g>
- <g class="c-armR"><path class="o" fill="none" stroke="${C.line}" stroke-width="21" stroke-linecap="round"/><path class="f" fill="none" stroke="${C.fur}" stroke-width="15" stroke-linecap="round"/><circle class="p" r="10.5" fill="${C.cream}" stroke="${C.line}" stroke-width="3"/></g>
+ <g class="c-armL" data-part="лапа"><path class="o" fill="none" stroke="${C.line}" stroke-width="21" stroke-linecap="round"/><path class="f" fill="none" stroke="${C.fur}" stroke-width="15" stroke-linecap="round"/><circle class="p" r="10.5" fill="${C.cream}" stroke="${C.line}" stroke-width="3"/></g>
+ <g class="c-armR" data-part="лапа"><path class="o" fill="none" stroke="${C.line}" stroke-width="21" stroke-linecap="round"/><path class="f" fill="none" stroke="${C.fur}" stroke-width="15" stroke-linecap="round"/><circle class="p" r="10.5" fill="${C.cream}" stroke="${C.line}" stroke-width="3"/></g>
+ <text class="c-item" font-size="34" text-anchor="middle" style="display:none"></text>
 </g>`}
 function mouthSvg(open,wide){ /* open 0…1 — насколько открыт; wide −1 (трубочка) … +1 (улыбка) */
   const y=106;
@@ -59,14 +63,14 @@ const lerp=(a,b,k)=>a+(b-a)*k;
 function mount(el,opt={}){
   if(!el)return null;
   const old=el.querySelector(':scope>.hero2d');if(old){old._kill&&old._kill();old.remove()}
-  const box=document.createElement('div');box.className='sh3d hero2d';box.style.cssText='display:block;width:100%;height:100%';
+  const box=document.createElement('div');box.className='sh3d hero2d';box.style.cssText='display:block;position:relative;width:100%;height:100%;min-height:0';
   const face=opt.view==='face';
-  box.innerHTML=`<svg viewBox="${face?'28 2 144 132':'0 0 200 220'}" style="display:block;width:100%;height:100%;overflow:${face?'hidden':'visible'}" aria-hidden="true">${markup()}</svg>`;
+  box.innerHTML=`<svg viewBox="${face?'28 2 144 132':'0 0 200 220'}" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;display:block;width:100%!important;height:100%!important;max-width:none;overflow:${face?'hidden':'visible'}" aria-hidden="true">${markup()}</svg>`;
   el.appendChild(box);
   const q=s=>box.querySelector(s);
   const P={all:q('.c-all'),tail:q('.c-tail'),body:q('.c-body'),head:q('.c-head'),earL:q('.c-earL'),earR:q('.c-earR'),chL:q('.c-chL'),chR:q('.c-chR'),eyes:q('.c-eyes'),eyeL:q('.c-eyeL'),eyeR:q('.c-eyeR'),
-    pups:[...box.querySelectorAll('.c-pup')],happy:q('.c-happy'),shut:q('.c-shut'),brL:q('.c-brL'),brR:q('.c-brR'),mouth:q('.c-mouth'),armL:q('.c-armL'),armR:q('.c-armR')};
-  const st={mood:'calm',moodT:0,talk:false,vis:null,lvl:0,lvlOn:false,pose:null,jumpT:9,waveT:9,nodT:9,shakeT:9,point:null,alive:true};
+    pups:[...box.querySelectorAll('.c-pup')],happy:q('.c-happy'),shut:q('.c-shut'),brL:q('.c-brL'),brR:q('.c-brR'),mouth:q('.c-mouth'),armL:q('.c-armL'),armR:q('.c-armR'),zzz:q('.c-zzz'),item:q('.c-item')};
+  const st={mood:'calm',moodT:0,talk:false,vis:null,lvl:0,lvlOn:false,pose:null,jumpT:9,waveT:9,nodT:9,shakeT:9,point:null,act:null,item:'',alive:true};
   /* текущие (сглаженные) значения */
   const cur={hL:REST.L.slice(),hR:REST.R.slice(),rot:0,hy:0,hx:0,jy:0,sq:0,open:0,wide:.5,eye:1,px:0,py:0,br:0,puff:1,tail:0,earR:0,lean:0};
   let t=0,last=0,blink=2+Math.random()*3,blinkT=9,mKey='',raf=0;
@@ -92,6 +96,14 @@ function mount(el,opt={}){
       else if(p==='shoulder'){hL=[68,128];hR=[132,128]}else if(p==='wave'){hR=[158+Math.sin(t*10)*11,50];wide=1}
       else if(p==='clap'){const c=Math.abs(Math.sin(t*6))*20;hL=[94-c,150];hR=[106+c,150];wide=.9}
       else if(p==='armsup'){hL=[44,62];hR=[156,62];wide=1}else if(p==='squat'){sq=(Math.sin(t*3.2)*.5+.5)*.16} }
+    /* действия («Что делает Шарик?») */
+    let zzz=false,sway=0;const a=st.act;
+    if(a==='sleep'){shut=true;rot=13;hy=6;sq=.05+Math.sin(t*1.6)*.015;zzz=true;wide=.2}
+    else if(a==='eat'){const c=Math.sin(t*7);hR=[112,112+c*5];open=.25+.35*(c>0?c:0);wide=.3}
+    else if(a==='jump'){if(st.jumpT>.75)st.jumpT=0;hL=[50,96];hR=[150,96];wide=1}
+    else if(a==='wave'){hR=[158+Math.sin(t*10)*11,50];wide=1}
+    else if(a==='dance'){sway=Math.sin(t*5)*9;hL=[46,100+Math.sin(t*5)*26];hR=[154,100-Math.sin(t*5)*26];wide=1;happy=true}
+    else if(a==='wash'){hR=[126+Math.cos(t*8)*7,92+Math.sin(t*8)*7];shut=true;wide=.8}
     /* речь */
     if(st.vis&&MOUTHS[st.vis]){open=MOUTHS[st.vis][0];wide=MOUTHS[st.vis][1]}
     else if(st.talk){open=st.lvlOn?Math.min(1,.12+st.lvl*1.15):.2+.5*Math.abs(Math.sin(t*9.5))*(.6+.4*Math.sin(t*3.1));if(wide>.6)wide=.6}
@@ -108,7 +120,9 @@ function mount(el,opt={}){
     cur.tail=Math.sin(t*(m==='praise'?9:2.2))*(m==='praise'?12:6);
     /* применить */
     const sy=1-cur.sq,land=st.jumpT>.6&&st.jumpT<.78?.05:0;
-    P.all.setAttribute('transform',`translate(0 ${(cur.jy+208*(cur.sq+land)).toFixed(2)}) translate(100 0) scale(${(1+cur.sq*.5+land).toFixed(3)} ${(sy-land).toFixed(3)}) translate(-100 0)`);
+    P.zzz.style.display=zzz?'':'none';if(zzz)P.zzz.setAttribute('opacity',(.55+.45*Math.sin(t*2.4)).toFixed(2));
+    cur.sway=lerp(cur.sway||0,sway,k);
+    P.all.setAttribute('transform',`rotate(${cur.sway.toFixed(2)} 100 205) translate(0 ${(cur.jy+208*(cur.sq+land)).toFixed(2)}) translate(100 0) scale(${(1+cur.sq*.5+land).toFixed(3)} ${(sy-land).toFixed(3)}) translate(-100 0)`);
     P.tail.setAttribute('transform',`rotate(${cur.tail.toFixed(2)} 136 190)`);
     P.body.setAttribute('transform',`translate(0 ${(Math.sin(t*1.8)*.6).toFixed(2)})`);
     P.head.setAttribute('transform',`translate(${cur.hx.toFixed(2)} ${cur.hy.toFixed(2)}) rotate(${cur.rot.toFixed(2)} 100 122)`);
@@ -121,6 +135,7 @@ function mount(el,opt={}){
     const key=(Math.round(cur.open*20))+'|'+(Math.round(cur.wide*10));if(key!==mKey){mKey=key;P.mouth.innerHTML=mouthSvg(cur.open,cur.wide)}
     /* лапы рисуются поверх головы и не наклоняются вместе с ней */
     arm(P.armL,SH.L,cur.hL,-1);arm(P.armR,SH.R,cur.hR,1);
+    if(st.item){P.item.setAttribute('x',cur.hR[0].toFixed(1));P.item.setAttribute('y',(cur.hR[1]+8).toFixed(1))}
   }
   frame(performance.now());raf=requestAnimationFrame(frame);
   box._kill=()=>{st.alive=false;cancelAnimationFrame(raf)};
@@ -132,7 +147,10 @@ function mount(el,opt={}){
     level(v){st.lvl=Math.max(0,+v||0);st.lvlOn=st.talk&&st.lvl>=0;return h},
     jump(){st.jumpT=0;return h},wave(){st.waveT=0;return h},
     point(dir){st.point=dir||null;return h},      /* 'up' | 'left' | 'right' | null — показать лапой на картинку */
-    nod(){st.nodT=0;return h},shake(){st.shakeT=0;return h}, /* «да» и «нет» головой */
+    nod(){st.nodT=0;return h},shake(){st.shakeT=0;return h},
+    act(a){st.act=a||null;return h},              /* 'sleep' | 'eat' | 'jump' | 'wave' | 'dance' | 'wash' | null — что герой делает */
+    hold(ch){st.item=ch||'';P.item.textContent=st.item;P.item.style.display=st.item?'':'none';return h}, /* предмет в лапе (значок) */
+    onPart(fn){box.querySelector('svg').style.pointerEvents='auto';box.onclick=e=>{const p=e.target.closest&&e.target.closest('[data-part]');fn(p?p.getAttribute('data-part'):null,e)};return h}, /* нажатие на часть тела */ /* «да» и «нет» головой */
     unmount(){st.alive=false;cancelAnimationFrame(raf);box.remove()},
     get active(){return st.alive&&box.isConnected},
     kind:'cat'};
