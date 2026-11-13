@@ -180,6 +180,7 @@ $('#set-sayit').onchange=e=>{S.sayit=e.target.value;save()};
 $('#set-ask').onchange=e=>{S.askFirst=e.target.checked;save()};
 $('#set-name').onchange=e=>{S.name=e.target.value.trim()||'Лев';save()};
 $('#set-shon').onchange=e=>{S.shOn=e.target.checked;save();applyV21Home()};
+$('#set-shhost').onchange=e=>{S.shHost=e.target.checked;save()};
 $('#set-shurl').onchange=e=>{S.shUrl=e.target.value.trim();save();applyV21Home()};
 $('#set-shcode').onchange=e=>{S.shCode=e.target.value.trim();save()};
 $('#set-shmin').onchange=e=>{S.shMin=Math.min(45,Math.max(5,+e.target.value||20));save()};

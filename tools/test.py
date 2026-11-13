@@ -585,8 +585,17 @@ with sync_playwright() as p:
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     pg.evaluate(f"delete window.__shSim;{R}.S.shOn=false;{R}.S.shVoice=true;{R}.S.shTts=true;__ev('applyV21Home')()")
     pg.evaluate(f"__ev('startGame')('yn')"); pg.wait_for_timeout(500)
-    check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'обычная игра: Шарика-ведущего на экране нет')
+    check(pg.evaluate("!document.querySelector('#shc')||getComputedStyle(document.querySelector('#shc')).display==='none'"), 'Шарик выключен: в обычной игре его на экране нет')
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
+    # v42: Шарик включён — он рядом и в обычной игре (без сервера); выключатель «в обычных играх» его убирает
+    pg.evaluate(f"{R}.S.shOn=true;{R}.S.shUrl='';__ev('startGame')('yn')"); pg.wait_for_timeout(700)
+    on = pg.evaluate(f"!!{R}.G.host&&!!document.querySelector('#shc')&&document.querySelector('#shc').getBoundingClientRect().height>60")
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"{R}.S.shHost=false;__ev('startGame')('yn')"); pg.wait_for_timeout(500)
+    off = pg.evaluate(f"!{R}.G.host&&!document.querySelector('#shc')")
+    check(on and off, f'Шарик рядом в обычной игре и выключается в разделе для взрослых (есть={on}, убран={off})')
+    pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(500)
+    pg.evaluate(f"delete {R}.S.shHost;{R}.S.shOn=false;__ev('applyV21Home')()")
 
     # ---- v34: память между занятиями — сводка за 7 дней по журналу (считается на телефоне)
     mem = pg.evaluate(f"""(()=>{{const S={R}.S,keep=S.log,now=Date.now(),D=864e5;

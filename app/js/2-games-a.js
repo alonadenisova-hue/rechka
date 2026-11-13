@@ -93,7 +93,7 @@ function startMix(){const week=Date.now()-7*864e5;const acc=g=>{const L=S.log.fi
   /* v12: игры дня в случайном порядке, одна и та же игра не идёт два раза подряд */
   const bag=[];for(let i=0;i<S.rounds;i++)bag.push(i%2===0?easy[(i>>1)%3]:weak[(i>>1)%2]);let plan;
   for(let t=0;t<50;t++){plan=shuffle(bag);if(plan.every((g,k)=>k===0||g!==plan[k-1]))break}
-  ac();G={t0:Date.now(),game:plan[0],i:0,results:[],seen:new Set(),plan};$('#game').classList.remove('withnext','sharik');show('game');renderDots();nextRound()}
+  ac();G={t0:Date.now(),game:plan[0],i:0,results:[],seen:new Set(),plan};$('#game').classList.remove('withnext','sharik');shHostStart();show('game');renderDots();nextRound()}
 
 /* ---------- GAME 8: кто как говорит (звукоподражания) */
 const ONO={собака:'Гав-гав!',кошка:'Мяу!',лошадь:'И-го-го!',гусь:'Га-га-га!',корова:'Му-у!',курица:'Ко-ко-ко!',мышь:'Пи-пи-пи!',волк:'У-у-у!',медведь:'Р-р-р!',лиса:'Тяв-тяв!',

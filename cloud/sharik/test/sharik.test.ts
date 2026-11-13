@@ -236,7 +236,9 @@ test("готовые фразы: предложения и приведение 
   assert.equal(canonical("молодец. Покажи, где ушко!"), "Молодец! Покажи, где ушко!");
   assert.equal(canonical("пока пока"), "Пока-пока!");
   assert.ok(PHRASE_LIST.length >= 40 && new Set(PHRASE_LIST).size === PHRASE_LIST.length);
-  assert.match(SYSTEM_PROMPT, /«Молодец!»/);
+  // v42: экономию на готовых фразах отменили — модель говорит своими словами, список остаётся для голоса без интернета
+  assert.doesNotMatch(SYSTEM_PROMPT, /ТОЛЬКО из этого списка/);
+  assert.match(SYSTEM_PROMPT, /разнообразно/);
   assert.equal(sanitize({ say: "умница! Покажи нос!", next: { kind: "game", game: "body", level: 1 }, tone: "praise" }, base).say, "Умница! Покажи нос!");
   // все запасные реплики сервера состоят из готовых фраз
   for (const t of ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause"] as const)
