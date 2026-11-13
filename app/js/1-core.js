@@ -188,8 +188,8 @@ async function roundDone(ok,meta){
   save();
   await nextGate();if(!G||G.round!==R||R.dead)return;
   {const step=(G.max||S.rounds)>=10?5:4;if(G.i%step===0&&G.i<(G.max||S.rounds)&&S.bonus!==false){await bonusPop();if(!G||G.round!==R||R.dead)return}}
-  if(up)await levelUp();
-  await wait(250);nextRound();
+  if(up){await levelUp();if(!G||G.round!==R||R.dead)return} /* v46: пока звучало «Новый уровень!», могли выйти домой и открыть другую игру */
+  await wait(250);if(!G||G.round!==R||R.dead)return;nextRound();
 }
 async function levelUp(){sfx.up();confetti(120);const d=document.createElement('div');d.className='levelup';d.textContent='Новый уровень!';document.body.append(d);await say('Новый уровень!');await wait(900);d.remove()}
 /* generic choice: options [{html, ok, key}], cls grid n */
