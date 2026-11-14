@@ -5,7 +5,7 @@ import { canonical } from "./phrases.ts";
 
 // ---- что присылает приложение
 export interface SharikEvent {
-  type: "start" | "result" | "silence" | "voice" | "tired" | "parent_end" | "parent_pause" | "parent_say" | "summary";
+  type: "start" | "result" | "silence" | "voice" | "tired" | "parent_end" | "parent_pause" | "parent_say" | "summary" | "lesson";
   text?: string; // parent_say: слова родителя; summary: итоги занятия, посчитанные на телефоне
   game?: string; // игра, к которой относится событие
   task?: string; // конкретное задание («Покажи, где нос»)
@@ -15,7 +15,15 @@ export interface SharikEvent {
   voiceMs?: number; // длительность голоса (попытка сказать), мс
   heard?: string; // распознанные слова — только для подсказки, не для оценки
   how?: "tap" | "camera" | "voice" | "parent";
+  // v47, «Пятиминутка» (event lesson): какую помощь можно выбрать, если следующая попытка не удастся
+  allowed?: string[]; // разрешённые действия (из LESSON_ACTIONS)
+  helps?: string[]; // какие помощи уже были в этом задании
+  stage?: string; // что сейчас: ask — вопрос задан, wrong — ошибся, silence — молчит, help — помощь идёт
 }
+
+// Действия ведущего в «Пятиминутке»: модель выбирает одно из разрешённых, приложение проверяет и выполняет.
+export const LESSON_ACTIONS = ["repeat", "more_time", "model", "fewer", "easier", "next"] as const;
+export type LessonAction = (typeof LESSON_ACTIONS)[number];
 
 // Сводка прошлых занятий за 7 дней — считается на телефоне, сервер её не хранит.
 export interface SharikMemory {
@@ -42,7 +50,7 @@ export interface SharikRequest {
 export type NextKind = "game" | "wait" | "break" | "end";
 export interface SharikReply {
   say: string; // что сказать вслух (коротко)
-  next: { kind: NextKind; game: string | null; level: number | null };
+  next: { kind: NextKind; game: string | null; level: number | null; action?: LessonAction | null };
   tone: "praise" | "invite" | "comfort" | "calm";
 }
 
@@ -56,8 +64,9 @@ export const REPLY_SCHEMA = {
         kind: { type: "string", enum: ["game", "wait", "break", "end"] },
         game: { anyOf: [{ type: "string" }, { type: "null" }], description: "id игры из каталога, если kind=game или break" },
         level: { anyOf: [{ type: "integer" }, { type: "null" }], description: "уровень игры (1 — самый лёгкий) или null — оставить как есть" },
+        action: { anyOf: [{ type: "string", enum: [...LESSON_ACTIONS] }, { type: "null" }], description: "только для event lesson: одно действие из allowed, иначе null" },
       },
-      required: ["kind", "game", "level"],
+      required: ["kind", "game", "level", "action"],
       additionalProperties: false,
     },
     tone: { type: "string", enum: ["praise", "invite", "comfort", "calm"] },
@@ -115,6 +124,12 @@ export const SYSTEM_PROMPT = `Ты — Шарик, добрый весёлый �
 - «Перерыв», «отдохнём» — kind=break с игрой-перерывом. «Хватит», «заканчиваем» — kind=end и тёплое прощание с Львом. «Подожди», «пауза» — kind=wait.
 - Вопрос («что ему трудно?», «как он сегодня?», «что повторить дома?») — ответь по событиям занятия и сводке прошлых занятий; next.kind=game, next.game=null (занятие продолжается как шло). Не выдумывай того, чего нет в данных. Речь Льва не оценивай.
 - Если не понял слова — переспроси одной фразой, next.kind=game, next.game=null.
+
+«Пятиминутка» (event lesson): короткое занятие из трёх упражнений, которое ведёт приложение. Ты не говоришь (say — пустая строка) и не выбираешь игру (next.kind=game, next.game=null, next.level=null). Ты выбираешь, как помочь Льву, если следующая попытка не удастся: next.action — одно из списка allowed:
+- repeat — повторить тот же вопрос; more_time — подождать ещё молча; model — показать образец (герой сам делает или говорит); fewer — убрать неверную карточку; easier — упростить; next — перейти к следующему, без похвалы.
+- Обычно по порядку: сначала repeat или more_time, потом model, потом fewer или easier; next — когда помощи уже были 3 раза или Лев явно устал. Не выбирай то, что уже было в helps два раза подряд.
+- После ошибки (stage wrong) — лучше model или fewer, чем просто repeat. Если Лев молчит (silence) — more_time или repeat.
+- Если allowed пуст или ничего не подходит — null.
 
 Итог занятия для мамы (event summary, поле «итоги» — посчитано на телефоне): напиши маме 3–4 коротких предложения обычным языком: что сегодня получилось, что было трудно, что стоит повторить дома (один-два простых совета в духе логопеда: выбор из двух, образец из двух слов, не заставлять). Только по данным, без выдумок и без оценки речи. next.kind=end.
 
@@ -176,6 +191,9 @@ export function userMessage(req: SharikRequest): string {
     e.heard ? `heard: «${String(e.heard).slice(0, 60)}»` : "",
     e.type === "parent_say" && e.text ? `слова родителя: «${String(e.text).replace(/[«»]/g, '"').slice(0, 300)}»` : "",
     e.type === "summary" && e.text ? `итоги: ${String(e.text).slice(0, 1500)}` : "",
+    e.type === "lesson" && e.stage ? `этап: ${String(e.stage).slice(0, 20)}` : "",
+    e.type === "lesson" ? `allowed: ${lessonAllowed(e).join(", ") || "пусто"}` : "",
+    e.type === "lesson" && Array.isArray(e.helps) && e.helps.length ? `helps: ${e.helps.filter((x) => (LESSON_ACTIONS as readonly string[]).includes(x)).slice(-6).join(", ")}` : "",
   ].filter(Boolean).join("; ");
   return [
     `Имя ребёнка: ${name}.`,
@@ -200,12 +218,20 @@ const FALLBACK_SAY: Record<SharikEvent["type"], string> = {
   parent_pause: "Жду тебя!",
   parent_say: "Не расслышал. Повторите, пожалуйста.",
   summary: "",
+  lesson: "",
 };
+
+// Разрешённые действия из события: только известные, без повторов.
+export function lessonAllowed(e: SharikEvent | undefined): LessonAction[] {
+  const a = Array.isArray(e?.allowed) ? e!.allowed : [];
+  return [...new Set(a.filter((x): x is LessonAction => (LESSON_ACTIONS as readonly string[]).includes(x as string)))];
+}
 
 // Запасной ответ, если модель недоступна или ответила не по правилам: приложение продолжает само.
 export function fallbackReply(req: SharikRequest): SharikReply {
   const t = req.event?.type || "result";
   const end = t === "parent_end";
+  if (t === "lesson") return { say: "", next: { kind: "game", game: null, level: null, action: null }, tone: "calm" }; // приложение поможет по своим правилам
   return { say: FALLBACK_SAY[t] ?? FALLBACK_SAY.result, next: { kind: end || t === "summary" ? "end" : t === "parent_pause" ? "wait" : "game", game: null, level: null }, tone: end ? "calm" : "praise" };
 }
 
@@ -234,6 +260,12 @@ export function sanitize(raw: unknown, req: SharikRequest): SharikReply {
   if (req.event?.type === "parent_end") { if (kind !== "end") say = fb.say; kind = "end"; }
   if (req.event?.type === "parent_pause") kind = "wait";
   if (req.event?.type === "summary") kind = "end";
+  if (req.event?.type === "lesson") {
+    // «Пятиминутка»: только действие из разрешённых; говорить и выбирать игру не нужно
+    const allowed = lessonAllowed(req.event);
+    const a = r.next && typeof r.next.action === "string" && (allowed as string[]).includes(r.next.action) ? (r.next.action as LessonAction) : null;
+    return { say: "", next: { kind: "game", game: null, level: null, action: a }, tone: "calm" };
+  }
   const tones = ["praise", "invite", "comfort", "calm"] as const;
   const tone = tones.includes(r.tone as (typeof tones)[number]) ? (r.tone as SharikReply["tone"]) : fb.tone;
   return { say, next: { kind, game: kind === "game" || kind === "break" ? game : null, level: kind === "game" || kind === "break" ? level : null }, tone };
@@ -243,8 +275,10 @@ export function sanitize(raw: unknown, req: SharikRequest): SharikReply {
 export function parseRequest(body: unknown): SharikRequest | null {
   if (!body || typeof body !== "object") return null;
   const b = body as SharikRequest;
-  const types = ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause", "parent_say", "summary"];
+  const types = ["start", "result", "silence", "voice", "tired", "parent_end", "parent_pause", "parent_say", "summary", "lesson"];
   if (!b.event || !types.includes(b.event.type)) return null;
+  if (b.event.allowed !== undefined && (!Array.isArray(b.event.allowed) || b.event.allowed.length > 10)) return null;
+  if (b.event.helps !== undefined && (!Array.isArray(b.event.helps) || b.event.helps.length > 20)) return null;
   if (b.history && (!Array.isArray(b.history) || b.history.length > 50)) return null;
   if (b.available && !Array.isArray(b.available)) return null;
   if (b.memory !== undefined && (b.memory === null || typeof b.memory !== "object" || Array.isArray(b.memory))) delete b.memory;

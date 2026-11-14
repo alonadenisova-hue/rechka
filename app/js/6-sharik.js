@@ -74,20 +74,35 @@ function shAbort(){try{SH_CTL.abort()}catch(e){}SH_CTL=new AbortController()}
 function shSignal(ms){const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),ms),own=SH_CTL.signal;
   if(own.aborted)ctl.abort();else own.addEventListener('abort',()=>ctl.abort(),{once:true});return {signal:ctl.signal,done:()=>clearTimeout(tm)}}
 const SH_WAIT=9000; /* сколько приложение ждёт ответа /sharik (сервер сдаётся раньше — через ~6,5 с — и присылает запасную реплику) */
-async function shAsk(ev){if(window.__shSim){const own=SH_CTL.signal,j=await window.__shSim(ev);return own.aborted?null:j}
+async function shAsk(ev){const t0=Date.now();
+  if(window.__shSim){const own=SH_CTL.signal,j=await window.__shSim(ev);if(own.aborted)return null;shNote(j,t0,'net');return j}
   const body={child:{name:S.name||'Лев'},hero:heroKind(),minutes:(Date.now()-G.t0)/60000,plannedMinutes:+S.shMin||20,levels:S.lvl,available:shAvail(),history:(G.shHist||[]).slice(-12),event:ev};
   if(G.shMem===undefined)G.shMem=shMemory();if(G.shMem)body.memory=G.shMem;
-  const q=shSignal(SH_WAIT);
+  const q=shSignal(SH_WAIT);let why='net';
   try{const r=await fetch(String(S.shUrl).replace(/\/+$/,'')+'/sharik',{method:'POST',headers:{'Content-Type':'application/json','X-Sharik-Code':S.shCode||''},body:JSON.stringify(body),signal:q.signal});
-    if(r.ok){const j=await r.json();if(j&&typeof j.say==='string'&&j.next)return j}}catch(e){}finally{q.done()}
-  return null}
+    if(r.ok){const j=await r.json();if(j&&typeof j.say==='string'&&j.next){shNote(j,t0);return j}why='bad_json'}else why=r.status===401?'code':'http_'+r.status}
+  catch(e){why=SH_CTL.signal.aborted?'':q.signal.aborted?'slow':'net'}finally{q.done()}
+  if(why)shNote(null,t0,why);return null}
+/* v47: учёт ответов ИИ за занятие (G.shStat) — для отчёта маме и значка «ИИ молчит» на экране.
+   note от сервера: ok — ответила модель; no_key, daily_limit, timeout, bad_key, rate_limited, connection, api_… — запасная реплика.
+   Без ответа: net — нет связи, slow — приложение не дождалось 9 с, code — неверный семейный код. */
+const SH_WHY={no_key:'нет ключа',daily_limit:'дневной лимит',timeout:'модель не успела',bad_key:'неверный ключ',rate_limited:'перегружен',connection:'нет связи у сервера',
+  net:'нет связи',slow:'сервер не ответил',code:'неверный код',refusal:'отказ модели',bad_json:'странный ответ'};
+function shWhy(n){return SH_WHY[n]||(/^(api|http)_/.test(n)?'ошибка '+n.replace(/\D/g,''):n)}
+function shStat(){return G?(G.shStat||(G.shStat={n:0,ai:0,fb:{},lat:[],late:0})):null}
+function shNote(j,t0,why){const s=shStat();if(!s)return;const note=j?(j.local?'local':j.note||'ok'):why;s.n++;
+  if(note==='ok'){s.ai++;s.lat.push(Date.now()-t0)}else s.fb[note]=(s.fb[note]||0)+1;s.last=note;shBadge(note)}
+function shBadge(note){const gm=$('#game');if(!gm||!G||!(G.sharik||G.lesson)||S.shBadge===false)return;let b=document.getElementById('shai');
+  if(!b){gm.insertAdjacentHTML('beforeend','<div id="shai" hidden></div>');b=document.getElementById('shai')}
+  b.hidden=note==='ok';b.textContent='ИИ молчит: '+shWhy(note)}
 /* Шарик думает, пока ждёт ответ: «…» в облачке, объёмный — наклон головы, глаза вверх, лапа у подбородка */
 function shThink(dog,bub,on){bub.classList.toggle('think',on);dog.classList.toggle('think',on);if(on)bub.innerHTML='<span class="thd" aria-label="Шарик думает"><i></i><i></i><i></i></span>';
   const h=s3(dog);if(h&&on)h.mood('think');else if(on)sh3Ready(dog).then(x=>{if(x&&dog.classList.contains('think'))x.mood('think')})}
 function sh3Ready(el){return el._s3p||Promise.resolve(s3(el))}
 /* v32: Шарик слушает Льва после своей реплики. Засчитывается сама попытка (голос громче порога), слова не оцениваются.
    Распознавание (по желанию мамы) — только подсказка ей внизу экрана и поле heard для сервера. */
-const SHV={wait:3000,max:6000,tail:800,stt:5000}; // сколько ждать голос, максимум слушать, тишина после голоса, ожидание распознавания (мс)
+const SHV={max:6000,tail:800,stt:5000,get wait(){return shWaitMs()}}; // сколько ждать голос (v47: настройка, по умолчанию 5 с), максимум слушать, тишина после голоса, ожидание распознавания (мс)
+function shWaitMs(){return Math.max(2,Math.min(15,+S.shWaitS||5))*1000}
 function shVoiceOn(){return S.shVoice!==false&&(MICX!==false||!!window.__shVoiceSim)}
 async function shListen(st,mine){
   if(window.__shVoiceSim){const r=await window.__shVoiceSim();if(r&&S.shStt)r.heard=await shStt(new Float32Array(16000));return r}
@@ -98,9 +113,9 @@ async function shListen(st,mine){
   const r=await new Promise(res=>{let first=-1,lastEnd=-1,ms=0,skip=false;const t0=performance.now();
     const det=segDetector(t=>{if(first<0)first=t},(d,t)=>{ms+=d;lastEnd=t});
     st.onclick=()=>{skip=true};
-    const safe=setTimeout(()=>{VM.cb=null;res(null)},SHV.max+2000); /* микрофон замолчал или ушли из занятия */
+    const safe=setTimeout(()=>{VM.cb=null;res(null)},Math.max(SHV.max,SHV.wait)+2000); /* микрофон замолчал или ушли из занятия */
     VM.cb=(v,t)=>{const on=det(v,t);if(bar){bar.style.width=Math.min(100,v/vthr()*50)+'%';bar.classList.toggle('on',on>=0)}
-      const done=G!==mine||skip||(first<0&&t-t0>SHV.wait)||(on<0&&lastEnd>0&&t-lastEnd>SHV.tail)||t-t0>SHV.max;
+      const done=G!==mine||skip||(first<0&&t-t0>SHV.wait)||(on<0&&lastEnd>0&&t-lastEnd>SHV.tail)||t-t0>Math.max(SHV.max,SHV.wait+1500);
       if(!done)return;VM.cb=null;clearTimeout(safe);if(on>=0)ms+=on; /* голос ещё звучит — добавить текущий кусок */
       res(first<0||G!==mine?null:{ms:Math.round(ms),span:Math.round(t-first+250)})}});
   st.onclick=null;if(ear)ear.classList.remove('on');
@@ -225,6 +240,13 @@ const SH_MOVES={soft:'Ошибка — мягко: «Ой!», «Почти!» в
   who:'Иногда спрашивает «Кто молодец?» — «Я молодец!»',self:'После «Покажи, где…» — «А у тебя где?» и показывает на себе',did:'После «Положи» — «Что ты сделал?» — «Я положил!»'};
 function shMv(k){return !(S.shMv&&S.shMv[k]===false)}
 const SH_SELF={нос:'nose',рот:'mouth',глаз:'eye',глаза:'eye',ухо:'ear',уши:'ear',щека:'cheek',щёки:'cheek',голова:'head',волосы:'head',живот:'belly',нога:'leg',ноги:'leg',колено:'knee',коленка:'knee',плечо:'shoulder',плечи:'shoulder'};
+const SH_KEY={нос:'нос',рот:'рот',глаз:'глаз',глаза:'глаз',ухо:'ухо',уши:'ухо',щека:'щёчка',щёки:'щёчка',голова:'голова',волосы:'голова',живот:'живот',нога:'нога',ноги:'нога',колено:'коленка',коленка:'коленка',плечо:'плечи',плечи:'плечи'}; /* часть тела → жест «Зеркала» */
+/* ждать жест: камера (если включена) или кнопка мамы; null — не дождались */
+async function shGestWait(c,key,mine){let fin;const p=new Promise(r=>fin=r);const ms=shWaitMs()+3000;
+  const ctl=await mirrWatchStart(c,key&&MIRR_EX[key]?key:'нос',()=>G===mine,t=>{if(t==='camera'||t==='parent')fin(t)},{});
+  if(!key||!MIRR_EX[key])ctl.setKey(null); /* жест не знаем — камера не судит, только мама */
+  const how=await Promise.race([p,wait(ms).then(()=>null)]);ctl.stop();
+  if(how&&G===mine&&G.sharik)(G.shGest=G.shGest||{camera:0,parent:0})[how]++;return how}
 function shHero(){const d=shDogEl();return d?s3(d):null}
 function shNod(yes){const h=shHero();if(h&&h.nod&&shMv('nod'))setTimeout(()=>{yes?h.nod():h.shake()},250)}
 /* после двух ошибок игра подсвечивает верный ответ (.hint) — герой показывает на него лапой */
@@ -237,10 +259,15 @@ async function shTalk(mv,mine){const c=shC(),dog=c.querySelector('.shdog'),bub=c
   if(G.sharik)G.shHist.push({who:'sharik',text:mv.q});
   await shSpeak(mv.q,dog,{game:true});if(G!==mine)return false;
   let v=null;
-  if(mv.pose){if(h3())h3().mood('calm').pose(mv.pose);await shPause(c,3500);if(G!==mine)return false}
+  if(mv.pose){if(h3())h3().mood('calm').pose(mv.pose);
+    /* v47: хвалим только за событие — жест увидела камера или мама нажала «Получилось»; иначе герой просто показывает сам */
+    const how=await shGestWait(c,mv.key,mine);if(G!==mine)return false;
+    if(!how){if(h3())h3().mood('calm');bub.textContent=mv.m;if(G.sharik)G.shHist.push({who:'sharik',text:mv.m});
+      await shSpeak(mv.m,dog,{game:true});if(G!==mine)return false;if(h3())h3().pose(null);await wait(250);if(G!==mine)return false;shBig(false);return true}
+    sfx.good();confetti(30);if(G.sharik)G.shHist.push({who:'event',text:how==='camera'?'Лев показал на себе (камера)':'Мама: получилось'})}
   else if(shVoiceOn()){if(h3())h3().mood('listen');v=await shListen(c,mine);if(G!==mine)return false}
   else{await shPause(c,1800);if(G!==mine)return false}
-  if(v){sfx.good();confetti(30);if(G.sharik)G.shHist.push({who:'event',text:`Лев попытался сказать (голос ${(v.ms/1000).toFixed(1)} с)`})}
+  if(v&&!mv.pose){sfx.good();confetti(30);if(G.sharik)G.shHist.push({who:'event',text:`Лев попытался сказать (голос ${(v.ms/1000).toFixed(1)} с)`})}
   if(h3())h3().mood('praise');bub.textContent=mv.a;if(G.sharik)G.shHist.push({who:'sharik',text:mv.a});
   await shSpeak(mv.a,dog,{game:true});if(G!==mine)return false;
   if(h3())h3().pose(null).mood('calm');await wait(250);if(G!==mine)return false;shBig(false);return true}
@@ -251,7 +278,7 @@ async function shMoves(){const mine=G,c=shC();if(!c||!G.i||G.shMvI===G.i)return 
   const e=S.log[S.log.length-1];if(!e||e.t<G.t0||!e.ok)return true;
   let mv=null;
   if(e.g==='put'&&shMv('did')){if((G.shDidN=(G.shDidN||0)+1)%2===1)mv={q:'Что ты сделал?',a:'Я положил!'}}
-  else if(e.g==='body'&&SH_SELF[e.n]&&shMv('self')){if((G.shSelfN=(G.shSelfN||0)+1)%2===1)mv={q:`А у тебя где ${e.n}? Покажи!`,a:`Вот ${e.n}! Молодец!`,pose:SH_SELF[e.n]}}
+  else if(e.g==='body'&&SH_SELF[e.n]&&shMv('self')){if((G.shSelfN=(G.shSelfN||0)+1)%2===1)mv={q:`А у тебя где ${e.n}? Покажи!`,a:`Вот ${e.n}! Молодец!`,m:`Смотри: вот ${e.n}!`,pose:SH_SELF[e.n],key:SH_KEY[e.n]||null}}
   if(!mv&&shMv('who')&&(G.shOkN=(G.shOkN||0)+1)%6===0)mv={q:'Кто молодец?',a:'Я молодец!'};
   return mv?shTalk(mv,mine):true}
 /* задание закончено (вызывается из roundDone): результат уходит серверу в фоне, занятие не ждёт */
@@ -283,7 +310,7 @@ async function shStep(){
   else{ev=G.shEv||{type:'result'};const p=G.shPend;G.shPend=null;
     if(p){const tm=setTimeout(()=>{if(G===mine)think(true)},350);
       j=await shWait(p,(G.shMiss>=2?SH_GRACE.slow:SH_GRACE.result)-(Date.now()-G.shPendT));clearTimeout(tm);if(G!==mine)return false;think(false);
-      if(j)G.shMiss=0;else{G.shMiss=(G.shMiss||0)+1;p.then(x=>{if(G===mine&&x)G.shLate=x})}} /* опоздавший ответ пригодится для выбора следующей игры */
+      if(j)G.shMiss=0;else{G.shMiss=(G.shMiss||0)+1;shStat().late++;p.then(x=>{if(G===mine&&x)G.shLate=x})}} /* опоздавший ответ пригодится для выбора следующей игры */
     if(!j){const end=ev.type==='parent_end',late=G.shLate;G.shLate=null;
       const g=late&&late.next&&late.next.kind!=='end'&&late.next.game||((G.shSame||0)<3?G.game:null);
       j={say:end?pick(['Ты молодец! Пока-пока!','Ты сегодня так старался! До завтра!','Мне было весело с тобой! Пока-пока!']):g===G.game?'':pick(SH_BRIDGE),next:{kind:end?'end':'game',game:g,level:late&&late.next?late.next.level:null},local:true}}}
@@ -371,22 +398,37 @@ async function shParentSend(text,mine){const c=shC();if(!c)return;const dog=c.qu
     await new Promise(r=>c.querySelector('.shgo').onclick=()=>{ac();r()});const b=c.querySelector('.shgo');if(b)b.remove();if(G!==mine)return}
   if(g&&!j.local&&(g!==G.game||j.next.level))return shJump(g,j.next.level);
   if(h3())h3().mood('calm');shBig(false);c.classList.toggle('own',SH_OWN.includes(G.game))}
+/* v47: технический отчёт после занятия — участвовал ли ИИ (и почему нет), сколько помогала мама, что заметили.
+   c: {mom — «Получилось», next — «Дальше», voice, camera, tap — замеченные попытки, barge — перебил героя, voiceKind — чем говорил герой} */
+function shReport(mine,c={}){const s=mine&&mine.shStat,P=[];
+  if(s&&s.n){const fb=Object.entries(s.fb).map(([k,n])=>shWhy(k)+' — '+n).join(', '),lat=s.lat.slice().sort((a,b)=>a-b);
+    P.push(`ИИ ответил ${s.ai} из ${s.n}`+(lat.length?` (обычно за ${(lat[lat.length>>1]/1000).toFixed(1)} с, самое долгое ${(lat[lat.length-1]/1000).toFixed(1)} с)`:'')+(fb?`; без ИИ: ${fb}`:'')+(s.late?`; приложение не дождалось ответа: ${s.late}`:'')+'.')}
+  else P.push(shOn()?'ИИ ни разу не спрашивали.':'ИИ выключен (нет адреса сервера) — всё решал телефон.');
+  if(c.aiUsed!==undefined)P.push(`Подсказку выбрал ИИ: ${c.aiUsed}, телефон: ${c.localUsed||0}.`);
+  P.push(`Мама нажала «Получилось»: ${c.mom||0}`+(c.next!==undefined?`, «Дальше»: ${c.next}`:'')+'.');
+  P.push(`Замечено: голос — ${c.voice||0}, жест камерой — ${c.camera||0}`+(c.tap!==undefined?`, нажатий — ${c.tap}`:'')+(c.barge?`, перебил героя — ${c.barge}`:'')+'.');
+  if(c.voiceKind)P.push('Голос героя: '+c.voiceKind+'.');
+  return P.join(' ')}
+function shRepSave(kind,text){S.shRep=[{t:Date.now(),k:kind,x:String(text).slice(0,1200)}].concat(S.shRep||[]).slice(0,5);save()}
+function shRepText(){const L=S.shRep||[];if(!L.length)return 'Отчётов пока нет — они появятся после «Занятия с Шариком» или «Пятиминутки».';
+  return L.map(r=>`${new Date(r.t).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} · ${r.k}: ${r.x}`).join('\n\n')}
 /* итог занятия для мамы на экране «Молодец!»: сразу — счёт с телефона, затем — несколько фраз от сервера */
 function shSummary(mine){const box=$('#finish .finish');if(!box||!mine)return;const old=document.getElementById('sh-sum');if(old)old.remove();
   const L=S.log.filter(x=>x.t>=mine.t0&&ROUNDS[x.g]);if(!L.length)return;
   const nm=x=>(GN[x.g]||x.g)+(typeof x.n==='string'&&x.n.length<24?' «'+x.n+'»':'');
   const hard=[...new Set(L.filter(x=>!x.ok||x.w>0).map(nm))].slice(0,5),easy=[...new Set(L.filter(x=>x.ok&&!x.w).map(nm))].slice(0,6);
   const local=`Заданий: ${L.length}, с первой попытки: ${L.filter(x=>x.ok&&!x.w).length}.`+(hard.length?` Было трудно: ${hard.join(', ')}.`:'');
-  box.insertAdjacentHTML('beforeend','<div class="shsum" id="sh-sum"><b>Маме</b><span></span></div>');const sp=box.querySelector('#sh-sum span');sp.textContent=local;
+  box.insertAdjacentHTML('beforeend','<div class="shsum" id="sh-sum"><b>Маме</b><span></span><small style="display:block;color:#8a8fa3;margin-top:6px"></small></div>');const sp=box.querySelector('#sh-sum span');sp.textContent=local;
+  {const tech=shReport(mine,{voice:mine.shVoiceN||0,camera:(mine.shGest||{}).camera||0,mom:L.filter(x=>x.how==='parent').length+((mine.shGest||{}).parent||0)});box.querySelector('#sh-sum small').textContent=tech;shRepSave('Занятие с Шариком',local+' '+tech)}
   if(!shOn()||S.shSum===false)return;
   const stats=local+(easy.length?` Получилось сразу: ${easy.join(', ')}.`:'')+` Попыток сказать голосом: ${mine.shVoiceN||0}. Минут: ${Math.round((Date.now()-mine.t0)/60000)}.`;
   shAsk({type:'summary',text:stats.slice(0,1500)}).then(j=>{if(j&&j.say&&sp.isConnected&&!j.local)sp.textContent=local+' '+j.say})}
 function startSharik(){ac();shAbort();{const os=document.getElementById('sh-sum');if(os)os.remove()}G={t0:Date.now(),game:null,i:0,results:[],seen:new Set(),sharik:true,max:200,shHist:[]};
-  const gm=$('#game');gm.classList.remove('withnext');gm.classList.add('sharik');$('#stage').innerHTML='';shMountComp();
+  const gm=$('#game');gm.classList.remove('withnext','lesson');gm.classList.add('sharik');{const b=document.getElementById('shai');if(b)b.hidden=true}$('#stage').innerHTML='';shMountComp();
   show('game');renderDots();nextRound()}
 /* v42: Шарик рядом и в обычных играх (без сервера): задаёт вопрос, радуется и сочувствует. Выключатели — «Для взрослых» → «Шарик» */
 function shHostOn(){return !!S.shOn&&S.shHost===true} /* v46: по умолчанию выключено — в углу герой мало помогает */
-function shHostStart(){const os=document.getElementById('sh-sum');if(os)os.remove();const gm=$('#game');gm.classList.remove('withsh','shbig');const old=document.getElementById('shc');if(old)old.remove();
+function shHostStart(){const os=document.getElementById('sh-sum');if(os)os.remove();{const b=document.getElementById('shai');if(b)b.hidden=true}const gm=$('#game');gm.classList.remove('withsh','shbig');const old=document.getElementById('shc');if(old)old.remove();
   if(!G||G.sharik||!shHostOn())return;G.host=true;shMountComp();shHostSync()}
 /* перед каждым заданием: в играх со своим Шариком нижний прячется, после них — возвращается */
 function shHostSync(){if(!G||!G.host)return;const c=document.getElementById('shc');if(!c)return;const own=SH_OWN.includes(G.game);

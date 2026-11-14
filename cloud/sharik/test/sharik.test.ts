@@ -343,3 +343,21 @@ test("v45: итог занятия для мамы — длинный текст
   const r = sanitize({ say: "Сегодня Лев хорошо показывал части тела. ".repeat(10), next: { kind: "game", game: null, level: null }, tone: "calm" }, req);
   assert.equal(r.next.kind, "end"); assert.ok(r.say.length > 220 && r.say.length <= 700);
 });
+
+test("v47: «Пятиминутка» — действие только из разрешённых, без реплики и без игры", () => {
+  const req = { event: { type: "lesson", game: "cat", task: "Что делает Шарик? Шарик спит или ест?", stage: "ask", attempts: 1, allowed: ["repeat", "model", "fewer", "next", "fly"], helps: ["repeat"] } } as never;
+  assert.ok(parseRequest(req));
+  const m = userMessage(req);
+  assert.match(m, /allowed: repeat, model, fewer, next/); assert.doesNotMatch(m, /fly/);
+  assert.match(m, /helps: repeat/); assert.match(m, /этап: ask/);
+  const ok = sanitize({ say: "Смотри!", next: { kind: "end", game: "num", level: 3, action: "model" }, tone: "praise" }, req);
+  assert.deepEqual(ok, { say: "", next: { kind: "game", game: null, level: null, action: "model" }, tone: "calm" });
+  // не из списка разрешённых — нет действия, приложение решит само
+  assert.equal(sanitize({ say: "", next: { kind: "game", game: null, level: null, action: "easier" }, tone: "calm" }, req).next.action, null);
+  assert.equal(sanitize("мусор", req).next.action, null);
+  assert.equal(fallbackReply(req).next.action, null); assert.equal(fallbackReply(req).say, "");
+  // обычные события действия не несут
+  assert.equal("action" in sanitize({ say: "Да!", next: { kind: "game", game: "body", level: null, action: "model" }, tone: "praise" }, base).next, false);
+  assert.equal(parseRequest({ event: { type: "lesson", allowed: "repeat" } }), null);
+  assert.match(SYSTEM_PROMPT, /event lesson/);
+});

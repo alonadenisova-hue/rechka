@@ -147,7 +147,7 @@ function renderHome(){
 /* ---------- session engine */
 let G=null; // {game, i, results[], round}
 function fresh(gen,key){let c;for(let t=0;t<25;t++){c=gen();if(!G.seen.has(key(c)))break}G.seen.add(key(c));return c}
-function startGame(game){ac();VM.stop();G={t0:Date.now(),game,i:0,results:[],seen:new Set(),max:FIX7[game]||S.rounds};$('#game').classList.remove('withnext','sharik');shHostStart();show('game');renderDots();nextRound()}
+function startGame(game){ac();VM.stop();G={t0:Date.now(),game,i:0,results:[],seen:new Set(),max:FIX7[game]||S.rounds};$('#game').classList.remove('withnext','sharik','lesson');shHostStart();show('game');renderDots();nextRound()}
 function renderDots(){$('#dots').innerHTML=Array.from({length:G.max||S.rounds},(_,k)=>`<i class="${G.results[k]===true?'on':G.results[k]===false?'miss':''}"></i>`).join('')}
 async function nextRound(){
   if(!G)return;

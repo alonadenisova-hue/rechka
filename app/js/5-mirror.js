@@ -155,3 +155,37 @@ async function mirrRound(lvl){
   if(R.dead||!G)return;await wait(500);
   return roundDone(ok,{n:key,how:R.mirrHow})}
 
+/* v47: заметить жест камерой вне «Зеркала» — ход «А у тебя где нос?» и «Пятиминутка». Видео маленькое, на телефоне,
+   никуда не отправляется. on(тип): 'camera' — жест держится ~0,5 с; 'unsure' — начал, но не удержал (один раз на жест);
+   'parent' — мама нажала «Получилось». Без камеры (или выключено) — только кнопка мамы. Возвращает {cam, setKey, stop}. */
+const MCHK_CSS=`.mchk{display:flex;align-items:center;justify-content:center;gap:12px;flex:none}
+.mchk .mchkv{position:relative;width:96px;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:#24324a;box-shadow:0 4px 0 var(--line);flex:none}
+.mchk video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.mchk .ring{position:absolute;inset:0;border-radius:18px;box-shadow:inset 0 0 0 calc(var(--p,0)*10px) #3cbf7a;pointer-events:none}
+.mchk .big-btn{min-height:56px;pointer-events:auto}`;
+document.head.insertAdjacentHTML('beforeend','<style>'+MCHK_CSS+'</style>');
+async function mirrWatchStart(box,key,alive,on,o={}){
+  box.insertAdjacentHTML('beforeend',`<div class="mchk"><div class="mchkv"><video playsinline muted autoplay></video><div class="ring"></div></div>${o.btn===false?'':'<button class="big-btn mchkok">Получилось ✓</button>'}</div>`);
+  const w=box.lastElementChild,video=w.querySelector('video'),ring=w.querySelector('.ring');
+  let ex=MIRR_EX[key],stream=null,stopped=false,cam=false,held=0,unsure=false,mst={},last=performance.now();
+  const ctl={cam:false,setKey(k){ex=MIRR_EX[k];held=0;unsure=false;mst={};if(ring)ring.style.setProperty('--p',0)},
+    stop(){stopped=true;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;w.remove()}};
+  const ok=w.querySelector('.mchkok');if(ok)ok.onclick=e=>{e.stopPropagation();ac();on('parent')};
+  if(S.shCam!==false){
+    if(window.__mirrSim)cam=true;
+    else{stream=await getCam(false);if(stopped||!alive()){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;return ctl}
+      if(stream){video.srcObject=stream;try{await video.play()}catch(e){}
+        try{await mpLoad();if(ex&&(ex.t==='bp'||ex.t==='mv'))await mpPose();cam=true}catch(e){cam=false}}}}
+  if(stopped||!alive()){ctl.stop();return ctl}
+  if(!cam){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;const v=w.querySelector('.mchkv');if(v)v.remove()}
+  ctl.cam=cam;
+  const tick=()=>{if(stopped)return;if(!alive()){ctl.stop();return}
+    const now=performance.now(),dt=now-last;last=now;
+    if(cam&&ex){let d=null;try{d=mpFrame(video,now,ex)}catch(e){}
+      if(mirrHit(ex,d,mst,now))held+=dt;else held=Math.max(0,held-dt*.5);
+      if(ring)ring.style.setProperty('--p',Math.min(1,held/MIRR_CFG.hold));
+      if(held>=MIRR_CFG.hold){held=0;on('camera')}
+      else if(!unsure&&held>MIRR_CFG.hold*.4){unsure=true;on('unsure')}}
+    requestAnimationFrame(tick)};
+  if(cam)requestAnimationFrame(tick);
+  return ctl}
