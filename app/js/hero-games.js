@@ -45,7 +45,7 @@ async function catRound(lvl){
   const first=own&&G.i===0&&!G.hgSeq&&hgK('hello');
   if(!G.hgSeq||!G.hgSeq.length){const all=hgKinds(lvl);if(!all.length)all.push('do');let q,t=0;do{q=shuffle(all.slice())}while(q[q.length-1]===G.hgLast&&all.length>1&&t++<20);G.hgSeq=q}
   let mode=first?'hello':own&&last&&hgK('hello')?'bye':own&&G.i%5===4&&!last&&hgK('rest')?'rest':G.hgSeq.pop();G.hgLast=mode;
-  if(window.HGT&&(HGT[mode]||mode==='rest'))return hgtRound(mode,lvl); /* новые задания — app/js/hero-tasks.js */
+  if(typeof HGT!=='undefined'&&(HGT[mode]||mode==='rest'))return hgtRound(mode,lvl); /* новые задания — app/js/hero-tasks.js */
   const st=$('#stage');stageAnim&&stageAnim();
   st.innerHTML=`<div class="hg">${mode==='where'?`<div class="hgscene"><div class="zone on"></div><div class="zone under"></div>${HG_TABLE}<div class="hgcat side"></div></div>`:'<div class="hgcat"></div>'}<div class="hgrow"></div><div class="shear" aria-hidden="true">${EAR}<span class="lv"><i></i></span></div></div>`;
   const box=st.firstChild,cel=box.querySelector('.hgcat'),row=box.querySelector('.hgrow'),cat=hgCat(cel);

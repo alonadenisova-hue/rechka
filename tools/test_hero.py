@@ -37,7 +37,7 @@ with sync_playwright() as p:
     drive = f"""(()=>{{const L=window.__ls.L;if(!L||!L.it||L.it.done||!['wait'].includes(L.stage))return 0;
       const e=document.querySelector('#stage [data-ok="1"]:not(.gone)');if(e){{e.click();return 1}}
       window.__ls.lsEmit(L.x.kind==='pick'?'tap':'parent',{{ok:true}});L.it.done=true;return 2}})()"""
-    for lv in (1, 2, 3):
+    for lv in [int(x) for x in (sys.argv[1] if len(sys.argv) > 1 else "123")]:
         done, praised = [], True
         for k in KINDS:
             if lv < pg.evaluate(f"(window.__hgt.HGT && ({{yaty:2,put:2,rhythm:2}})['{k}'])||1"): continue
