@@ -97,7 +97,7 @@ async function lsChoose(x,it,stage){const L=G.ls,mine=G,allowed=lsAllowed(x,it),
   if(act!=='next')it.ai=lsAiAsk(x,it,'help'); /* про следующую помощь — тоже заранее */
   return act}
 /* ---------- одно задание: показать → объяснить → ждать → заметить → помочь → продолжить ---------- */
-async function lsItem(x){const L=G.ls,mine=G,it={tries:0,helps:[],left:x.opts||0};L.it=it;L.x=x;const gone=()=>G!==mine;
+async function lsItem(x){const L=G.ls,mine=G,R0=G.round,it={tries:0,helps:[],left:x.opts||0};L.it=it;L.x=x;const gone=()=>G!==mine||!!(R0&&(R0.dead||G.round!==R0)); /* ушли домой или задание отменили */
   L.pend=null;lsStage('show',{task:x.task});await x.show(it);if(gone())return null;
   it.ai=lsAiAsk(x,it,'ask');
   lsStage('explain');let r=await x.ask(it);if(gone())return null;
