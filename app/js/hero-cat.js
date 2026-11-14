@@ -19,6 +19,7 @@ function markup(){return `
   <ellipse cx="100" cy="168" rx="26" ry="32" fill="${C.cream}" data-part="живот"/>
   <ellipse cx="72" cy="200" rx="19" ry="11" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/><ellipse cx="128" cy="200" rx="19" ry="11" fill="${C.fur}" stroke="${C.line}" stroke-width="3"/>
   <path d="M62 198v6M70 200v6M130 200v6M138 198v6" stroke="${C.line}" stroke-width="2" stroke-linecap="round"/>
+  <g class="w-socks" style="display:none"><ellipse cx="72" cy="199" rx="21" ry="13" fill="#7b61ff" stroke="${C.line}" stroke-width="3"/><ellipse cx="128" cy="199" rx="21" ry="13" fill="#7b61ff" stroke="${C.line}" stroke-width="3"/><path d="M56 194h32M112 194h32" stroke="#fff" stroke-width="4" opacity=".8"/></g>
  </g>
  <g class="c-scarf"><path d="M134 126l14 30q-8 6-16 2l-8-28z" fill="${C.scarf2}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/>
   <path d="M64 118Q100 140 136 118L138 130Q100 154 62 130Z" fill="${C.scarf}" stroke="${C.line}" stroke-width="3" stroke-linejoin="round"/><path d="M80 130l-2 10M100 136v10M120 130l2 10" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/></g>
@@ -30,7 +31,7 @@ function markup(){return `
   <path d="M50 78l12 3M51 90l11-1M150 78l-12 3M149 90l-11-1" stroke="${C.dark}" stroke-width="4" stroke-linecap="round"/>
   <circle class="c-blL" cx="64" cy="98" r="9" fill="${C.pink}" opacity=".55"/><circle class="c-blR" cx="136" cy="98" r="9" fill="${C.pink}" opacity=".55"/>
   <g class="c-chL"><ellipse cx="82" cy="100" rx="19" ry="15" fill="${C.cream}"/></g><g class="c-chR"><ellipse cx="118" cy="100" rx="19" ry="15" fill="${C.cream}"/></g>
-  <path d="M60 100h-22M62 106l-20 6M140 100h22M138 106l20 6" stroke="${C.line}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+  <g data-part="усы"><path d="M60 100h-22M62 106l-20 6M140 100h22M138 106l20 6" stroke="${C.line}" stroke-width="1.6" stroke-linecap="round" opacity=".7"/><path d="M62 103h-26M138 103h26" stroke="transparent" stroke-width="14"/></g>
   <g class="c-eyes">
    <g class="c-eyeL"><ellipse cx="80" cy="76" rx="11" ry="13" fill="#fff" stroke="${C.line}" stroke-width="2"/><g class="c-pup"><circle cx="81" cy="78" r="7" fill="${C.eye}"/><circle cx="84" cy="74" r="2.6" fill="#fff"/></g></g>
    <g class="c-eyeR"><ellipse cx="120" cy="76" rx="11" ry="13" fill="#fff" stroke="${C.line}" stroke-width="2"/><g class="c-pup"><circle cx="119" cy="78" r="7" fill="${C.eye}"/><circle cx="122" cy="74" r="2.6" fill="#fff"/></g></g>
@@ -40,8 +41,12 @@ function markup(){return `
   <path class="c-brL" d="M68 58q11-7 22-2" fill="none" stroke="${C.line}" stroke-width="3.5" stroke-linecap="round"/><path class="c-brR" d="M132 58q-11-7-22-2" fill="none" stroke="${C.line}" stroke-width="3.5" stroke-linecap="round"/>
   <path d="M94 89h12l-6 7z" fill="${C.pink}" stroke="${C.line}" stroke-width="2" stroke-linejoin="round"/>
   <g class="c-mouth"></g>
+  <g class="w-teeth" style="display:none"><path d="M84 103Q100 122 116 103Z" fill="${C.mouth}" stroke="${C.line}" stroke-width="2.5"/><path d="M88 104h24l-2 5h-20z" fill="#fff" stroke="${C.line}" stroke-width="1.2"/></g>
   <circle cx="80" cy="76" r="15" fill="transparent" data-part="глаз"/><circle cx="120" cy="76" r="15" fill="transparent" data-part="глаз"/>
   <circle cx="100" cy="91" r="9" fill="transparent" data-part="нос"/><ellipse cx="100" cy="108" rx="17" ry="9" fill="transparent" data-part="рот"/>
+  <ellipse cx="100" cy="44" rx="40" ry="12" fill="transparent" data-part="голова"/>
+  <g class="w-glasses" style="display:none"><circle cx="80" cy="76" r="16" fill="#bfe3f555" stroke="#24324a" stroke-width="4"/><circle cx="120" cy="76" r="16" fill="#bfe3f555" stroke="#24324a" stroke-width="4"/><path d="M96 75q4-4 8 0M64 72l-14-4M136 72l14-4" fill="none" stroke="#24324a" stroke-width="4" stroke-linecap="round"/></g>
+  <g class="w-hat" style="display:none"><path d="M48 54Q50 12 100 10Q150 12 152 54Z" fill="#e8423b" stroke="${C.line}" stroke-width="3"/><path d="M70 22q6 14 4 30M100 12v40M130 22q-6 14-4 30" stroke="#c22f29" stroke-width="3" fill="none"/><rect x="44" y="44" width="112" height="16" rx="8" fill="#ffcd1c" stroke="${C.line}" stroke-width="3"/><circle cx="100" cy="8" r="10" fill="#ffcd1c" stroke="${C.line}" stroke-width="3"/></g>
   <text class="c-zzz" x="150" y="40" font-size="26" font-weight="700" fill="#7b61ff" style="display:none">z z</text>
  </g>
  <g class="c-armL" data-part="лапа"><path class="o" fill="none" stroke="${C.line}" stroke-width="21" stroke-linecap="round"/><path class="f" fill="none" stroke="${C.fur}" stroke-width="15" stroke-linecap="round"/><circle class="p" r="10.5" fill="${C.cream}" stroke="${C.line}" stroke-width="3"/></g>
@@ -149,6 +154,11 @@ function mount(el,opt={}){
     point(dir){st.point=dir||null;return h},      /* 'up' | 'left' | 'right' | null — показать лапой на картинку */
     nod(){st.nodT=0;return h},shake(){st.shakeT=0;return h},
     act(a){st.act=a||null;return h},              /* 'sleep' | 'eat' | 'jump' | 'wave' | 'dance' | 'wash' | null — что герой делает */
+    /* v48: одежда (рисуется кодом поверх кота): 'hat' шапка, 'glasses' очки, 'socks' носки, 'scarf' шарф (по умолчанию надет) */
+    wear(k,on){const e=k==='scarf'?box.querySelector('.c-scarf'):box.querySelector('.w-'+k);if(e)e.style.display=on?'':'none';return h},
+    worn(k){const e=k==='scarf'?box.querySelector('.c-scarf'):box.querySelector('.w-'+k);return !!e&&e.style.display!=='none'},
+    scarfColor(c,c2){const g=box.querySelector('.c-scarf');if(g){g.children[1].setAttribute('fill',c);g.children[0].setAttribute('fill',c2||c)}return h}, /* «Какой шарф?» */
+    teeth(on){box.querySelector('.w-teeth').style.display=on?'':'none';P.mouth.style.display=on?'none':'';return h}, /* «Где у Шарика зубы?» — широкая улыбка с зубами */
     hold(ch){st.item=ch||'';P.item.textContent=st.item;P.item.style.display=st.item?'':'none';return h}, /* предмет в лапе (значок) */
     onPart(fn){box.querySelector('svg').style.pointerEvents='auto';box.onclick=e=>{const p=e.target.closest&&e.target.closest('[data-part]');fn(p?p.getAttribute('data-part'):null,e)};return h}, /* нажатие на часть тела */ /* «да» и «нет» головой */
     unmount(){st.alive=false;cancelAnimationFrame(raf);box.remove()},

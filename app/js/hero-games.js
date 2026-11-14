@@ -40,8 +40,12 @@ function hgOn(){return S.hgOn!==false&&!!window.Cat2D}
 function hgCat(el,opt){const h=Cat2D.mount(el,opt);el.classList.add('is3d');el._s3=h;return h}
 async function catRound(lvl){
   const R=G.round,mine=G;lvl=lvl||1;
-  if(!G.hgSeq||!G.hgSeq.length){const all=lvl>=2?['do','part','give','where','call']:['do','part','give','call'];let q;do{q=shuffle(all.slice())}while(q[q.length-1]===G.hgLast&&all.length>1);G.hgSeq=q}
-  const mode=G.hgLast=G.hgSeq.pop();
+  /* v48: «Привет» первым заданием, «Пока» последним, перерыв каждым пятым (не в «Занятии с Шариком») */
+  const own=!G.sharik&&!G.plan,last=G.i>=(G.max||S.rounds)-1;
+  const first=own&&G.i===0&&!G.hgSeq&&hgK('hello');
+  if(!G.hgSeq||!G.hgSeq.length){const all=hgKinds(lvl);if(!all.length)all.push('do');let q,t=0;do{q=shuffle(all.slice())}while(q[q.length-1]===G.hgLast&&all.length>1&&t++<20);G.hgSeq=q}
+  let mode=first?'hello':own&&last&&hgK('hello')?'bye':own&&G.i%5===4&&!last&&hgK('rest')?'rest':G.hgSeq.pop();G.hgLast=mode;
+  if(typeof HGT!=='undefined'&&(HGT[mode]||mode==='rest'))return hgtRound(mode,lvl); /* новые задания — app/js/hero-tasks.js */
   const st=$('#stage');stageAnim&&stageAnim();
   st.innerHTML=`<div class="hg">${mode==='where'?`<div class="hgscene"><div class="zone on"></div><div class="zone under"></div>${HG_TABLE}<div class="hgcat side"></div></div>`:'<div class="hgcat"></div>'}<div class="hgrow"></div><div class="shear" aria-hidden="true">${EAR}<span class="lv"><i></i></span></div></div>`;
   const box=st.firstChild,cel=box.querySelector('.hgcat'),row=box.querySelector('.hgrow'),cat=hgCat(cel);
