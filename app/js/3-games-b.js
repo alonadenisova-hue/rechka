@@ -683,7 +683,7 @@ async function dogRound(lvl){
   const model=async()=>{for(let k=0;k<row.length;k++){if(R.dead)return;cs.forEach(c=>c.classList.remove('on'));cs[k].classList.add('on');await dogSay(dog,row[k].t,rate);await wait(mode==='syl'?120:250)}cs.forEach(c=>c.classList.remove('on'))};
   R.replay=async()=>{if(R.busy)return;R.busy=1;await model();R.busy=0};
   R.busy=1;await model();R.busy=0;if(R.dead)return;
-  await wait(300);await say('Теперь ты!');if(R.dead)return;setPrompt('Теперь ты!');hint.textContent='Повтори за Шариком';dog.classList.add('listen');s3(dog)&&s3(dog).mood('listen');
+  await wait(300);await say('Теперь ты!');if(R.dead||!G||G.round!==R)return;setPrompt('Теперь ты!');hint.textContent='Повтори за Шариком';dog.classList.add('listen');s3(dog)&&s3(dog).mood('listen');
   let k=0;const light=()=>{cs.forEach(c=>c.classList.remove('on'));if(k<cs.length){cs[k].classList.add('on','said')}k++};
   let usedMic=false;
   if(S.voiceGame&&MICX!==false&&await VM.start()){usedMic=true;let last=performance.now();
