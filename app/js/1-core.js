@@ -135,7 +135,7 @@ function renderHome(){
   $('#art-snd').innerHTML=img(picOf('корова')||D.animals[0].i);
   $('#art-syl').innerHTML=DRUM;
   const wv=D3.cobj.find(o=>o.n==='ведро');if(wv)$('#art-word').innerHTML=img(wv.i);
-  renderMeTile();renderPzHome();
+  renderMeTile();renderPzHome();{const played=new Set((S.log||[]).map(x=>x.g));for(const t of document.querySelectorAll('.tile[data-game]')){const nb=t.querySelector('.newb');if(nb&&nb.textContent.trim()==='новое')nb.hidden=played.has(t.dataset.game)}} /* v49: «новое» — пока в игру ни разу не играли */
   for(const t of document.querySelectorAll('.tile[data-game="dai"]'))t.hidden=!({dai:D4.daina,many:D4.many}[t.dataset.game]||[]).length;$('.tile[data-game="fly"]').hidden=true;
   if(D4.daina.length)$('#art-dai').innerHTML=`<img src="${IMG[D4.daina[0].happy]}" alt="">`;
   if(D4.many.length)$('#art-many').innerHTML=`<img src="${IMG[D4.many[4].lot]}" alt="">`;

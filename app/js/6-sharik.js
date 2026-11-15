@@ -321,7 +321,7 @@ async function shStep(){
       if(h3())h3().mood(['praise','invite','comfort','calm'].includes(j.tone)?j.tone:'calm');
       await shSpeak(j.say,dog);if(G!==mine)return false}
     /* слушает после приветствия и после своего вопроса (не больше двух раз подряд, не на паузе и не в конце) */
-    if(nv>=2||!j.say||j.next.kind==='end'||j.next.kind==='wait'||!shVoiceOn()||!((first&&nv===0)||ask1(j.say)))break;
+    if(nv>=2||(!j.say&&!(first&&nv===0))||j.next.kind==='end'||j.next.kind==='wait'||!shVoiceOn()||!((first&&nv===0)||ask1(j.say)))break;
     if(h3())h3().mood('listen');
     const v=await shListen(c,mine);if(G!==mine)return false;
     if(h3())h3().mood(v?'praise':'calm');
