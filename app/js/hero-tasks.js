@@ -299,3 +299,18 @@ async function hgtRound(mode,lvl){if(mode==='rest')return hgtRest();const xs=HGT
   for(const k in all)$('#set-hgk-'+k).onchange=e=>{S.hgK=Object.assign({},S.hgK,{[k]:e.target.checked});save()};
   const s0=shSync;shSync=function(){s0.apply(this,arguments);for(const k in all){const e=$('#set-hgk-'+k);if(e)e.checked=hgK(k)}}}}
 window.__hgt={HGT,hgKinds,hgK};
+/* ---------- v50: раздел «Для взрослых» короче — все разделы свёрнуты, сверху поиск настройки по словам ---------- */
+{const par=$('#parent');if(par&&!document.getElementById('par-q')){
+  for(const p of [...par.querySelectorAll(':scope>div.panel')]){const h=p.querySelector(':scope>h3');if(!h)continue;
+    const d=document.createElement('details');d.className='panel';d.id=p.id||'';const sm=document.createElement('summary');sm.textContent=h.textContent;d.append(sm);h.remove();
+    while(p.firstChild)d.append(p.firstChild);p.replaceWith(d)}
+  document.head.insertAdjacentHTML('beforeend','<style>.srchhide{display:none!important}#par-q{width:100%;box-sizing:border-box;font:inherit;font-size:17px;padding:10px 14px;border-radius:14px;border:2px solid var(--line);margin:4px 0 10px}</style>');
+  par.querySelector(':scope>.row').insertAdjacentHTML('afterend','<input type="search" id="par-q" placeholder="Найти настройку: «Шарик», «камера», «уровень»…" autocomplete="off">');
+  const q=$('#par-q');
+  q.oninput=()=>{const w=q.value.trim().toLowerCase();
+    for(const d of par.querySelectorAll(':scope>details.panel')){
+      const items=[...d.querySelectorAll('.row,#levels>*,p.note,h4')];let any=false;
+      for(const it of items){const hit=!w||it.textContent.toLowerCase().includes(w);it.classList.toggle('srchhide',!hit);if(hit)any=true}
+      const title=d.querySelector('summary').textContent.toLowerCase().includes(w);
+      if(w&&title){items.forEach(it=>it.classList.remove('srchhide'));any=true}
+      d.classList.toggle('srchhide',!!w&&!any);if(w)d.open=any;else d.open=false}}}}

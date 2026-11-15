@@ -442,7 +442,7 @@ const DCOL={red:['#ef4a3d','красн'],blue:['#2f8be0','син'],green:['#45b6
 const adjEnd=(c,g)=>{const soft=c==='blue';return DCOL[c][1]+(g==='f'?(soft?'юю':'ую'):g==='pl'?(soft?'ие':'ые'):(soft?'ий':'ый'))};
 const adjNom=(c,g)=>{const soft=c==='blue';return DCOL[c][1]+(g==='f'?(soft?'яя':'ая'):g==='pl'?(soft?'ие':'ые'):(soft?'ий':'ый'))};
 const DITEMS={
-  трусы:{g:'pl',acc:'трусы',vb:'60 190 80 60',z:3,d:c=>`<path d="M72 200h56l2 26q-14 6-24 4l-6-12-6 12q-10 2-24-4z" fill="${c}" stroke="#0002" stroke-width="2"/>`},
+  трусы:{g:'pl',acc:'трусы',vb:'60 190 80 60',z:3,d:c=>`<path d="M70 200h60l-1 9q-15 3-21 21h-16q-6-18-21-21z" fill="${c}" stroke="#0002" stroke-width="2"/><path d="M70 203.5h60" stroke="#fff" stroke-width="3" opacity=".7"/>`}, /* v50: трусы — высокий вырез, не похожи на шорты */
   шорты:{g:'pl',acc:'шорты',vb:'55 190 90 100',z:4,d:c=>`<path d="M70 198h60l6 76h-30l-6-44-6 44H64z" fill="${c}" stroke="#0002" stroke-width="2"/><path d="M70 206h60" stroke="#0003" stroke-width="3"/>`},
   футболка:{g:'f',acc:'футболку',vb:'30 95 140 130',z:5,d:c=>`<path d="M74 104l-34 22 14 28 18-10v66h56v-66l18 10 14-28-34-22q-26 14-52 0z" fill="${c}" stroke="#0002" stroke-width="2"/><path d="M86 106q14 10 28 0" stroke="#0003" stroke-width="3" fill="none"/>`},
   носки:{g:'pl',acc:'носки',vb:'55 320 90 70',z:2,d:c=>`<path d="M74 330h16v38q0 8-8 8H66q-4-8 8-12z" fill="${c}" stroke="#0002" stroke-width="2"/><path d="M110 330h16v34q12 4 8 12h-16q-8 0-8-8z" fill="${c}" stroke="#0002" stroke-width="2"/><path d="M74 336h16M110 336h16" stroke="#fff8" stroke-width="3"/>`},
@@ -462,11 +462,11 @@ async function dressRound(lvl){
   const left=Object.keys(DITEMS).filter(k=>!G.boy[k]);if(!left.length)G.boy={};
   const pool=Object.keys(DITEMS).filter(k=>!G.boy[k]);const k=pool.includes('трусы')&&Object.keys(G.boy).length===0?'трусы':pick(pool.filter(x=>x!=='трусы'||!G.boy.шорты));
   const cols=Object.keys(DCOL);const c=pick(cols);const it=DITEMS[k];
-  let opts;const useCol=lvl>=3;
-  if(lvl===1)opts=[{k,c},{k:pick(Object.keys(DITEMS).filter(x=>x!==k)),c:pick(cols)}];
-  else if(lvl===2)opts=[{k,c}].concat(shuffle(Object.keys(DITEMS).filter(x=>x!==k)).slice(0,3).map(x=>({k:x,c:pick(cols)})));
+  let opts;const useCol=lvl>=3;const twin={трусы:'шорты',шорты:'трусы'}[k];const OTH=Object.keys(DITEMS).filter(x=>x!==k&&x!==twin); /* v50: трусы и шорты похожи — не вместе */
+  if(lvl===1)opts=[{k,c},{k:pick(OTH),c:pick(cols)}];
+  else if(lvl===2)opts=[{k,c}].concat(shuffle(OTH.slice()).slice(0,3).map(x=>({k:x,c:pick(cols)})));
   else if(lvl===3)opts=[{k,c}].concat(shuffle(cols.filter(x=>x!==c)).slice(0,3).map(x=>({k,c:x})));
-  else{const k2=pick(Object.keys(DITEMS).filter(x=>x!==k));const c2=pick(cols.filter(x=>x!==c));opts=[{k,c},{k,c:c2},{k:k2,c},{k:k2,c:c2}]}
+  else{const k2=pick(OTH);const c2=pick(cols.filter(x=>x!==c));opts=[{k,c},{k,c:c2},{k:k2,c},{k:k2,c:c2}]}
   const name=(useCol?adjEnd(c,it.g)+' ':'')+it.acc;const q='Дай мальчику '+name+'!';
   if(!await ask(q))return;
   const nom=(useCol?adjNom(c,it.g)+' ':'')+k;R.good=cap(nom)+'.';

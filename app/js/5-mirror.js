@@ -43,7 +43,7 @@ let MP=null,MPP=null;
 /* загрузка MediaPipe один раз (из app/vendor/mediapipe, без интернета после первого раза) */
 /* MediaPipe пишет служебные строки («INFO: Created TensorFlow Lite…») через console.error — это не ошибки, прячем их */
 {const ce=console.error.bind(console);console.error=(...a)=>{if(typeof a[0]==='string'&&/^(INFO:|I\d{4} |W\d{4} )/.test(a[0]))return;ce(...a)}}
-function mpLoad(){if(MPP)return MPP;MPP=(async()=>{const v=await import('./vendor/mediapipe/vision_bundle.mjs');
+function mpLoad(){if(MPP)return MPP;MPP=(async()=>{const v=await import(new URL('vendor/mediapipe/vision_bundle.mjs',location.href).href); /* v50: путь от страницы, а не от js/ (с версии 36 камера не загружалась) */
   const fs={wasmLoaderPath:new URL('vendor/mediapipe/wasm/vision_wasm_internal.js',location.href).href,wasmBinaryPath:new URL('vendor/mediapipe/wasm/vision_wasm_internal.wasm',location.href).href};
   const mk=async(C,path,extra)=>{for(const d of ['GPU','CPU']){try{return await C.createFromOptions(fs,Object.assign({baseOptions:{modelAssetPath:path,delegate:d},runningMode:'VIDEO'},extra))}catch(e){if(d==='CPU')throw e}}};
   const face=await mk(v.FaceLandmarker,'vendor/mediapipe/face_landmarker.task',{numFaces:1,outputFaceBlendshapes:true});
