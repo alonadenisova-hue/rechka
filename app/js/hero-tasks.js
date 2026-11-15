@@ -309,7 +309,8 @@ window.__hgt={HGT,hgKinds,hgK};
   const q=$('#par-q');
   q.oninput=()=>{const w=q.value.trim().toLowerCase();
     for(const d of par.querySelectorAll(':scope>details.panel')){
-      const items=[...d.querySelectorAll('.row,#levels>*,p.note,h4')];let any=false;
+      const LISTS='#levels,#hg-kinds,#sh-moves,#wb-list,#vid-list,#rec-list,#lev-list,#photo-list,#pet-voices,#stats';
+      const items=[...d.children].filter(x=>x.tagName!=='SUMMARY').flatMap(x=>x.matches(LISTS)||x.tagName==='DETAILS'?[...x.children].filter(y=>y.tagName!=='SUMMARY'):[x]);let any=false;
       for(const it of items){const hit=!w||it.textContent.toLowerCase().includes(w);it.classList.toggle('srchhide',!hit);if(hit)any=true}
       const title=d.querySelector('summary').textContent.toLowerCase().includes(w);
       if(w&&title){items.forEach(it=>it.classList.remove('srchhide'));any=true}
