@@ -39,7 +39,7 @@ async function ibRound(lvl){
   const R=G.round;
   if(lvl>=4&&rmode('ibph',3)===2){/* перенос: настоящие фото людей и мультики животных (идёт / бежит) */
     let opts;const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
-    if(subs.length&&Math.random()<.5){const s=fresh(()=>pick(subs),x=>'ibA'+x);const A=v=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};opts=[A('идёт'),A('бежит')]}
+    if(false){ /* v50: анимации животных идут/бегут неразличимо — только фото людей */const s=fresh(()=>pick(subs),x=>'ibA'+x);const A=v=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};opts=[A('идёт'),A('бежит')]}
     else{const P=D2.pairs.filter(p=>p.set==='ib');const pr=fresh(()=>pick(P),x=>x.a[0].i+x.a[1].i);opts=pr.a}
     const ok=await twoQ(opts,['идёт','бежит'],'ibq');if(ok===null)return;return roundDone(ok,{v:'идёт/бежит (фото)',n:opts[0].s})}
   const n=lvl===1?2:lvl===2?3:4;

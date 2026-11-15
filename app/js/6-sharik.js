@@ -219,7 +219,7 @@ function shLatText(){const L=(S.shLat||[]).slice().sort((a,b)=>a-b);if(!L.length
   return `обычно ${(L[L.length>>1]/1000).toFixed(1)} с, самое долгое ${(L[L.length-1]/1000).toFixed(1)} с (последние ${L.length})`}
 /* ---------- v41: Шарик — ведущий внутри задания ---------- */
 const SH_OWN=['dog','mirr','cat']; /* в этих играх на экране свой Шарик — нижний прячется */
-const SH_GRACE={start:4000,result:2500,slow:700,voice:4000}; /* сколько ждём ответ сервера от момента запроса (мс); дальше — без него */
+const SH_GRACE={start:4000,result:3200,slow:700,voice:4000}; /* v50: результат ждём до 3,2 с от запроса; запрос уходит уже на верном ответе (shFireEarly), пока звучит похвала */ /* сколько ждём ответ сервера от момента запроса (мс); дальше — без него */
 function shC(){return G&&(G.sharik||G.host)?document.getElementById('shc'):null}
 function shDogEl(){const c=shC();return c&&!c.classList.contains('own')?c.querySelector('.shdog'):null}
 function shBig(on){$('#game').classList.toggle('shbig',!!on);if(on)$('#prompt').textContent='Шарик'}
@@ -234,7 +234,7 @@ say=function(text,opt){const d=shDogEl();
   noteRecent(text);const b=shC().querySelector('.shbub');const t=text.replace(/\u0301/g,'').trim();b.classList.remove('think');b.textContent=t===$('#prompt').textContent.trim()?'':t; /* вопрос уже написан сверху — в облачке только слова самого Шарика */
   return shSpeak(text,d,{game:true})};
 /* мгновенная реакция на ответ Льва: верно — радуется, ошибка — сочувствует (звуки игры остаются прежними) */
-{const g0=sfx.good,b0=sfx.bad;sfx.good=function(){shMood('praise',1800);return g0.apply(sfx,arguments)};sfx.bad=function(){shMood('comfort',1800);shPointHint();return b0.apply(sfx,arguments)}}
+{const g0=sfx.good,b0=sfx.bad;sfx.good=function(){shMood('praise',1800);shFireEarly();return g0.apply(sfx,arguments)};sfx.bad=function(){shMood('comfort',1800);shPointHint();return b0.apply(sfx,arguments)}}
 /* ---------- v44: ходы героя — приёмы логопеда (docs/logoped/2026-11-zanyatiya.md). Каждый выключается в «Для взрослых» ---------- */
 const SH_MOVES={soft:'Ошибка — мягко: «Ой!», «Почти!» вместо «Нет.»',point:'После двух ошибок показывает лапой на верный ответ',nod:'«Да или нет?», уровень 1: подсказывает кивком',
   who:'Иногда спрашивает «Кто молодец?» — «Я молодец!»',self:'После «Покажи, где…» — «А у тебя где?» и показывает на себе',did:'После «Положи» — «Что ты сделал?» — «Я положил!»'};
@@ -281,12 +281,18 @@ async function shMoves(){const mine=G,c=shC();if(!c||!G.i||G.shMvI===G.i)return 
   else if(e.g==='body'&&SH_SELF[e.n]&&shMv('self')){if((G.shSelfN=(G.shSelfN||0)+1)%2===1)mv={q:`А у тебя где ${e.n}? Покажи!`,a:`Вот ${e.n}! Молодец!`,m:`Смотри: вот ${e.n}!`,pose:SH_SELF[e.n],key:SH_KEY[e.n]||null}}
   if(!mv&&shMv('who')&&(G.shOkN=(G.shOkN||0)+1)%6===0)mv={q:'Кто молодец?',a:'Я молодец!'};
   return mv?shTalk(mv,mine):true}
+/* v50: верный ответ — запрос серверу уходит сразу, пока Шарик хвалит (полторы-две секунды выигрыша) */
+function shFireEarly(){if(!G||!G.sharik||!G.round||G.round.finished||G.round.shEarly||G.round.dead||!G.game||G.game==='cat'||G.game==='ib')return; /* в заданиях из нескольких шагов — только в конце */const R=G.round;R.shEarly=true;
+  const ev={type:'result',game:G.game,task:String(R.prompt||GN[G.game]||G.game).slice(0,80),ok:true,attempts:(R.wrong||0)+1,how:'tap'};if(R.good)ev.good=String(R.good).slice(0,80);
+  if((Date.now()-G.t0)/60000>(+S.shMin||20)+5)return;
+  G.shEv=ev;G.shT0=G.shPendT=Date.now();G.shPend=shAsk(ev)}
 /* задание закончено (вызывается из roundDone): результат уходит серверу в фоне, занятие не ждёт */
 function shFire(e){if(!G||!G.sharik||!e)return;const R=G.round||{};
   let ev={type:'result',game:e.g,task:String(R.prompt||GN[e.g]||e.g||'').slice(0,80),ok:!!e.ok,attempts:(e.w||0)+1,how:e.how==='camera'?'camera':e.how==='parent'?'parent':'tap'};
   if(R.good)ev.good=String(R.good).slice(0,80);
   G.shHist.push({who:'event',text:`${GN[e.g]||e.g||''}: «${ev.task}» — ${e.ok?'справился':'не справился'}${e.w?`, ошибок ${e.w}`:''}${R.good?`. Шарик уже сказал: «${R.good}»`:''}`.slice(0,160)});
   if((Date.now()-G.t0)/60000>(+S.shMin||20)+5)ev={type:'parent_end'};
+  if(R.shEarly&&ev.type==='result'&&e.ok&&G.shPend){G.shT0=Date.now();return} /* запрос уже ушёл на верном ответе; задержку для мамы считаем от конца задания */
   G.shEv=ev;G.shT0=G.shPendT=Date.now();G.shPend=shAsk(ev)}
 function shWait(p,ms){return Promise.race([p,wait(Math.max(0,ms)).then(()=>undefined)])}
 function shPickLocal(){const av=new Set(shAvail());const L=SH_LOCAL.filter(g=>av.has(g)&&ROUNDS[g]&&g!==G.game);return pick(L.length?L:SH_LOCAL.filter(g=>ROUNDS[g]))}
@@ -310,7 +316,8 @@ async function shStep(){
   else{ev=G.shEv||{type:'result'};const p=G.shPend;G.shPend=null;
     if(p){const tm=setTimeout(()=>{if(G===mine)think(true)},350);
       j=await shWait(p,(G.shMiss>=2?SH_GRACE.slow:SH_GRACE.result)-(Date.now()-G.shPendT));clearTimeout(tm);if(G!==mine)return false;think(false);
-      if(j)G.shMiss=0;else{G.shMiss=(G.shMiss||0)+1;shStat().late++;p.then(x=>{if(G===mine&&x)G.shLate=x})}} /* опоздавший ответ пригодится для выбора следующей игры */
+      /* v50: «быстрый режим» (ждать 0,7 с) — только если сервер правда не отвечает; опоздание — не повод перестать ждать */
+      if(j)G.shMiss=0;else{shStat().late++;p.then(x=>{if(G!==mine)return;if(x&&!x.local){G.shLate=x;G.shMiss=0}else G.shMiss=(G.shMiss||0)+1})}} /* опоздавший ответ пригодится для выбора следующей игры */
     if(!j){const end=ev.type==='parent_end',late=G.shLate;G.shLate=null;
       const g=late&&late.next&&late.next.kind!=='end'&&late.next.game||((G.shSame||0)<3?G.game:null);
       j={say:end?pick(['Ты молодец! Пока-пока!','Ты сегодня так старался! До завтра!','Мне было весело с тобой! Пока-пока!']):g===G.game?'':pick(SH_BRIDGE),next:{kind:end?'end':'game',game:g,level:late&&late.next?late.next.level:null},local:true}}}

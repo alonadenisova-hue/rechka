@@ -35,6 +35,12 @@ if((S.ver||0)<22){S.lvl.num=1;S.lvl.food=1;S.lvl.seq=Math.min(S.lvl.seq||1,3);S.
 if((S.ver||0)<21){S.sayit=S.sayit||'some';S.ver=Math.max(S.ver||0,21)}
 if((S.ver||0)<18){if((S.dogL||0)>=4)S.dogL+=5;S.ver=18} /* v18: +5 лёгких уровней щенков после тренировки */ /* v14: «Повтори!» теперь начинается с 3 картинок */
 const save=()=>{try{S.log=S.log.slice(-3000);localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+/* v50 (обход игр, решение мамы): пары фото, где действие не различить (стоит — на фото сидит, «бежит» похоже на шаг,
+   «лежит» с закрытыми глазами), не показываются в «Похожих действиях», «Спит — лежит», «Идёт, бежит…». Ключ — картинки пары. */
+const PAIR_OFF=new Set(['pcdd139091+p06346201c','p15787a5a0+p661e4d2d4','p234ed36a0+pbc7ce7d7b','paba8a377a+pb1c612ff1','pacc9456a6+pcee14b34e','pf9c13b643+pff11b1b9f',
+  'p7dfa2f0af+p2fa23f621','p15787a5a0+p3145f4ad3','pf9c13b643+p7ae3ce63b','p8ce48ccec+p492e3acf5','pcdd139091+pa5f322b53',
+  'p83151c294+p4307d6016','pda632cacb+pd04541c92','p84995c6a1+p4307d6016','p564a1c805+p850dcf4ff','pba721c15c+p419040866','pa0a41b3a0+p61497aaeb','p4a51f3f9c+p62c367ad8','pf8492fb48+p8a23ca60c']);
+D2.pairs=D2.pairs.filter(p=>!PAIR_OFF.has(p.a.map(x=>x.i).join('+')));
 const MAXL={cat:3,mirr:4,body:3,home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
 for(const g in MAXL)if(S.lvl[g]>MAXL[g])S.lvl[g]=MAXL[g];
 const UPG={syl:5,snd:4}; // для этих игр уровень поднимается медленнее
@@ -276,12 +282,10 @@ async function verbRound(lvl){
     else{const c=av2.filter(v=>isConf(v,tv));others=shuffle(c).slice(0,1).concat(shuffle(av2.filter(v=>!c.includes(v))).slice(0,3)).slice(0,3)}
     const t=fresh(()=>actImg(tv,pA),x=>x.i);opts=[{a:t,ok:true}].concat(others.map(v=>({a:actImg(v,pA),ok:false})));
     q='Кто '+tv+'?';good=t.s?cap(t.s)+' '+tv+'.':cap(tv)+'.';meta={v:tv};
-  }else if(lvl===4&&S.anim&&Math.random()<.75){
-    const two=s=>D.anims.find(a=>a.s===s&&a.v==='идёт')&&D.anims.find(a=>a.s===s&&a.v==='бежит');
-    const subs=[...new Set(D.anims.filter(a=>a.s).map(a=>a.s))].filter(two);
-    const c=fresh(()=>{const [s1,s2]=shuffle(subs).slice(0,2);return{s1,s2,v:pick(['идёт','бежит'])}},x=>x.s1+x.v);
-    const A=(s,v)=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};const v2=c.v==='идёт'?'бежит':'идёт';
-    opts=[{a:A(c.s1,c.v),ok:true},{a:A(c.s1,v2),ok:false},{a:A(c.s2,c.v),ok:false},{a:A(c.s2,v2),ok:false}];
+  }else if(lvl===4&&Math.random()<.75){ /* v50: «идёт / бежит» — рисованные человечки одного стиля (анимации животных путали) */
+    const c=fresh(()=>{const [s1,s2]=shuffle(FIG_W.slice()).slice(0,2);return{s1,s2,v:pick(['идёт','бежит'])}},x=>x.s1+x.v);const v2=c.v==='идёт'?'бежит':'идёт';
+    const F=(s,v)=>({fig:figSvg(s,v),s,v});
+    opts=[{a:F(c.s1,c.v),ok:true},{a:F(c.s1,v2),ok:false},{a:F(c.s2,c.v),ok:false},{a:F(c.s2,v2),ok:false}];
     q='Где '+c.s1+' '+c.v+'?';good=cap(c.s1)+' '+c.v+'.';meta={v:c.v,s:c.s1};
   }else if(lvl===4){
     const subs=FAMILIAR.filter(s=>D.actions.filter(a=>a.s===s&&!a.o&&!a.ph).length>=2);
@@ -299,7 +303,7 @@ async function verbRound(lvl){
     opts=[{a:t,ok:true}].concat(others.map(a=>({a,ok:false})));q='Где '+t.s+' '+t.v+' '+t.o+'?';good=cap(t.s)+' '+t.v+' '+t.o+'.';meta={v:t.v,s:t.s};
   }
   if(!await ask(q))return;
-  const ok=await choice(shuffle(opts.map(o=>({html:img(o.a.i),ok:o.ok,key:o.a.v}))),{question:q,goodText:good,wide:lvl>=4});
+  const ok=await choice(shuffle(opts.map(o=>({html:o.a.fig||img(o.a.i),ok:o.ok,key:o.a.v}))),{question:q,goodText:good,wide:lvl>=4});
   return roundDone(ok,meta);
 }
 
@@ -389,14 +393,17 @@ async function feedRound(lvl){
 function prepPairs(set,a='в',b='на'){const m={};D.preps.filter(p=>!set||p.set===set).forEach(p=>{(m[p.k]=m[p.k]||{})[p.p]=p});return Object.values(m).filter(x=>x[a]&&x[b])}
 async function prepRound(lvl){
   let opts,t;
-  if(lvl<=2){const pr=fresh(()=>pick(prepPairs(lvl===1?'osa':'tr')),x=>x['в'].n);t=pr[pick(['в','на'])];opts=[pr['в'],pr['на']]}
-  else if(lvl<=4){const pool=prepPairs(lvl===3?'osa':null);let a,b,k=0;do{[a,b]=shuffle(pool).slice(0,2);k++}while(a['в'].n===b['в'].n||(k<25&&G.seen.has(a['в'].n)));G.seen.add(a['в'].n);
+  /* v50 (обход игр): набор «дядя на такси / на трамвае…» убран — по-русски это «едет на такси», а нарисован дядя на крыше.
+     Варианты в одном вопросе — из одного набора (не осы рядом с самосвалами) */
+  if(lvl<=2){const pr=fresh(()=>pick(prepPairs('osa')),x=>x['в'].n+lvl);t=pr[pick(['в','на'])];opts=[pr['в'],pr['на']]}
+  else if(lvl<=4){const pool=prepPairs('osa');let a,b,k=0;do{[a,b]=shuffle(pool).slice(0,2);k++}while(a['в'].n===b['в'].n||(k<25&&G.seen.has(a['в'].n)));G.seen.add(a['в'].n);
     t=a[pick(['в','на'])];opts=[a['в'],a['на'],b['в'],b['на']]}
   else if(lvl<=6){const pr=fresh(()=>pick(prepPairs(lvl===5?'bel':'kot','под')),x=>x['под'].k);t=pr[pick(['под','на'])];opts=[pr['под'],pr['на']]}
   else if(lvl===7){const pool=prepPairs(pick(['bel','kot']),'под');let a,b,k=0;do{[a,b]=shuffle(pool).slice(0,2);k++}while(a['под'].nn===b['под'].nn||(k<25&&G.seen.has(a['под'].k)));G.seen.add(a['под'].k);
     t=a[pick(['под','на'])];opts=[a['под'],a['на'],b['под'],b['на']]}
-  else{const vn=prepPairs(null),pn=prepPairs(null,'под');const useP=Math.random()<.5;const a=fresh(()=>pick(useP?pn:vn),x=>(useP?x['под']:x['в']).k);const b=pick(useP?vn:pn);
-    t=useP?a[pick(['под','на'])]:a[pick(['в','на'])];opts=(useP?[a['под'],a['на']]:[a['в'],a['на']]).concat(useP?[b['в'],b['на']]:[b['под'],b['на']])}
+  else{const vn=prepPairs('osa'),pn=prepPairs(null,'под');const useP=Math.random()<.5;const a=fresh(()=>pick(useP?pn:vn),x=>(useP?x['под']:x['в']).k);
+    const same=(useP?pn.filter(x=>x['под'].set===a['под'].set&&x['под'].nn!==a['под'].nn):vn.filter(x=>x['в'].n!==a['в'].n));const b=pick(same.length?same:(useP?pn:vn).filter(x=>x!==a));
+    const A=useP?['под','на']:['в','на'];t=a[pick(A)];opts=[a[A[0]],a[A[1]],b[A[0]],b[A[1]]]}
   const q='Где '+t.w+' '+t.p+' '+t.n+'?';
   if(!await ask(q))return;
   const ok=await choice(shuffle(opts.map(o=>({html:img(o.i),ok:o===t,key:o.p+' '+o.n}))),{question:q,goodText:cap(t.w)+' '+t.p+' '+t.n+'.',wide:opts.length===4&&t.set==='tr'});
@@ -407,7 +414,7 @@ const PSET={1:'si',2:'ss',3:'ib',4:'sl'};
 const PVERBS={si:['стоит','идёт'],ss:['стоит','сидит'],ib:['идёт','бежит'],sl:['спит','лежит']};
 async function pairRound(lvl){
   const P=D2.pairs,pk=x=>x.a[0].i+x.a[1].i;let t,opts;
-  if(lvl===3&&S.anim&&Math.random()<.5){const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
+  if(false){const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
     const c=fresh(()=>({s:pick(subs),v:pick(['идёт','бежит'])}),x=>'a'+x.s+x.v);const A=v=>{const a=pick(D.anims.filter(x=>x.s===c.s&&x.v===v));return{i:a.a,s:c.s,v}};
     opts=[A('идёт'),A('бежит')];t=opts.find(o=>o.v===c.v)}
   else if(lvl<=4){const c=fresh(()=>{const pr=pick(P.filter(p=>p.set===PSET[lvl]));return{pr,t:pick(pr.a)}},x=>pk(x.pr)+x.t.i);t=c.t;opts=c.pr.a}
@@ -422,7 +429,7 @@ async function pairRound(lvl){
 const SADJ={b:{m:'большой',f:'большая',n:'большое'},s:{m:'маленький',f:'маленькая',n:'маленькое'}};
 const simg=(i,small)=>`<img src="${IMG[i]||i}" alt=""${small?' class="sm"':''}>`;
 function sizeItems(){ // same picture shown big and small: logoped pairs + coloured objects + feed animals
-  const L=D3.size2.map(x=>({b:x.b,s:x.s,n:x.n,g:x.g}));
+  const L=D3.size2.map(x=>({b:x.b,s:x.b,n:x.n,g:x.g})); /* v50: один и тот же рисунок, большой и маленький (не баскетбольный рядом с футбольным) */
   D3.cobj.forEach(o=>L.push({b:o.i,s:o.i,n:o.n,g:o.g,c:o.c}));
   return L}
 async function sizeRound0(lvl){

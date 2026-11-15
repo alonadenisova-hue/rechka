@@ -202,11 +202,13 @@ async function numRound(lvl){
 /* ---------- ЛЕТИТ, ЕДЕТ, ПЛЫВЁТ: перетащить на небо, на дорогу, на речку (одну или несколько картинок) */
 async function trSort(R,list,lvl){
   const one=list.length===1;const t0=list[0];
-  const q=one?cap(t0.n)+' летит, едет или плывёт?':'Разложи! Что летит, что едет, что плывёт?';
+  /* v50 (совет логопеда): одна картинка — выбор из двух, верный ответ то первым, то вторым; третья полоса прячется */
+  let two=null;if(one){const o=pick(['fly','ride','swim'].filter(x=>x!==t0.c));two=rmode('tr2',2)===0?[t0.c,o]:[o,t0.c]}
+  const q=one?cap(t0.n)+' '+TRV[two[0]]+' или '+TRV[two[1]]+'?':'Разложи! Что летит, что едет, что плывёт?';
   if(!await ask(q,one?q+' Отнеси!':'Что летит — на небо. Что едет — на дорогу. Что плывёт — на речку!'))return null;
   R.good=one?cap(t0.n)+' '+TRV[t0.c]+'.':'Всё на месте!';
   const st=$('#stage');st.innerHTML=`<div class="put trs"><div class="trhome"></div><div class="trzs"><div class="tz sky" data-c="fly"><i class="cl a"></i><i class="cl b"></i></div><div class="tz road" data-c="ride"><i class="lane"></i></div><div class="tz sea" data-c="swim"><i class="wv"></i></div></div></div>`;
-  const box=st.firstChild;const BR=box.getBoundingClientRect(),rel=e=>{const r=e.getBoundingClientRect();return{x:r.left-BR.left,y:r.top-BR.top,w:r.width,h:r.height}};
+  const box=st.firstChild;if(two)box.querySelectorAll('.tz').forEach(z=>{if(!two.includes(z.dataset.c))z.remove()});const BR=box.getBoundingClientRect(),rel=e=>{const r=e.getBoundingClientRect();return{x:r.left-BR.left,y:r.top-BR.top,w:r.width,h:r.height}};
   const HR=rel(box.querySelector('.trhome')),ZR=rel(box.querySelector('.trzs'));const k=list.length,horiz=HR.w>=HR.h;
   const os=Math.min(170,horiz?Math.min(HR.h*.85,HR.w/k*.92):Math.min(HR.w*.85,HR.h/k*.92));
   const objs=[];const zones=[...box.querySelectorAll('.tz')];const inZone={fly:0,ride:0,swim:0};let wrong=0,left=k;
@@ -221,7 +223,7 @@ async function trSort(R,list,lvl){
       if(moved<12){el.classList.add('back');place(el,{x:home.x,y:home.y,w:os,h:os});say(cap(t.n)+'.');return}
       const cx=parseFloat(el.style.left)+os/2,cy=parseFloat(el.style.top)+os/2;
       if(cx>=HR.x&&cx<=HR.x+HR.w&&cy>=HR.y&&cy<=HR.y+HR.h){el.classList.add('back');place(el,{x:home.x,y:home.y,w:os,h:os});return}
-      const zr=zones.map(rel);let zi=zr.findIndex(r=>cy>=r.y&&cy<r.y+r.h);if(zi<0)zi=cy<zr[0].y?0:2;const zc=zones[zi].dataset.c;
+      const zr=zones.map(rel);let zi=zr.findIndex(r=>cy>=r.y&&cy<r.y+r.h);if(zi<0)zi=cy<zr[0].y?0:zr.length-1;const zc=zones[zi].dataset.c;
       if(zc===c){el.classList.add('placed');const n=inZone[c]++;const s=one?os:Math.min(os,zr[zi].h*.9);const y=zr[zi].y+zr[zi].h/2-s/2-(c==='swim'?s*.12:0);
         place(el,{x:ZR.x+8+n*s*.9,y,w:s,h:s});sfx.good();zones.forEach(z=>z.classList.remove('hint'));left--;
         if(one){await wait(60);el.classList.add('go-'+c);res();return}
