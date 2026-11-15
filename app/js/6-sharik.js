@@ -283,7 +283,7 @@ async function shMoves(){const mine=G,c=shC();if(!c||!G.i||G.shMvI===G.i)return 
   return mv?shTalk(mv,mine):true}
 /* v50: верный ответ — запрос серверу уходит сразу, пока Шарик хвалит (полторы-две секунды выигрыша) */
 function shFireEarly(){if(!G||!G.sharik||!G.round||G.round.finished||G.round.shEarly||G.round.dead||!G.game||G.game==='cat'||G.game==='ib')return; /* в заданиях из нескольких шагов — только в конце */const R=G.round;R.shEarly=true;
-  const ev={type:'result',game:G.game,task:String(R.prompt||GN[G.game]||G.game).slice(0,80),ok:true,attempts:(R.wrong||0)+1,how:'tap'};if(R.good)ev.good=String(R.good).slice(0,80);
+  const ev={type:'result',game:G.game,task:String(R.prompt||GN[G.game]||G.game).slice(0,80),ok:!R.wrong,attempts:(R.wrong||0)+1,how:'tap'}; /* как в журнале: «справился» — с первой попытки */if(R.good)ev.good=String(R.good).slice(0,80);
   if((Date.now()-G.t0)/60000>(+S.shMin||20)+5)return;
   G.shEv=ev;G.shT0=G.shPendT=Date.now();G.shPend=shAsk(ev)}
 /* задание закончено (вызывается из roundDone): результат уходит серверу в фоне, занятие не ждёт */
@@ -292,7 +292,7 @@ function shFire(e){if(!G||!G.sharik||!e)return;const R=G.round||{};
   if(R.good)ev.good=String(R.good).slice(0,80);
   G.shHist.push({who:'event',text:`${GN[e.g]||e.g||''}: «${ev.task}» — ${e.ok?'справился':'не справился'}${e.w?`, ошибок ${e.w}`:''}${R.good?`. Шарик уже сказал: «${R.good}»`:''}`.slice(0,160)});
   if((Date.now()-G.t0)/60000>(+S.shMin||20)+5)ev={type:'parent_end'};
-  if(R.shEarly&&ev.type==='result'&&e.ok&&G.shPend){G.shT0=Date.now();return} /* запрос уже ушёл на верном ответе; задержку для мамы считаем от конца задания */
+  if(R.shEarly&&ev.type==='result'&&G.shPend){G.shT0=Date.now();return} /* запрос уже ушёл на верном ответе; задержку для мамы считаем от конца задания */
   G.shEv=ev;G.shT0=G.shPendT=Date.now();G.shPend=shAsk(ev)}
 function shWait(p,ms){return Promise.race([p,wait(Math.max(0,ms)).then(()=>undefined)])}
 function shPickLocal(){const av=new Set(shAvail());const L=SH_LOCAL.filter(g=>av.has(g)&&ROUNDS[g]&&g!==G.game);return pick(L.length?L:SH_LOCAL.filter(g=>ROUNDS[g]))}
