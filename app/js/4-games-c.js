@@ -120,7 +120,7 @@ async function homeRound(lvl){
   st.innerHTML=`<div class="home28 n${nPl}"><div class="hm-house"><div class="hm-roof"></div><div class="hm-rooms">${pls.map(plHtml).join('')}</div></div>
     <div class="hm-floor"><div class="hm-hero" aria-label="${hero.n}"><img src="${I24(hero.ic)}" alt="" draggable="false"><i class="hm-bub">${{sleep:'💤',eat:'🍽️',walk:'🌳',wash:'🧼',tv:'📺',pool:'🌊',toilet:'🚽',draw:'🎨',dress:'👕',teeth:'🦷'}[T.k]}</i></div><div class="hm-tray"></div></div></div>`;
   const box=st.firstChild,heroEl=box.querySelector('.hm-hero');let wrong=0,done=false;
-  const hintT=setTimeout(()=>{if(done)return;box.querySelector('.pl-'+T.pl).classList.add('hint');say(how)},9000);
+  const hintT=setTimeout(()=>{if(done||!box.isConnected||R.dead||!G||G.round!==R)return;box.querySelector('.pl-'+T.pl).classList.add('hint');say(how)},9000);
   /* шаг 1: отвести героя */
   const res1=await new Promise(res=>{
     const tryPlace=async p=>{if(done)return;const el=box.querySelector('.pl-'+p);
