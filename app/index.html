@@ -438,6 +438,7 @@ input[type=text]{font:inherit;padding:8px 10px;border-radius:12px;border:1px sol
 /* ===== v22 ===== */
 .t35{background:#fff0dc}.t36{background:#eaf4ff}.t37{background:#fff4d6}
 .dogsvg{width:100%;height:100%}
+.bodyg .anibody{height:100%;width:100%}
 .dogg{width:100%;height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:10px}
 .dogbox{position:relative;background:#fff;border-radius:28px;box-shadow:0 6px 0 var(--line);display:grid;place-items:center;padding:8px;min-height:0}
 .dogbox svg{height:100%;width:auto;max-width:100%}
@@ -774,7 +775,7 @@ body[data-bg="2"]::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22
 body{background:#eaf3fb}
 </style>
 
-<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 51</div>
+<div id="home" class="screen"><div style="position:fixed;left:8px;bottom:4px;font:12px sans-serif;opacity:.45;pointer-events:none;z-index:1">версия 52</div>
   <div class="home-head">
     <div class="logo">Реч<span>ка</span></div>
     <button class="gear" id="gear" aria-label="Для взрослых: подержите 2 секунды">
@@ -792,14 +793,14 @@ body{background:#eaf3fb}
   <div class="tiles">
     <button class="tile t35" data-game="cat"><span class="lvl" data-lvl="cat"></span><div class="art" id="art-cat"></div><b>Играем с Шариком</b><span class="newb">новое</span></button>
     <button class="tile t38" data-game="home"><span class="lvl" data-lvl="home"></span><div class="art" id="art-home"></div><b>Собака дома</b><span class="newb">новое</span></button>
-    <button class="tile t36" data-game="draw"><span class="lvl" data-lvl="draw"></span><div class="art" id="art-draw"></div><b>Дорисуй</b><span class="newb">новое</span></button>
+    <button class="tile t36" data-game="draw" hidden><span class="lvl" data-lvl="draw"></span><div class="art" id="art-draw"></div><b>Дорисуй</b><span class="newb">новое</span></button>
     <button class="tile t41" data-game="mirr"><span class="lvl" data-lvl="mirr"></span><div class="art" id="art-mirr"></div><b>Зеркало с Шариком</b><span class="newb">новое</span></button>
     <button class="tile t40" data-game="body"><span class="lvl" data-lvl="body"></span><div class="art" id="art-body"></div><b>Покажи, где…</b><span class="newb">новое</span></button>
-    <button class="tile t35" data-game="dog"><span class="lvl" data-lvl="dog"></span><div class="art" id="art-dog"></div><b>Повторяй за Шариком</b><span class="newb">звуки, слоги</span></button>
+    <button class="tile t35" data-game="dog" hidden><span class="lvl" data-lvl="dog"></span><div class="art" id="art-dog"></div><b>Повторяй за Шариком</b><span class="newb">звуки, слоги</span></button>
     <button class="tile t33" data-game="voice" hidden data-say="Скажи — и будет!"><span class="lvl" data-lvl="voice"></span><div class="art" id="art-voice"></div><b>Скажи — и будет!</b><span class="newb">новое</span></button>
     <button class="tile t34" data-game="make" hidden><span class="lvl" data-lvl="make"></span><div class="art" id="art-make"></div><b>Сделай как скажу</b><span class="newb">новое</span></button>
-    <button class="tile t30" data-game="rh"><span class="lvl" data-lvl="rh"></span><div class="art" id="art-rh"></div><b>Час пик</b><span class="newb">новое</span></button>
-    <button class="tile t31" data-game="pg"><span class="lvl" data-lvl="pg"></span><div class="art" id="art-pg"></div><b>Пингвины</b><span class="newb">труднее</span></button>
+    <button class="tile t30" data-game="rh" hidden><span class="lvl" data-lvl="rh"></span><div class="art" id="art-rh"></div><b>Час пик</b><span class="newb">новое</span></button>
+    <button class="tile t31" data-game="pg" hidden><span class="lvl" data-lvl="pg"></span><div class="art" id="art-pg"></div><b>Пингвины</b><span class="newb">труднее</span></button>
     <button class="tile t32" data-game="br" hidden><span class="lvl" data-lvl="br"></span><div class="art" id="art-br"></div><b>Мостик для мышки</b><span class="newb">новое</span></button>
     <button class="tile t29" data-game="dogs" hidden><span class="lvl" data-lvl="dogs"></span><div class="art" id="art-dogs"></div><b>Озорные щенки</b><span class="newb">новое</span></button>
     <button class="tile t28" data-game="tr"><span class="lvl" data-lvl="tr"></span><div class="art" id="art-tr"></div><b>Летит, едет, плывёт</b><span class="newb">новое</span></button>
@@ -810,7 +811,7 @@ body{background:#eaf3fb}
     <button class="tile t24" data-game="sl"><span class="lvl" data-lvl="sl"></span><div class="art duo" id="art-sl"></div><b>Спит или лежит?</b><span class="newb">новое</span></button>
     <button class="tile t25" data-game="ib"><span class="lvl" data-lvl="ib"></span><div class="art duo" id="art-ib"></div><b>Идёт, бежит, стоит, сидит</b><span class="newb">новое</span></button>
     <button class="tile t26" data-game="food"><span class="lvl" data-lvl="food"></span><div class="art" id="art-food"></div><b>Съедобное</b><span class="newb">новое</span></button>
-    <button class="tile t21" data-game="seq"><span class="lvl" data-lvl="seq"></span><div class="art" id="art-seq"></div><b>Повтори!</b></button>
+    <button class="tile t21" data-game="seq" hidden><span class="lvl" data-lvl="seq"></span><div class="art" id="art-seq"></div><b>Повтори!</b></button>
     <button class="tile t22" data-game="want"><span class="lvl" data-lvl="want"></span><div class="art" id="art-want"></div><b>Я хочу</b><span class="newb">новое</span></button>
     <button class="tile t20" data-game="num"><span class="lvl" data-lvl="num"></span><div class="art" id="art-num"></div><b>Цифры</b></button>
     <button class="tile t1" data-game="odd"><span class="lvl" data-lvl="odd"></span><div class="art" id="art-odd"></div><b>Другой</b></button>
@@ -1003,6 +1004,7 @@ body{background:#eaf3fb}
     <div class="row"><label for="set-shcode">Семейный код</label><input type="text" id="set-shcode" maxlength="40" style="width:140px" autocomplete="off"></div>
     <div class="row"><label for="set-shmin">Длительность занятия, минут</label><input type="number" id="set-shmin" min="5" max="45" step="5" style="width:80px"></div>
     <h4 style="margin:12px 0 4px">Голос</h4>
+    <div class="row"><label for="set-cloudv"><b>Живой голос во всех играх</b> (ElevenLabs через сервер Шарика; нужен только адрес сервера и код ниже, «Шарик включён» — не обязательно. Каждая фраза скачивается один раз, потом звучит без интернета. Нет связи — голос телефона)</label><input type="checkbox" id="set-cloudv"></div>
     <div class="row"><label for="set-shtts">Живой голос Шарика через сервер (без ответа за 3,5 с или без интернета — голос телефона; записи мамы главнее)</label><input type="checkbox" id="set-shtts"></div>
     <div class="row"><span>Шарик отвечает: <span id="sh-lat">—</span> (от конца задания до первого звука)</span><button class="small-btn" id="sh-ttstest">Проверить голос Шарика</button></div>
     <div class="row"><span>Готовые фразы (похвалы, приветствия…) — скачать голос один раз: дальше без оплаты и без интернета <small id="sh-phn"></small></span><button class="small-btn" id="sh-phdl">Скачать постоянные фразы</button></div>
@@ -1020,6 +1022,7 @@ body{background:#eaf3fb}
     <p class="note">Кнопка «Хочу» на главном экране — не игра: в ней нет заданий и оценок. Ребёнок нажимает карточку, телефон говорит просьбу, взрослый её выполняет. В статистике видно, что ребёнок просил сам.</p>
     <div class="row"><label for="set-wbon">Кнопка «Хочу» на главном экране</label><input type="checkbox" id="set-wbon"></div>
     <div class="row"><label for="set-body">Игра «Покажи, где…» (части тела)</label><input type="checkbox" id="set-body"></div>
+    <div class="row"><label for="set-bodyani">«Покажи, где…»: части тела у кошки и собаки (хвост, лапы, уши) и лицо крупно — волосы, брови, зубы, язык (уровни 4–5)</label><input type="checkbox" id="set-bodyani"></div>
     <div class="row"><label for="set-wbask">Через секунду мягко предлагать: «Скажи: дай сок!»</label><input type="checkbox" id="set-wbask"></div>
     <div class="row"><label for="set-wbn">Карточек на экране</label><select id="set-wbn"><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="12">12</option></select></div>
     <div id="wb-list"></div>

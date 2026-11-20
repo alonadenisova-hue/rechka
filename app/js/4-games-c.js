@@ -42,10 +42,10 @@ async function ibRound(lvl){
     if(false){ /* v50: анимации животных идут/бегут неразличимо — только фото людей */const s=fresh(()=>pick(subs),x=>'ibA'+x);const A=v=>{const a=pick(D.anims.filter(x=>x.s===s&&x.v===v));return{i:a.a,s,v}};opts=[A('идёт'),A('бежит')]}
     else{const P=D2.pairs.filter(p=>p.set==='ib');const pr=fresh(()=>pick(P),x=>x.a[0].i+x.a[1].i);opts=pr.a}
     const ok=await twoQ(opts,['идёт','бежит'],'ibq');if(ok===null)return;return roundDone(ok,{v:'идёт/бежит (фото)',n:opts[0].s})}
-  const n=lvl===1?2:lvl===2?3:4;
+  const n=lvl<=2?3:4; /* v52: минимум 3 карточки; на 1 ур. — пара по очереди + третий глагол */
   /* набор глаголов: на 1 уровне пары чередуются (идёт–сидит, бежит–стоит, идёт–бежит, стоит–сидит…) */
   const PAIRS=[['идёт','сидит'],['бежит','стоит'],['идёт','бежит'],['стоит','сидит'],['бежит','сидит'],['идёт','стоит']];
-  const verbs=n===2?PAIRS[rmode('ibpair',PAIRS.length)]:n===3?shuffle(IB_V.slice()).slice(0,3):IB_V.slice();
+  const verbs=lvl===1?(pr=>pr.concat(pick(IB_V.filter(v=>!pr.includes(v)))))(PAIRS[rmode('ibpair',PAIRS.length)]):n===3?shuffle(IB_V.slice()).slice(0,3):IB_V.slice();
   /* на 1–2 уровне все карточки — один и тот же человек, потом разные */
   const same=lvl<=2||Math.random()<.4;const who0=fresh(()=>pick(FIG_W),x=>'ibw'+x);const ws=same?verbs.map(()=>who0):shuffle(FIG_W.slice()).slice(0,n);
   const opts=verbs.map((v,k)=>({v,s:ws[k]}));
@@ -109,7 +109,7 @@ const HM_T=[
   {k:'teeth',want:'чистить зубы',pl:'sink',done:'чистит зубы',lv:4}];
 const HM_HERO=[{n:'собака',ic:'dog',dat:'собаке'},{n:'кошка',ic:'cat',dat:'кошке'},{n:'зайка',ic:'rabbit',dat:'зайке'},{n:'мишка',ic:'teddy2',dat:'мишке'}];
 async function homeRound(lvl){
-  const R=G.round;const nPl=[0,2,3,4,6][lvl]||4;
+  const R=G.round;const nPl=[0,3,3,4,6][lvl]||4; /* v52: минимум 3 места */
   const T=fresh(()=>pick(HM_T.filter(t=>t.lv<=Math.min(lvl,4))),t=>'hm'+t.k);
   const hero=lvl>=4&&Math.random()<.6?pick(HM_HERO.slice(1)):HM_HERO[0];const H=cap(hero.n);
   const others=shuffle(Object.keys(HM_PL).filter(p=>p!==T.pl)).slice(0,nPl-1);const pls=shuffle([T.pl].concat(others));posFix(pls,p=>p===T.pl);
@@ -239,11 +239,18 @@ try{document.body.dataset.bg=String(Math.floor(Math.random()*3))}catch(_){}
    Каждая часть тела — отдельная фигура (data-part); у мелких частей (глаз, нос, рот, ухо) есть невидимая
    увеличенная зона нажатия. Рисунок векторный, поэтому чёткий на любом экране. */
 const BODY_LV={1:['голова','рука','нога','живот'],2:['голова','рука','нога','живот','глаз','нос','рот','ухо'],
-  3:['голова','рука','нога','живот','глаз','нос','рот','ухо','волосы','шея','ладошка','колено']};
+  3:['голова','рука','нога','живот','глаз','нос','рот','ухо','волосы','шея','ладошка','колено'],
+  /* v52 (просьба мамы): лицо крупно — волосы, брови, щека, зубы, язык; и животные — хвост, лапы, уши */
+  4:['глаз','нос','рот','ухо','волосы','брови','щека','зубы','язык'],
+  5:['голова','рука','нога','живот','глаз','нос','рот','ухо','волосы','шея','ладошка','колено','брови','щека','зубы','язык']};
+const BODY_FACE=['глаз','нос','рот','ухо','волосы','брови','щека','зубы','язык'];
+/* животные: с какого уровня какие части */
+const ANI_LV={2:['голова','хвост','лапа','ухо','нос','глаз'],4:['голова','хвост','лапа','ухо','нос','глаз','рот','живот','усы','язык']};
+const ANI_W={лапа:'лапы',ухо:'уши',глаз:'глаза'}; /* как спрашивать: «Покажи, где у кошки лапы!» */
 /* мелкая часть входит в крупную: нажал на нос, когда спросили «голову», — это правильно */
-const BODY_UP={глаз:'голова',нос:'голова',рот:'голова',ухо:'голова',волосы:'голова',щека:'голова',ладошка:'рука',колено:'нога',ступня:'нога'};
+const BODY_UP={глаз:'голова',нос:'голова',рот:'голова',ухо:'голова',волосы:'голова',щека:'голова',брови:'голова',зубы:'рот',язык:'рот',усы:'голова',ладошка:'рука',колено:'нога',ступня:'нога'};
 const BODY_ASK={волосы:'Покажи, где волосы!'};
-function bodyName(part,lvl){const L=BODY_LV[lvl]||BODY_LV[1];let p=part;while(p&&!L.includes(p))p=BODY_UP[p];return p||null}
+function bodyName(part,lvl,list){const L=list||BODY_LV[lvl]||BODY_LV[1];let p=part;while(p&&!L.includes(p))p=BODY_UP[p];return p||null}
 function bodyHits(part,target){let p=part;while(p){if(p===target)return true;p=BODY_UP[p]}return false}
 function boySvg(id='b'){const g=(n,x)=>`url(#${id}${n})`;return `<svg class="boy3d" viewBox="0 0 300 540" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
 <defs>
@@ -296,15 +303,17 @@ function boySvg(id='b'){const g=(n,x)=>`url(#${id}${n})`;return `<svg class="boy
  <g data-part="глаз">
   <ellipse cx="112" cy="124" rx="17" ry="20" fill="#fff"/><circle cx="114" cy="128" r="11" fill="${g('iris')}"/><circle cx="115" cy="129" r="5.5" fill="#1a2238"/><circle cx="110" cy="123" r="3.6" fill="#fff"/>
   <ellipse cx="188" cy="124" rx="17" ry="20" fill="#fff"/><circle cx="186" cy="128" r="11" fill="${g('iris')}"/><circle cx="185" cy="129" r="5.5" fill="#1a2238"/><circle cx="182" cy="123" r="3.6" fill="#fff"/>
-  <path d="M94 98q18-10 34-2M172 96q16-8 34 2" stroke="#6b4022" stroke-width="5" fill="none" stroke-linecap="round"/>
   <circle cx="112" cy="124" r="28" fill="transparent"/><circle cx="188" cy="124" r="28" fill="transparent"/></g>
+ <g data-part="брови"><path d="M92 98q20-12 38-2M170 96q18-10 38 2" stroke="#6b4022" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M92 98q20-12 38-2M170 96q18-10 38 2" stroke="transparent" stroke-width="20" fill="none" stroke-linecap="round"/></g>
  <g data-part="нос"><path d="M150 140q-12 14-10 22 4 6 10 6t10-6q2-8-10-22z" fill="#eaa274"/><ellipse cx="146" cy="152" rx="4" ry="3" fill="#fff" opacity=".55"/><circle cx="150" cy="154" r="22" fill="transparent"/></g>
- <g data-part="рот"><path d="M122 180q28 26 56 0q-4 18-28 20-24-2-28-20z" fill="#c9374a"/><path d="M134 192q16 9 32 0q-6 8-16 8t-16-8z" fill="#ff8fa0"/><ellipse cx="150" cy="188" rx="38" ry="20" fill="transparent"/></g>
+ <g data-part="рот"><ellipse cx="150" cy="190" rx="42" ry="24" fill="transparent"/><path d="M114 175q36 6 72 0q-4 32-36 34-32-2-36-34z" fill="#8a2a3a" stroke="#c9374a" stroke-width="5" stroke-linejoin="round"/>
+  <g data-part="зубы"><path d="M120 177q30 5 60 0l-2 10q-28 5-56 0z" fill="#fff"/><path d="M135 179v9M150 180v9M165 179v9" stroke="#e3d3d3" stroke-width="1.6"/><rect x="116" y="172" width="68" height="18" fill="transparent"/></g>
+  <g data-part="язык"><path d="M129 202q2-14 21-14t21 14q-8 6-21 6t-21-6z" fill="#ff8fa0"/><path d="M150 191v11" stroke="#e06b80" stroke-width="2.4" stroke-linecap="round"/><rect x="124" y="190" width="52" height="20" fill="transparent"/></g></g>
 </g>
 </svg>`}
 const BODY_CSS=`
 .bodyg{position:relative;height:100%;display:grid;place-items:center}
-.bodyg .boy3d{height:100%;width:100%;max-width:100%;touch-action:manipulation;overflow:visible}
+.bodyg .boy3d{height:100%;width:100%;max-width:100%;max-height:calc(100dvh - 118px);touch-action:manipulation;overflow:visible} /* v52: в альбомной не обрезается снизу */
 .boy3d [data-part]{cursor:pointer;transform-box:fill-box;transform-origin:center}
 .boy3d .ok{filter:drop-shadow(0 0 6px #3cbf7a) drop-shadow(0 0 3px #3cbf7a);animation:bpop .45s}
 .boy3d .bad{filter:drop-shadow(0 0 5px #ff6b5b);animation:bshake .35s}
@@ -314,20 +323,53 @@ const BODY_CSS=`
 @keyframes bhint{50%{filter:drop-shadow(0 0 8px #ffc93c) drop-shadow(0 0 4px #ffc93c)}}
 .tile .art .boy3d{position:absolute;inset:0;width:100%;height:100%}
 `;
+/* v52: животные для «Покажи, где…» — рыжий кот (тот же, что герой, hero-cat.js) и собака (нарисована здесь, свой рисунок) */
+const DOG_BODY=`<svg class="boy3d anibody" viewBox="0 0 200 220" aria-hidden="true">
+<ellipse cx="100" cy="212" rx="62" ry="6" fill="#3a2a4022"/>
+<g data-part="хвост"><path d="M134 186Q178 182 172 140" fill="none" stroke="#5b3a22" stroke-width="17" stroke-linecap="round"/><path d="M134 186Q178 182 172 140" fill="none" stroke="#b9772f" stroke-width="12" stroke-linecap="round"/><path d="M134 186Q178 182 172 140" fill="none" stroke="transparent" stroke-width="30" stroke-linecap="round"/></g>
+<g data-part="живот"><ellipse cx="100" cy="162" rx="44" ry="46" fill="#c9843a" stroke="#5b3a22" stroke-width="3"/><ellipse cx="100" cy="168" rx="25" ry="32" fill="#fbe7c6"/></g>
+<g data-part="лапа"><ellipse cx="66" cy="202" rx="20" ry="11" fill="#c9843a" stroke="#5b3a22" stroke-width="3"/><ellipse cx="134" cy="202" rx="20" ry="11" fill="#c9843a" stroke="#5b3a22" stroke-width="3"/>
+ <rect x="76" y="140" width="18" height="62" rx="9" fill="#d9944a" stroke="#5b3a22" stroke-width="3"/><rect x="106" y="140" width="18" height="62" rx="9" fill="#d9944a" stroke="#5b3a22" stroke-width="3"/>
+ <ellipse cx="85" cy="202" rx="13" ry="8" fill="#fbe7c6" stroke="#5b3a22" stroke-width="3"/><ellipse cx="115" cy="202" rx="13" ry="8" fill="#fbe7c6" stroke="#5b3a22" stroke-width="3"/>
+ <path d="M80 204v4M85 205v4M90 204v4M110 204v4M115 205v4M120 204v4" stroke="#5b3a22" stroke-width="1.6" stroke-linecap="round"/></g>
+<g data-part="голова">
+ <ellipse cx="100" cy="78" rx="50" ry="44" fill="#d9944a" stroke="#5b3a22" stroke-width="3"/>
+ <ellipse cx="80" cy="64" rx="16" ry="12" fill="#b9772f" opacity=".55"/>
+ <ellipse cx="100" cy="102" rx="28" ry="20" fill="#fbe7c6" stroke="#5b3a22" stroke-width="2"/>
+ <g data-part="ухо"><path d="M58 46Q30 44 30 84Q32 112 50 104Q60 80 62 56Z" fill="#7a4a24" stroke="#5b3a22" stroke-width="3" stroke-linejoin="round"/><path d="M142 46Q170 44 170 84Q168 112 150 104Q140 80 138 56Z" fill="#7a4a24" stroke="#5b3a22" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="44" cy="78" r="22" fill="transparent"/><circle cx="156" cy="78" r="22" fill="transparent"/></g>
+ <g data-part="глаз"><ellipse cx="80" cy="74" rx="10" ry="12" fill="#fff" stroke="#5b3a22" stroke-width="2"/><circle cx="81" cy="76" r="6.5" fill="#2b3a55"/><circle cx="83.5" cy="72.5" r="2.4" fill="#fff"/>
+  <ellipse cx="120" cy="74" rx="10" ry="12" fill="#fff" stroke="#5b3a22" stroke-width="2"/><circle cx="119" cy="76" r="6.5" fill="#2b3a55"/><circle cx="121.5" cy="72.5" r="2.4" fill="#fff"/>
+  <circle cx="80" cy="74" r="15" fill="transparent"/><circle cx="120" cy="74" r="15" fill="transparent"/></g>
+ <g data-part="нос"><path d="M88 89q12-6 24 0q0 10-12 13q-12-3-12-13z" fill="#2a1d14"/><ellipse cx="96" cy="90" rx="4" ry="2" fill="#fff" opacity=".5"/><circle cx="100" cy="93" r="12" fill="transparent"/></g>
+ <g data-part="рот"><ellipse cx="100" cy="112" rx="18" ry="9" fill="transparent"/><path d="M100 102v4M84 106q8 8 16 0q8 8 16 0" fill="none" stroke="#5b3a22" stroke-width="2.5" stroke-linecap="round"/><path d="M88 108q12 10 24 0q-2 6-12 7-10-1-12-7z" fill="#8a2a3a"/></g>
+ <g data-part="язык"><path d="M92 112q8-2 16 0v12q0 8-8 8t-8-8z" fill="#ff8fa0" stroke="#d9667a" stroke-width="1.6"/><path d="M100 114v10" stroke="#d9667a" stroke-width="1.6"/><rect x="88" y="110" width="24" height="26" fill="transparent"/></g>
+</g></svg>`;
+const ANIS={cat:{gen:'кошки',svg:()=>{if(!window.Cat2D)return null;let t=Cat2D.svg();
+    t=t.replace('class="dogsvg herocat-static"','class="boy3d anibody herocat-static"').replace('<g class="c-head">','<g class="c-head" data-part="голова">').replace('<g class="c-body">','<g class="c-body" data-part="живот">')
+     .replace(/(<ellipse cx="72" cy="200"[\s\S]*?<path d="M62 198v6[^>]*\/>)/,'<g data-part="лапа">$1</g>').replace(/(<path d="M76 140Q70 170[\s\S]*?)(<style>)/,'<g data-part="лапа">$1</g>$2');return t}},
+  dog:{gen:'собаки',svg:()=>DOG_BODY}};
 async function bodyRound(lvl){
-  const R=G.round;const L=BODY_LV[lvl]||BODY_LV[1];
-  const last=G.bodyLast||[];const pool=L.filter(p=>!last.includes(p));const target=pick(pool.length?pool:L);
+  const R=G.round;
+  /* v52: с 2 уровня каждое третье задание — на животном, с 4 уровня — каждое второе (выключатель «Животные и лицо крупно») */
+  const extra=S.bodyAni!==false;const L=BODY_LV[extra?lvl:Math.min(lvl,3)]||BODY_LV[3];
+  const ani=extra&&lvl>=2&&rmode('bodyani',lvl>=4?2:3)===0?pick(Object.keys(ANIS)):null;const A=ani?ANIS[ani]:null;const asvg=A&&A.svg();
+  const html=`<div class="bodyg">${asvg||boySvg('bd')}</div>`;const has=p=>html.includes(`data-part="${p}"`);
+  const list=asvg?ANI_LV[lvl>=4?4:2].filter(has):L;
+  const last=G.bodyLast||[];const pool=list.filter(p=>!last.includes(p));const target=pick(pool.length?pool:list);
   G.bodyLast=last.concat(target).slice(-2);
-  const q=BODY_ASK[target]||'Покажи, где '+target+'!';
+
+  const q=asvg?'Покажи, где у '+A.gen+' '+(ANI_W[target]||target)+'!':(BODY_ASK[target]||'Покажи, где '+target+'!');
   if(!await ask(q))return;
-  const st=$('#stage');st.innerHTML=`<div class="bodyg">${boySvg('bd')}</div>`;
-  const svg=st.querySelector('svg');let wrong=0,locked=false;R.bodyReady=true;
+  const st=$('#stage');st.innerHTML=html;const svg=st.querySelector('svg');let wrong=0,locked=false;
+  if(!asvg&&extra&&(lvl===4||lvl>=5&&BODY_FACE.includes(target)))svg.setAttribute('viewBox','20 8 260 216'); /* лицо крупно */
+  R.bodyReady=true;R.bodyT=target;R.bodyAni=ani;
   const groupOf=(name)=>[...svg.querySelectorAll('[data-part]')].filter(e=>e.dataset.part===name);
   const flash=(els,cls,ms)=>{els.forEach(e=>{e.classList.remove(cls);void e.getBoundingClientRect();e.classList.add(cls)});if(ms)setTimeout(()=>els.forEach(e=>e.classList.remove(cls)),ms)};
   const ok=await new Promise(res=>{
     svg.onpointerdown=async e=>{if(locked||R.dead)return;ac();
       const el=e.target.closest&&e.target.closest('[data-part]');
-      if(!el){tone(660,0,.08,'triangle',.1);say(q);return}   /* мимо мальчика — повторяем задание */
+      if(!el){tone(660,0,.08,'triangle',.1);say(q);return}   /* мимо — повторяем задание */
       const part=el.dataset.part;
       if(bodyHits(part,target)){locked=true;
         const hit=groupOf(target);flash(hit.length?hit:[el],'ok');svg.querySelectorAll('.hint').forEach(x=>x.classList.remove('hint'));
@@ -335,13 +377,13 @@ async function bodyRound(lvl){
         await say('Молодец! Это '+target+'!');res(wrong===0);return}
       /* неверно: называем, что он показал, на уровне частей этого уровня */
       locked=true;wrong++;R.wrong++;(R.picks=R.picks||[]).push(part);
-      const nm=bodyName(part,lvl)||part;const shown=groupOf(nm);flash(shown.length?shown:[el],'bad',700);
+      const nm=bodyName(part,lvl,list)||part;const shown=groupOf(nm);flash(shown.length?shown:[el],'bad',700);
       const badMs=sfx.bad();await wait(Math.min(badMs,400));if(R.dead)return;
       await say('Нет, это не '+target+', это '+nm+'.');if(R.dead)return;
       if(wrong>=2)groupOf(target).forEach(x=>x.classList.add('hint'));
       await say(q);locked=false};
   });
   if(R.dead||!G)return;await wait(400);
-  return roundDone(ok,{n:target})}
+  return roundDone(ok,{n:(ani?ani+': ':'')+target})}
 document.head.insertAdjacentHTML('beforeend','<style>'+BODY_CSS+'</style>');
 

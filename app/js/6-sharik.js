@@ -155,7 +155,7 @@ function shMemory(now=Date.now()){
 const SHT={wait:3500,tick:50,gain:5}; // ждать сервер (мс), как часто мерить громкость (мс), чувствительность рта
 const SH_HOW=[]; /* чем говорил Шарик последние разы: tts:ok / tts:stop / phone / mom (для проверки) */
 const SHT_MEM=new Map(); // фраза → MP3 (пока приложение открыто); на диске — Cache Storage «sharik-tts»
-function shTtsOn(){return S.shTts!==false&&shOn()&&!!S.voice&&!(G&&G.shNoTts)}
+function shTtsOn(){return S.shTts!==false&&!!S.shUrl&&!!S.voice&&!(G&&G.shNoTts)}
 async function shTtsGet(text,memOnly){ /* memOnly — только то, что уже записано на телефоне (фразы игр): в сеть не ходим */
   if(window.__shTtsSim)return memOnly?null:window.__shTtsSim(text);
   const key=text.trim();if(SHT_MEM.has(key))return SHT_MEM.get(key);
@@ -441,6 +441,6 @@ function shHostStart(){const os=document.getElementById('sh-sum');if(os)os.remov
 function shHostSync(){if(!G||!G.host)return;const c=document.getElementById('shc');if(!c)return;const own=SH_OWN.includes(G.game);
   c.classList.toggle('own',own);const dog=c.querySelector('.shdog');if(!own&&!s3(dog)&&dog.classList.contains('is3d')){dog.classList.remove('is3d');dog._s3p=sh3(dog)}}
 /* настройки в разделе для взрослых */
-function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost===true;q('set-hgon').checked=S.hgOn!==false;q('set-hero').value=heroKind();q('set-shask').checked=S.shAskBtn!==false;q('set-shsum').checked=S.shSum!==false;for(const k in SH_MOVES){const e=q('set-mv-'+k);if(e)e.checked=shMv(k)}q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
+function shSync(){const q=id=>$('#'+id);if(!q('set-shon'))return;q('set-shon').checked=!!S.shOn;q('set-shhost').checked=S.shHost===true;q('set-hgon').checked=S.hgOn!==false;q('set-hero').value=heroKind();q('set-shask').checked=S.shAskBtn!==false;q('set-shsum').checked=S.shSum!==false;for(const k in SH_MOVES){const e=q('set-mv-'+k);if(e)e.checked=shMv(k)}q('set-shurl').value=S.shUrl||'';q('set-shcode').value=S.shCode||'';q('set-shmin').value=S.shMin||20;q('set-shvoice').checked=S.shVoice!==false;q('set-shstt').checked=!!S.shStt;q('set-sh3d').checked=S.sh3d!==false;q('set-shmem').checked=S.shMem!==false;q('set-mirrbody').checked=S.mirrBody!==false;q('set-shtts').checked=S.shTts!==false;if(q('set-cloudv'))q('set-cloudv').checked=S.cloudVoice!==false;const l=q('sh-lat');if(l)l.textContent=shLatText();const pc=q('sh-phn');if(pc)shPhrasesCount().then(n=>pc.textContent=n?`на телефоне записано фраз: ${n}`:'')}
 
 

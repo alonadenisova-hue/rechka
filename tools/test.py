@@ -370,15 +370,15 @@ with sync_playwright() as p:
           if(hit(...c))return c;
           for(let k=1;k<=8;k++)for(let a=0;a<12;a++){const x=c[0]+Math.cos(a*Math.PI/6)*r.width*k/16,y=c[1]+Math.sin(a*Math.PI/6)*r.height*k/16;if(hit(x,y))return [x,y]}
           return c}"""
-        for lv in (1, 2, 3):
+        for lv in (1, 2, 3, 4, 5):
             okr = okw = 0
             start('body', lv); prev = None
             for r_ in range(3):
                 pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.bodyReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=20000); pg.wait_for_timeout(300)
                 prev = pg.evaluate(f"{R}.G.round.tStart")
                 i0 = pg.evaluate(f"{R}.G.i")
-                tgt = pg.evaluate("document.querySelector('#prompt').textContent.replace('Покажи, где ','').replace('!','').trim()")
-                top = [x for x in ('нога', 'рука', 'живот', 'голова') if x != tgt and not pg.evaluate(f"__ev('bodyHits')('{tgt}','{x}')")]
+                tgt = pg.evaluate(f"{R}.G.round.bodyT")  # v52: у кошки и собаки вопрос «Покажи, где у кошки лапы!»
+                top = [x for x in ('нога', 'рука', 'живот', 'голова', 'хвост', 'лапа') if x != tgt and pg.evaluate(f"!!document.querySelector('#stage [data-part=\"{x}\"]')") and not pg.evaluate(f"__ev('bodyHits')('{x}','{tgt}')") and not pg.evaluate(f"__ev('bodyHits')('{tgt}','{x}')")]
                 w0 = pg.evaluate(f"{R}.G.round.wrong")
                 pg.touchscreen.tap(*pg.evaluate(PT, top[0])); pg.wait_for_timeout(300)
                 if pg.evaluate(f"{R}.G.round.wrong") == w0 + 1: okw += 1

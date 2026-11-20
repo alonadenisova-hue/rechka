@@ -25,7 +25,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ---------- storage */
 const KEY='rechka-v1';
-const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',bodyOn:true,mirrOn:true,shOn:false,hero:'cat',shUrl:'',shCode:'',shMin:20,sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{cat:1,home:1,draw:1,rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1,body:1,mirr:1},streak:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},errs:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
+const defaults={dogHi:0,voiceGame:true,sylMic:true,vthr:.03,vidFreq:'always',mirror:false,sayRec:false,wbOn:true,wbAsk:true,tipOn:true,voice:true,badSnd:'soft',bodyOn:true,mirrOn:true,shOn:false,cloudVoice:true,hero:'cat',shUrl:'',shCode:'',shMin:20,sayit:'some',askFirst:true,myVoice:true,name:'Лев',rate:0.85,rounds:15,anim:true,nextBtn:true,lvl:{cat:1,home:1,draw:1,rh:1,pg:1,br:1,dogs:1,tr:1,yn:1,nes:1,sl:1,ib:1,food:1,odd:1,verb:1,color:1,feed:1,prep:1,pair:1,size:1,snd:1,syl:1,me:1,word:1,dai:1,many:1,fly:1,put:1,bal:1,world:1,dress:1,catch:1,num:1,seq:1,want:1,voice:1,make:1,dog:1,give:1,not:1,body:1,mirr:1},streak:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},errs:{cat:0,home:0,draw:0,rh:0,pg:0,br:0,dogs:0,tr:0,yn:0,nes:0,sl:0,ib:0,food:0,odd:0,verb:0,color:0,feed:0,prep:0,pair:0,size:0,snd:0,syl:0,me:0,word:0,dai:0,many:0,fly:0,put:0,bal:0,world:0,dress:0,catch:0,num:0,seq:0,want:0,voice:0,make:0,dog:0,give:0,not:0,body:0,mirr:0},log:[],recent:[],pz:{k:0,placed:[],bank:0,done:[]}};
 let S;
 try{S=Object.assign(structuredClone(defaults),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(defaults)}
 for(const k of ['lvl','streak','errs','pz'])S[k]=Object.assign({},defaults[k],S[k]);
@@ -41,7 +41,7 @@ const PAIR_OFF=new Set(['pcdd139091+p06346201c','p15787a5a0+p661e4d2d4','p234ed3
   'p7dfa2f0af+p2fa23f621','p15787a5a0+p3145f4ad3','pf9c13b643+p7ae3ce63b','p8ce48ccec+p492e3acf5','pcdd139091+pa5f322b53',
   'p83151c294+p4307d6016','pda632cacb+pd04541c92','p84995c6a1+p4307d6016','p564a1c805+p850dcf4ff','pba721c15c+p419040866','pa0a41b3a0+p61497aaeb','p4a51f3f9c+p62c367ad8','pf8492fb48+p8a23ca60c']);
 D2.pairs=D2.pairs.filter(p=>!PAIR_OFF.has(p.a.map(x=>x.i).join('+')));
-const MAXL={cat:3,mirr:4,body:3,home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
+const MAXL={cat:3,mirr:4,body:5,home:4,draw:3,not:4,dog:6,voice:3,make:6,odd:4,verb:5,color:6,feed:4,prep:8,fly:3,pair:5,size:5,snd:3,syl:5,me:3,word:4,dai:4,many:3,put:4,bal:4,world:5,dress:4,catch:4,num:7,seq:3,want:4,rh:1,pg:1,br:1,dogs:1,tr:4,yn:2,nes:3,sl:1,ib:4,food:5};
 for(const g in MAXL)if(S.lvl[g]>MAXL[g])S.lvl[g]=MAXL[g];
 const UPG={syl:5,snd:4}; // для этих игр уровень поднимается медленнее
 const UP=3; // верных подряд с первой попытки, чтобы уровень поднялся
@@ -52,7 +52,20 @@ function pickVoice(){const vs=speechSynthesis.getVoices().filter(v=>/^ru/i.test(
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 let curAudio=null,sayGen=0;
 function stopVoice(){sayGen++;try{speechSynthesis.cancel()}catch(e){}if(curAudio){const a=curAudio;curAudio=null;try{a.pause()}catch(e){}}}
-function tts(text,{rate,pitch}={}){return new Promise(res=>{
+/* v52: живой голос (ElevenLabs через сервер Шарика) во ВСЕХ играх, включён по умолчанию («Для взрослых» → «Живой голос во всех играх»).
+   Нужен только адрес сервера; «Занятие с Шариком» включать не обязательно. Фраза скачивается один раз и дальше звучит с телефона
+   (Cache Storage «sharik-tts»). Нет сервера, нет интернета, сервер молчит — голос телефона, как раньше; после двух неудач подряд
+   2 минуты сервер не спрашиваем, чтобы игра не ждала. Записи мамы главнее. */
+const CV={fail:0,until:0};
+function cloudOn(){return S.cloudVoice!==false&&!!S.voice&&!!S.shUrl&&typeof shTtsGet==='function'&&Date.now()>CV.until&&!(G&&G.shNoTts)&&navigator.onLine!==false}
+async function cloudSay(text){ /* true — фраза прозвучала (или её остановили), false — нужен голос телефона */
+  const my=sayGen;const parts=splitParts(text);if(!parts.length)return false;
+  let bs;try{bs=await Promise.all(parts.map(p=>shTtsGet(p)))}catch(e){bs=[]}
+  if(my!==sayGen)return true;
+  if(!bs.length||!bs.every(Boolean)){if(++CV.fail>=2){CV.fail=0;CV.until=Date.now()+120000}return false}
+  CV.fail=0;for(const b of bs){if(my!==sayGen)return true;await playURL(URL.createObjectURL(b))}return true}
+function tts(text,opt={}){if(cloudOn()&&text){stopVoice();return cloudSay(text).then(ok=>ok?undefined:tts0(text,opt))}return tts0(text,opt)}
+function tts0(text,{rate,pitch}={}){return new Promise(res=>{
   if(!('speechSynthesis' in window)){res();return}
   try{speechSynthesis.cancel()}catch(e){}const u=new SpeechSynthesisUtterance(fixStress(text));u.lang='ru-RU';if(voice)u.voice=voice;
   u.rate=rate||S.rate;u.pitch=pitch||1.1;let done=false;const fin=()=>{if(!done){done=true;res()}};
@@ -72,8 +85,9 @@ function say(text,opt={}){
   if(!S.voice||!text)return Promise.resolve();
   noteRecent(text);stopVoice();const my=sayGen;const parts=splitParts(text);
   if(S.myVoice&&REC.size&&parts.some(p=>REC.has(nk(p))))return (async()=>{for(const p of parts){if(my!==sayGen)return;let b=null;
-    if(REC.has(nk(p))){try{b=await MDB.get('rec',nk(p))}catch(e){}}if(my!==sayGen)return;if(b)await playURL(URL.createObjectURL(b));else await tts(p,opt)}})();
-  return tts(text,opt);}
+    if(REC.has(nk(p))){try{b=await MDB.get('rec',nk(p))}catch(e){}}if(my!==sayGen)return;if(b)await playURL(URL.createObjectURL(b));else if(!(cloudOn()&&await cloudSay(p))&&my===sayGen)await tts0(p,opt)}})();
+  if(cloudOn())return cloudSay(text).then(ok=>ok||my!==sayGen?undefined:tts0(text,opt));
+  return tts0(text,opt);}
 let AC=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function tone(f,t0,dur,type='sine',vol=.18){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,a.currentTime+t0);
@@ -277,8 +291,10 @@ async function verbRound(lvl){
     const tv=pickTargetVerb(avail);let others;
     if(S.askFirst&&rmode('ask',4)===0){const R=G.round;await askFirst(tv);if(!G||G.round!==R||R.dead)return}
     const av2=avail.filter(v=>okOther(tv,v));
-    if(lvl===1){const c=av2.filter(v=>!isConf(v,tv));others=[pick(c.length?c:av2)]}
-    else if(lvl===2){const c=av2.filter(v=>isConf(v,tv));others=[c.length?pick(c):pick(av2)]}
+    /* v52: минимум 3 картинки (1 ур. — две непохожие, 2 ур. — похожая и непохожая) */
+    const sep=L=>L.filter(v=>okOther(v,tv)).filter((v,k,a)=>a.findIndex(y=>!okOther(y,v)||!okOther(v,y))===k);
+    if(lvl===1){const c=av2.filter(v=>!isConf(v,tv));others=shuffle(sep(c.length>=2?c:av2)).slice(0,2)}
+    else if(lvl===2){const c=av2.filter(v=>isConf(v,tv));const a=c.length?pick(c):pick(av2);const rest=sep(av2.filter(v=>v!==a&&!isConf(v,tv)&&okOther(a,v)&&okOther(v,a)));others=[a].concat(shuffle(rest).slice(0,1))}
     else{const c=av2.filter(v=>isConf(v,tv));others=shuffle(c).slice(0,1).concat(shuffle(av2.filter(v=>!c.includes(v))).slice(0,3)).slice(0,3)}
     const t=fresh(()=>actImg(tv,pA),x=>x.i);opts=[{a:t,ok:true}].concat(others.map(v=>({a:actImg(v,pA),ok:false})));
     q='Кто '+tv+'?';good=t.s?cap(t.s)+' '+tv+'.':cap(tv)+'.';meta={v:tv};
@@ -359,7 +375,7 @@ async function feedRound(lvl){
   const target=pets[0];
   const allF=Object.keys(D.foods);
   const fkey=lvl>=3&&Math.random()<.5?pick(allF):target.f;
-  const nF=lvl===1?2:3;
+  const nF=3; /* v52: минимум 3 варианта */
   const avoid=pets.map(p=>p.f);
   const foods=shuffle([fkey].concat(shuffle(allF.filter(f=>f!==fkey&&!avoid.includes(f))).slice(0,nF-1)));
   const q='Дай '+target.dat+' '+D.foods[fkey].acc+'!';
@@ -395,10 +411,12 @@ async function prepRound(lvl){
   let opts,t;
   /* v50 (обход игр): набор «дядя на такси / на трамвае…» убран — по-русски это «едет на такси», а нарисован дядя на крыше.
      Варианты в одном вопросе — из одного набора (не осы рядом с самосвалами) */
-  if(lvl<=2){const pr=fresh(()=>pick(prepPairs('osa')),x=>x['в'].n+lvl);t=pr[pick(['в','на'])];opts=[pr['в'],pr['на']]}
+  if(lvl<=2){const pr=fresh(()=>pick(prepPairs('osa')),x=>x['в'].n+lvl);t=pr[pick(['в','на'])];opts=[pr['в'],pr['на']];
+    const o=pick(prepPairs('osa').filter(x=>x['в'].n!==pr['в'].n));if(o)opts.push(o[t.p==='в'?'на':'в'])} /* v52: третья картинка — другой предмет, другой предлог */
   else if(lvl<=4){const pool=prepPairs('osa');let a,b,k=0;do{[a,b]=shuffle(pool).slice(0,2);k++}while(a['в'].n===b['в'].n||(k<25&&G.seen.has(a['в'].n)));G.seen.add(a['в'].n);
     t=a[pick(['в','на'])];opts=[a['в'],a['на'],b['в'],b['на']]}
-  else if(lvl<=6){const pr=fresh(()=>pick(prepPairs(lvl===5?'bel':'kot','под')),x=>x['под'].k);t=pr[pick(['под','на'])];opts=[pr['под'],pr['на']]}
+  else if(lvl<=6){const set=lvl===5?'bel':'kot';const pr=fresh(()=>pick(prepPairs(set,'под')),x=>x['под'].k);t=pr[pick(['под','на'])];opts=[pr['под'],pr['на']];
+    const o=pick(prepPairs(set,'под').filter(x=>x['под'].nn!==pr['под'].nn&&x['под'].k!==pr['под'].k));if(o)opts.push(o[t.p==='под'?'на':'под'])}
   else if(lvl===7){const pool=prepPairs(pick(['bel','kot']),'под');let a,b,k=0;do{[a,b]=shuffle(pool).slice(0,2);k++}while(a['под'].nn===b['под'].nn||(k<25&&G.seen.has(a['под'].k)));G.seen.add(a['под'].k);
     t=a[pick(['под','на'])];opts=[a['под'],a['на'],b['под'],b['на']]}
   else{const vn=prepPairs('osa'),pn=prepPairs(null,'под');const useP=Math.random()<.5;const a=fresh(()=>pick(useP?pn:vn),x=>(useP?x['под']:x['в']).k);
@@ -412,12 +430,16 @@ async function prepRound(lvl){
 /* ---------- GAME 6: look-alike actions, pairs from the logoped's slides */
 const PSET={1:'si',2:'ss',3:'ib',4:'sl'};
 const PVERBS={si:['стоит','идёт'],ss:['стоит','сидит'],ib:['идёт','бежит'],sl:['спит','лежит']};
+/* v52: третья картинка к паре «стоит — идёт» и т. п.: действие из набора, где нет ни одного из этих глаголов (и не «спит» к «лежит») */
+function pairExtra(verbs){const bad=v=>verbs.includes(v)||verbs.some(w=>!okOther(w,v)||!okOther(v,w))||(verbs.includes('лежит')&&v==='спит')||(verbs.includes('спит')&&v==='лежит');
+  const sets=Object.keys(PVERBS).filter(k=>!PVERBS[k].some(bad));const L=D2.pairs.filter(p=>sets.includes(p.set)).flatMap(p=>p.a).filter(a=>!bad(a.v));return L.length?pick(L):null}
 async function pairRound(lvl){
   const P=D2.pairs,pk=x=>x.a[0].i+x.a[1].i;let t,opts;
   if(false){const subs=[...new Set(D.anims.filter(a=>a.s&&a.v==='идёт').map(a=>a.s))].filter(s=>D.anims.some(a=>a.s===s&&a.v==='бежит'));
     const c=fresh(()=>({s:pick(subs),v:pick(['идёт','бежит'])}),x=>'a'+x.s+x.v);const A=v=>{const a=pick(D.anims.filter(x=>x.s===c.s&&x.v===v));return{i:a.a,s:c.s,v}};
     opts=[A('идёт'),A('бежит')];t=opts.find(o=>o.v===c.v)}
-  else if(lvl<=4){const c=fresh(()=>{const pr=pick(P.filter(p=>p.set===PSET[lvl]));return{pr,t:pick(pr.a)}},x=>pk(x.pr)+x.t.i);t=c.t;opts=c.pr.a}
+  else if(lvl<=4){const c=fresh(()=>{const pr=pick(P.filter(p=>p.set===PSET[lvl]));return{pr,t:pick(pr.a)}},x=>pk(x.pr)+x.t.i);t=c.t;opts=c.pr.a.slice();
+    const ex=pairExtra(c.pr.a.map(a=>a.v));if(ex)opts.push(ex)} /* v52: третья картинка — действие из другой пары */
   else{const c=fresh(()=>{const pr=pick(P);return{pr,t:pick(pr.a)}},x=>pk(x.pr)+x.t.i);const p1=c.pr;t=c.t;const sets=Object.keys(PVERBS).filter(k=>k!==p1.set&&!PVERBS[k].includes(t.v));
     const p2=pick(P.filter(p=>p.set===pick(sets)));opts=p1.a.concat(p2.a)}
   if(t.v==='лежит'&&opts.some(o=>o.v==='спит'))t=opts.find(o=>o.v==='спит');
@@ -436,7 +458,8 @@ async function sizeRound0(lvl){
   let opts,q,good,meta;const which=pick(['b','s']);
   if(lvl===1){const pr=fresh(()=>pick(D3.size1),x=>x.b.i+which);const t=pr[which];
     q=which==='b'?'Что большое?':'Что маленькое?';good=cap(SADJ[which][t.g])+' '+t.n+'.';
-    opts=[{html:simg(pr.b.i,false),ok:which==='b',key:'b'},{html:simg(pr.s.i,true),ok:which==='s',key:'s'}];meta={sz:which,n:t.n}}
+    opts=[{html:simg(pr.b.i,false),ok:which==='b',key:'b'},{html:simg(pr.s.i,true),ok:which==='s',key:'s'}];meta={sz:which,n:t.n};
+    const o=pick(D3.size1.filter(x=>x!==pr&&x.b.n!==pr.b.n));if(o)opts.push(which==='b'?{html:simg(o.s.i,true),ok:false,key:'s2'}:{html:simg(o.b.i,false),ok:false,key:'b2'})} /* v52: третья картинка — другой предмет «не того» размера */
   else{const items=sizeItems();const n=lvl===2?1:lvl===4?3:2;
     if(lvl===5){const nouns=[...new Set(D3.cobj.map(o=>o.n))].filter(nn=>new Set(D3.cobj.filter(o=>o.n===nn).map(o=>o.c)).size>=2);
       const c=fresh(()=>{const nn=pick(nouns);const two=shuffle(D3.cobj.filter(o=>o.n===nn)).filter((o,k,a)=>a.findIndex(y=>y.c===o.c)===k).slice(0,2);return{nn,two,t:pick(two)}},x=>x.t.i+which);
@@ -444,7 +467,8 @@ async function sizeRound0(lvl){
       opts=[];c.two.forEach(o=>['b','s'].forEach(z=>opts.push({html:simg(o.i,z==='s'),ok:o===t&&z===which,key:z})));meta={sz:which,n:t.n}}
     else{const t=fresh(()=>pick(items),x=>x.n+which);const others=shuffle(items.filter(x=>x.n!==t.n)).filter((o,k,a)=>a.findIndex(y=>y.n===o.n)===k).slice(0,n-1);
       q='Где '+SADJ[which][t.g]+' '+t.n+'?';good=cap(SADJ[which][t.g])+' '+t.n+'.';
-      opts=[];[t].concat(others).forEach(o=>['b','s'].forEach(z=>opts.push({html:simg(z==='b'?o.b:o.s,z==='s'),ok:o===t&&z===which,key:z})));meta={sz:which,n:t.n}}}
+      opts=[];[t].concat(others).forEach(o=>['b','s'].forEach(z=>opts.push({html:simg(z==='b'?o.b:o.s,z==='s'),ok:o===t&&z===which,key:z})));meta={sz:which,n:t.n};
+      if(opts.length<3){const o=pick(items.filter(x=>x.n!==t.n));if(o){const z=which==='b'?'s':'b';opts.push({html:simg(z==='b'?o.b:o.s,z==='s'),ok:false,key:z})}}}}
   if(!await ask(q))return;
   const ok=await choice(shuffle(opts),{question:q,goodText:good});
   return roundDone(ok,meta);

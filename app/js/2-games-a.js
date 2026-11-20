@@ -85,7 +85,7 @@ function sceneSvg(b){const c=SEASONS[b%4];const tree=(x,y,k)=>`<rect x="${x-7}" 
   ${tree(110,470,1)}${tree(1120,500,1.1)}${tree(330,560,.8)}${flakes}`}
 const BIG={c:4,r:3,W:1200,H:900};
 /* ---------- «Занятие дня»: трудное вперемешку с лёгким */
-const MIXG=['home','draw','dog','give','nes','not','want','verb','pair','color','prep','size','snd','odd','feed','put','bal','world','dress','catch','num','seq','nes','sl','ib','food','yn','tr'];
+const MIXG=['home','give','nes','not','want','verb','pair','color','prep','size','snd','odd','feed','put','bal','world','dress','catch','num','nes','sl','ib','food','yn','tr'];
 function startMix(){const week=Date.now()-7*864e5;const acc=g=>{const L=S.log.filter(x=>x.g===g&&x.t>week);return L.length>=3?L.filter(x=>x.ok).length/L.length:.7};
   const gs=MIXG.concat(Object.keys(PH).length>=2?['me']:[]).concat(D.daina&&D.daina.length?['dai']:[]);
   const weak=gs.filter(g=>g!=='syl').sort((a,b)=>acc(a)-acc(b)+(Math.random()-.5)*.05).slice(0,2);
@@ -103,7 +103,7 @@ function picOf(n){const a=D.animals.find(x=>x.n===n);if(a)return a.i;const s=D.a
 let ONO_L=Object.keys(ONO).map(n=>({n,o:ONO[n],i:picOf(n)})).filter(x=>x.i&&hasSnd(x.n));
 async function sndRound(lvl){
   const R=G.round;const t=fresh(()=>pick(ONO_L),x=>x.n);const play=()=>animalSound({n:t.n,snd:t.o});
-  const n=lvl===1?2:lvl===2?3:4;const CLASH=[['курица','петух'],['гусь','утка'],['волк','собака'],['коза','овца']];const cl=(a,b)=>CLASH.some(p=>p.includes(a.n)&&p.includes(b.n));const others=[];for(const x of shuffle(ONO_L)){if(others.length>=n-1)break;const all=[t].concat(others);if(all.some(y=>y.n===x.n||y.o===x.o||cl(x,y)))continue;others.push(x)}
+  const n=lvl<=2?3:4;const CLASH=[['курица','петух'],['гусь','утка'],['волк','собака'],['коза','овца']];const cl=(a,b)=>CLASH.some(p=>p.includes(a.n)&&p.includes(b.n));const others=[];for(const x of shuffle(ONO_L)){if(others.length>=n-1)break;const all=[t].concat(others);if(all.some(y=>y.n===x.n||y.o===x.o||cl(x,y)))continue;others.push(x)}
   setPrompt('Кто так говорит?');G.round.replay=play;
   if(!await ask('Кто так говорит?','Послушай! Кто так говорит?'))return;await play();if(R.dead)return;
   const ok=await choice(shuffle([t].concat(others).map(x=>({html:img(x.i),ok:x===t,key:x.n}))),{question:'Кто так говорит?',goodText:cap(t.n)+' говорит: '+t.o,sayit:t.o.replace(/!/g,''),onWrong:play});
@@ -153,7 +153,8 @@ async function meRound(lvl){
   if(have.length<2){$('#stage').innerHTML='<div class="notice"><b>Здесь будут твои фото!</b><span class="note">Взрослому: подержите шестерёнку на главном экране → «Фото для игры „Я“» и сфотографируйте ребёнка в действии — хотя бы 2 фото.</span></div>';
     setPrompt('Я');say('Попроси маму сфотографировать тебя!');return}
   const t=fresh(()=>pick(have),x=>x[0]),nm=S.name||'Лев';let opts;
-  if(lvl===1||have.length<3){opts=[{h:meImg(t),ok:true,k:t[0]},{h:meImg(pick(have.filter(v=>v!==t))),k:'me'}]}
+  if(lvl===1||have.length<3){opts=[{h:meImg(t),ok:true,k:t[0]}].concat(shuffle(have.filter(v=>v!==t)).slice(0,2).map(v=>({h:meImg(v),k:v[0]})));
+    if(opts.length<3){const a=pick(D.actions.filter(x=>x.v!==t[0]&&!x.o&&x.s&&okOther(t[0],x.v)));if(a)opts.push({h:img(a.i),k:a.s})}} /* v52: минимум 3 картинки */
   else if(lvl===2){opts=[{h:meImg(t),ok:true,k:t[0]}].concat(shuffle(have.filter(v=>v!==t)).slice(0,3).map(v=>({h:meImg(v),k:v[0]})))}
   else{const an=shuffle(D.actions.filter(a=>a.v===t[0]&&!a.o&&a.s)).slice(0,2);opts=[{h:meImg(t),ok:true,k:t[0]},{h:meImg(pick(have.filter(v=>v!==t))),k:'me'}].concat(an.map(a=>({h:img(a.i),k:a.s})));
     if(opts.length<4)opts=opts.concat(shuffle(have.filter(v=>v!==t)).slice(0,4-opts.length).map(v=>({h:meImg(v),k:v[0]})));
@@ -185,23 +186,34 @@ const place=(el,r)=>Object.assign(el.style,{left:r.x+'px',top:r.y+'px',width:r.w
 function flyTo(el,target){return new Promise(res=>{const a=el.getBoundingClientRect(),b=target.getBoundingClientRect();el.style.transition='transform .6s cubic-bezier(.5,-0.3,.5,1.2),opacity .25s .5s';el.style.zIndex=30;
   el.style.transform=`translate(${b.left+b.width/2-a.left-a.width/2}px,${b.top+b.height*.55-a.top-a.height/2}px) scale(.4)`;el.style.opacity='0';setTimeout(res,650)})}
 /* ---------- GAME 12: Дай — на («Катя, дай» и сцены «Дай-на») */
+/* v52: названия вещей в «Катя, дай» (по картинкам; [что это, кого/что дать]). Губы не называем — картинка без слова в игру не идёт */
+const KATYA_W={v7_1df429fc0a:['мята','мяту'],v7_6ed91b1bee:['вода','воду'],v7_138a2544d7:['ваза','вазу'],v7_8716c97a69:['еда','еду'],v7_b4073dbd1c:['пена','пену'],
+  v7_c051a897b0:['нота','ноту'],v7_ab46b1cc02:['вата','вату'],v7_afca7840a6:['пила','пилу'],v7_24d34eaf53:['бита','биту'],v7_c324ae4e1d:['дыня','дыню'],
+  v7_faa376656a:['мука','муку'],v7_a99810ba82:['луна','луну'],v7_7ab598bbf4:['каша','кашу'],v7_e6985c9733:['шуба','шубу'],v7_f97b937a4b:['ванна','ванну']};
 async function daiRound(lvl){
   const R=G.round,st=$('#stage');
-  if(lvl===1){const k=fresh(()=>pick(D4.katya.list),x=>x.req);
+  if(lvl===1){ /* v52 (просьба мамы): «Катя, дай» — выбор из трёх вещей; просьба называет вещь: «Катя, дай вазу!» */
+    const KL=D4.katya.list.map(x=>Object.assign({w:KATYA_W[x.item]},x)).filter(x=>x.w);
+    const k=fresh(()=>pick(KL),x=>x.req);const oth=shuffle(KL.filter(x=>x.item!==k.item)).slice(0,2);const items=shuffle([k].concat(oth));
     st.innerHTML='<div class="scene white"></div>';const sc=st.firstChild;const L=sceneLayout(sc,16/9,true);
     const kat=document.createElement('img');kat.src=IMG[D4.katya.katya];kat.className='hero';
     const req=document.createElement('img');req.src=IMG[k.req];req.className='hero';
-    const it=document.createElement('button');it.className='it';it.innerHTML=`<img src="${IMG[k.item]}" alt="">`;
-    if(L.port){const W=L.W,H=L.H,z=Math.min(W*.34,H*.2);place(req,{x:W*.3,y:6,w:W*.66,h:H*.44});place(kat,{x:4,y:H*.48,w:W*.58,h:H*.5});place(it,{x:W*.6,y:H*.6,w:z,h:z})}
-    else{place(kat,L.map(k.kp));place(req,L.map(k.rp));place(it,L.map(k.ip,80))}
-    it.style.visibility='hidden';sc.append(kat,req,it);
-    setPrompt('Катя, дай!');G.round.replay=()=>tts('Катя, дай!',{pitch:1.3});G.round.good='На!';
-    await tts('Катя, дай!',{pitch:1.3});if(R.dead)return;it.style.visibility='';
-    const hint=setTimeout(()=>it.classList.add('hint'),6000);
-    await new Promise(res=>{const go=async()=>{clearTimeout(hint);it.onclick=kat.onclick=null;it.classList.remove('hint');ac();sfx.click();await flyTo(it,req);res()};it.onclick=go;kat.onclick=go});
-    if(R.dead)return;await say('На!');req.classList.add('yay');sfx.good();confetti(60);await tts('Спасибо!',{pitch:1.3});if(R.dead)return;
-    if(wantSayIt())await sayIt('На',`<img src="${IMG[k.item]}" alt="">`);
-    return roundDone(true,{who:k.who,m:'katya'})}
+    const els=items.map(x=>{const b=document.createElement('button');b.className='it';b.innerHTML=`<img src="${IMG[x.item]}" alt="">`;b.setAttribute('aria-label',x.w[0]);b._x=x;return b});
+    if(L.port){const W=L.W,H=L.H,z=Math.min(W*.3,H*.145);place(req,{x:W*.3,y:6,w:W*.66,h:H*.42});place(kat,{x:4,y:H*.46,w:W*.56,h:H*.5});
+      els.forEach((b,j)=>place(b,{x:W*.64,y:H*.5+j*(H*.155),w:z,h:z}))}
+    else{place(kat,L.map(k.kp));place(req,L.map(k.rp));els.forEach((b,j)=>place(b,L.map([.44,.035+j*.33,.13,.26],84)))}
+    els.forEach(b=>b.style.visibility='hidden');sc.append(kat,req,...els);
+    const ask='Катя, дай '+k.w[1]+'!';
+    setPrompt(ask);G.round.replay=()=>tts(ask,{pitch:1.3});G.round.good='На '+k.w[1]+'!';
+    await tts(ask,{pitch:1.3});if(R.dead)return;els.forEach(b=>b.style.visibility='');
+    let miss=0;const hint=setTimeout(()=>els.forEach(b=>{if(b._x===k)b.classList.add('hint')}),9000);
+    await new Promise(res=>{els.forEach(b=>b.onclick=async()=>{if(b._busy)return;ac();const x=b._x;
+      if(x===k){clearTimeout(hint);els.forEach(e=>{e.onclick=null;e.classList.remove('hint')});sfx.click();await flyTo(b,req);res();return}
+      miss++;G.round.wrong=(G.round.wrong||0)+1;b._busy=1;b.classList.remove('bad');void b.offsetWidth;b.classList.add('bad');await wait(sfx.bad());b._busy=0;if(R.dead)return;
+      await tts('Нет, это '+x.w[0]+'! '+ask,{pitch:1.3});if(miss>=2)els.forEach(e=>{if(e._x===k)e.classList.add('hint')})})});
+    if(R.dead)return;await say('На '+k.w[1]+'!');req.classList.add('yay');sfx.good();confetti(60);await tts('Спасибо!',{pitch:1.3});if(R.dead)return;
+    if(wantSayIt())await sayIt('На '+k.w[1],`<img src="${IMG[k.item]}" alt="">`);
+    return roundDone(miss===0,{who:k.who,m:'katya',n:k.w[0]})}
   const sc=fresh(()=>pick(D.daina),x=>x.bg);
   st.innerHTML=`<div class="scene" style="background-image:url(${IMG[sc.bg]})"></div>`;const box=st.firstChild;const L=sceneLayout(box,sc.ar);
   const hero=document.createElement('img');hero.src=IMG[sc.sad];hero.className='hero';box.append(hero);
@@ -234,7 +246,7 @@ async function daiRound(lvl){
 function manyQ(m,which){return which==='one'?'Где '+(m.g==='m'?'один ':'одна ')+m.n+'?':(which==='lot'?'Где много ':'Где мало ')+m.pl+'?'}
 async function manyRound(lvl){
   const m=fresh(()=>pick(D.many),x=>x.n);const which=lvl===3?pick(['one','few','lot']):pick(['one','lot']);let opts;
-  if(lvl===1)opts=['one','lot'].map(w=>({w,m}));
+  if(lvl===1){const m2=pick(D.many.filter(x=>x!==m));opts=['one','lot'].map(w=>({w,m})).concat(m2?[{w:which==='one'?'lot':'one',m:m2}]:[])} /* v52: третья картинка — другой предмет */
   else if(lvl===2){const m2=pick(D.many.filter(x=>x!==m));opts=['one','lot'].flatMap(w=>[{w,m},{w,m:m2}])}
   else opts=['one','few','lot'].map(w=>({w,m}));
   const q=manyQ(m,which);if(!await ask(q))return;
@@ -254,7 +266,7 @@ async function flyRound(lvl){
     if(R.dead)return;ac();svg.onclick=null;fl.classList.add('flyaway');sfx.good();confetti(50);await say('Вот муха! Муха на '+f.n+'.');if(R.dead)return;
     if(wantSayIt())await sayIt('Муха на '+f.n,flySvg(f));
     return roundDone(miss===0,{n:f.nom})}
-  const n=lvl===2?2:4;const others=shuffle(D4.fly.filter(x=>x.nom!==f.nom)).filter((x,k,a)=>a.findIndex(y=>y.nom===x.nom)===k).slice(0,n-1);
+  const n=lvl===2?3:4;const others=shuffle(D4.fly.filter(x=>x.nom!==f.nom)).filter((x,k,a)=>a.findIndex(y=>y.nom===x.nom)===k).slice(0,n-1);
   const q='Где муха на '+f.n+'?';if(!await ask(q))return;
   const ok=await choice(shuffle([f].concat(others).map(x=>({html:flySvg(x),ok:x===f,key:x.nom}))),{question:q,goodText:'Муха на '+f.n+'.'});
   return roundDone(ok,{n:f.nom});
@@ -289,7 +301,7 @@ async function putRound(lvl){
   /* v12: всегда два места (на стол или на стул?); предлоги В и ПОД чередуются с НА */
   const lastP=G.lastP||'';const wantP=lastP==='на'?pick(lvl===1?['в']:['в','под']):(lastP?'на':pick(['на','в']));G.lastP=wantP;
   const c=fresh(()=>pick(ALL.filter(x=>x[1]===wantP)),x=>x.join());
-  const other=pick(Object.keys(FUR).filter(f=>f!==c[0]));furs=shuffle([c[0],other]);task={f:c[0],p:c[1]};
+  const others=shuffle(Object.keys(FUR).filter(f=>f!==c[0])).slice(0,2);furs=shuffle([c[0]].concat(others)); /* v52: три места */task={f:c[0],p:c[1]};
   const on=Object.keys(OBJ);task.o=pick(on);const nObj=lvl>=4?3:lvl===3?2:1;objs=shuffle([task.o].concat(shuffle(on.filter(o=>o!==task.o)).slice(0,nObj-1)));
   const O=OBJ[task.o],F=FUR[task.f];
   const q='Положи '+O.acc+' '+task.p+' '+F.acc+'!';const good=cap(O.nom)+' '+F.f[task.p]+'.';
@@ -355,7 +367,7 @@ function popFx(b,c,box){const r=b.getBoundingClientRect(),sr=box.getBoundingClie
     const ang=i/16*Math.PI*2;p.style.setProperty('--dx',Math.cos(ang)*90+'px');p.style.setProperty('--dy',Math.sin(ang)*90+'px');box.append(p);setTimeout(()=>p.remove(),800)}}
 /* 1) лопни только нужный цвет */
 async function balOnly(lvl){
-  const R=G.round,pal=lvl===1?['red','blue']:lvl===2?['red','yellow','green','blue']:Object.keys(CN);const col=pick(pal);const need=lvl===1?3:lvl===2?4:5;
+  const R=G.round,pal=lvl===1?['red','blue','yellow']:lvl===2?['red','yellow','green','blue']:Object.keys(CN);const col=pick(pal);const need=lvl===1?3:lvl===2?4:5;
   const q='Лопни только '+{red:'красные',yellow:'жёлтые',green:'зелёные',blue:'синие',pink:'розовые',white:'белые'}[col]+' шарики!';
   if(!await ask(q))return;R.good=q;
   const st=$('#stage');st.innerHTML=`<div class="sky"><div class="bcount">${Array.from({length:need},()=>`<svg viewBox="0 0 60 90">${balloonSvg(CB[col]).replace(/^<svg[^>]*>|<\/svg>$/g,'')}</svg>`).join('')}</div></div>`;const sky=st.firstChild;
@@ -385,7 +397,7 @@ async function balInside(lvl){
   if(R.dead)return;
   st.insertAdjacentHTML('beforeend',`<div class="drop">${img(t.i)}</div>`);await wait(900);if(R.dead)return;
   await say('Ой! Что это?');await wait(600);if(R.dead)return;
-  const k=lvl===1?2:4;let others;
+  const k=lvl===1?3:4;let others; /* v52: минимум 3 */
   if(lvl>=3){const g=WGROUPS.find(g=>g.includes(t.n));others=shuffle(pool.filter(x=>x.n!==t.n&&(!g||g.includes(x.n)))).slice(0,k-1);if(others.length<k-1)others=others.concat(shuffle(pool.filter(x=>x.n!==t.n&&!others.includes(x))).slice(0,k-1-others.length))}
   else others=shuffle(pool.filter(x=>x.n!==t.n)).slice(0,k-1);
   const q='Где '+t.n+'?';if(!await ask(q))return;
@@ -463,7 +475,7 @@ async function dressRound(lvl){
   const pool=Object.keys(DITEMS).filter(k=>!G.boy[k]);const k=pool.includes('трусы')&&Object.keys(G.boy).length===0?'трусы':pick(pool.filter(x=>x!=='трусы'||!G.boy.шорты));
   const cols=Object.keys(DCOL);const c=pick(cols);const it=DITEMS[k];
   let opts;const useCol=lvl>=3;const twin={трусы:'шорты',шорты:'трусы'}[k];const OTH=Object.keys(DITEMS).filter(x=>x!==k&&x!==twin); /* v50: трусы и шорты похожи — не вместе */
-  if(lvl===1)opts=[{k,c},{k:pick(OTH),c:pick(cols)}];
+  if(lvl===1)opts=[{k,c}].concat(shuffle(OTH.slice()).slice(0,2).map(x=>({k:x,c:pick(cols)}))); /* v52: минимум 3 */
   else if(lvl===2)opts=[{k,c}].concat(shuffle(OTH.slice()).slice(0,3).map(x=>({k:x,c:pick(cols)})));
   else if(lvl===3)opts=[{k,c}].concat(shuffle(cols.filter(x=>x!==c)).slice(0,3).map(x=>({k,c:x})));
   else{const k2=pick(OTH);const c2=pick(cols.filter(x=>x!==c));opts=[{k,c},{k,c:c2},{k:k2,c},{k:k2,c:c2}]}
@@ -562,6 +574,7 @@ const nesCard=(x,v)=>`<img src="${v==='несёт'?x.walk:IMG[x.hold]}" alt="">`
 /* СПИТ / ЛЕЖИТ и ИДЁТ / БЕЖИТ: на одной паре картинок два вопроса в случайном порядке */
 async function twoQ(opts,verbs,setKey){
   const order=rmode(setKey,2)===0?verbs:[verbs[1],verbs[0]];let all=true;
+  {const ex=pairExtra(verbs);if(ex&&opts.length<3)opts=opts.concat([ex])} /* v52: третья картинка — другое действие */
   for(const v of order){const t=opts.find(o=>o.v===v);const q='Кто '+v+'?';if(!await ask(q))return null;
     let good=cap(t.s)+' '+v+'.';
     if(v==='спит')good=cap(t.s)+' спит — глазки закрыты.';
