@@ -63,17 +63,17 @@ async function catRound(lvl){
         if(o.ok){b.classList.remove('hint');b.classList.add('good');res(o)}
         else{await miss(o.wrongText,b);if(R.wrong>=2){[...row.children].forEach((c,i)=>opts[i].ok&&c.classList.add('hint'));onHint&&onHint()}lock=false}}})});
 
-  if(mode==='do'){ /* «Что делает Шарик?» — выбор из двух, образец из двух слов */
-    const pool=HG_ACTS.slice(0,lvl>=3?6:lvl>=2?5:3),t=fresh(()=>pick(pool),x=>'hgdo'+x[0]);let o;do{o=pick(pool)}while(o===t);
-    const q=rmode('hgdo',2)===0?`Шарик ${t[1]} или ${o[1]}?`:`Шарик ${o[1]} или ${t[1]}?`;
+  if(mode==='do'){ /* «Что делает Шарик?» — v52: выбор из трёх (просьба мамы), образец из двух слов */
+    const pool=HG_ACTS.slice(0,lvl>=3?6:lvl>=2?5:3),t=fresh(()=>pick(pool),x=>'hgdo'+x[0]);const os=shuffle(pool.filter(x=>x!==t)).slice(0,2),o=os[0];
+    const ord=os.slice();ord.splice(rmode('hgdo',3),0,t);const q=`Шарик ${ord[0][1]}, ${ord[1][1]} или ${ord[2][1]}?`;
     setPrompt('Что делает Шарик?');cat.act(t[0]);if(t[0]==='eat')cat.hold('🐟');
     await wait(900);if(dead())return;await say0('Что делает Шарик? '+q);if(dead())return; /* спрашивает голос за кадром: герой занят делом */
     const mk=a=>({ok:a===t,wrongText:`Тут Шарик ${a[1]}. Посмотри на меня! ${q}`,mount:b=>{const m=Cat2D.mount(b);m.act(a[0]);if(a[0]==='eat')m.hold('🐟')}});
-    await cards([mk(t),mk(o)]);if(dead())return;cat.act(null).hold('');
+    await cards([mk(t)].concat(os.map(mk)));if(dead())return;cat.act(null).hold('');
     return good(`Шарик ${t[1]}.`,{m:'do',n:t[1]})}
 
   if(mode==='give'){ /* «Дай Шарику…» — понимание просьбы, фраза через «я» */
-    const items=shuffle(HG_ITEMS.slice()).slice(0,Math.min(4,lvl+1)),t=items[0];
+    const items=shuffle(HG_ITEMS.slice()).slice(0,Math.min(4,lvl+2)),t=items[0]; /* v52: минимум 3 */
     setPrompt('Дай Шарику '+t[1]+'!');cat.mood('invite');await wait(400);if(dead())return;
     const q=`Дай мне ${t[1]}!`;await hsay(pick(['Я хочу ','Мне нужно ','Хочу '])+t[1]+'! '+q);if(dead())return;cat.mood('calm');
     await cards(items.map(it=>({html:it[0],ok:it===t,wrongText:`Это ${it[2]}. ${q}`})),()=>cat.point&&cat.point('up'));if(dead())return;

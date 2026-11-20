@@ -188,7 +188,7 @@ function lsMount(){const L=G.ls;L.cel=L.box.querySelector('.lscat');L.cat=hgCat(
   const ear=L.box.querySelector('.shear');if(ear)ear.classList.toggle('on',!!L.mic)}
 /* ---------- голос занятия: заранее скачать все фразы (один голос на всё занятие) ---------- */
 async function lsVoicePrep(){const L=G.ls,mine=G;
-  if(S.lsPre===false||!shTtsOn()){L.voice='phone';L.voiceWhy=!shOn()?'нет сервера':!S.voice?'звук выключен':S.shTts===false?'живой голос выключен':'выключена загрузка';G.shNoTts=true;return}
+  if(S.lsPre===false||!shTtsOn()){L.voice='phone';L.voiceWhy=!S.shUrl?'нет сервера':!S.voice?'звук выключен':S.shTts===false?'живой голос выключен':'выключена загрузка';G.shNoTts=true;return}
   const P=lsPhrases();L.phr=P.length;
   if(P.length>100){L.voice='phone';L.voiceWhy=`фраз ${P.length} — больше сотни, нужно согласие мамы`;G.shNoTts=true;return}
   L.box.innerHTML=`<div class="lsprep"><div class="lscat" style="width:180px;height:200px;flex:none"></div><div>Шарик готовит голос… <b class="n">0</b> из ${P.length}</div><button class="big-btn lsgo">Начать сразу</button></div>`;

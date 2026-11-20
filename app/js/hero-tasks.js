@@ -120,7 +120,7 @@ const hgAlt=(key,a,b)=>rmode(key,2)===0?[a,b]:[b,a]; /* верный ответ 
 const hgOrQ=(key,right,other,f)=>{const [a,b]=hgAlt(key,right,other);return f(a,b)};
 /* ---------- А. «Одень Шарика» ---------- */
 const HGT_WEAR=[{k:'hat',em:'🧢',w:'шапка',acc:'шапку',in:'в шапке'},{k:'glasses',em:'👓',w:'очки',acc:'очки',in:'в очках'},{k:'socks',em:'🧦',w:'носки',acc:'носки',in:'в носках'},{k:'scarf',em:'🧣',w:'шарф',acc:'шарф',in:'в шарфе'}];
-function hgtDress(lvl){const nOpt=Math.min(4,lvl+1),t=fresh(()=>pick(HGT_WEAR),x=>'hgw'+x.k),others=shuffle(HGT_WEAR.filter(x=>x!==t)).slice(0,nOpt-1);
+function hgtDress(lvl){const nOpt=Math.min(4,lvl+2),t=fresh(()=>pick(HGT_WEAR),x=>'hgw'+x.k),others=shuffle(HGT_WEAR.filter(x=>x!==t)).slice(0,nOpt-1);
   const v=rmode('hgdress',lvl>=2?3:2),bare=L=>{for(const w of HGT_WEAR)L.cat.wear(w.k,false)};
   const card=w=>({html:`<span class="em">${w.em}</span><span class="wd">${w.w}</span>`,ok:w===t,wrong:`Это ${w.w}.`,w});
   if(v===0){const q=`Надень мне ${t.acc}!`; /* понимание просьбы → «Я в шапке.» */

@@ -86,7 +86,7 @@ with sync_playwright() as p:
     for _ in range(10):
         start('num', 1); pg.wait_for_function("document.querySelector('.countbox .cnt img,.nscene')", timeout=15000); pg.wait_for_timeout(300)
         if pg.query_selector('.countbox .cnt img'): break
-    check(len(pg.query_selector_all('.numopts .opt')) == 2 and not pg.query_selector('.dots5'), '«Цифры» ур. 1: предметы (не точки) и 2 цифры на выбор')
+    check(len(pg.query_selector_all('.numopts .opt')) == 3 and not pg.query_selector('.dots5'), '«Цифры» ур. 1: предметы (не точки) и 3 цифры на выбор')
     found = False
     for _ in range(14):
         start('num', 6); pg.wait_for_function("document.querySelector('.nmatch,.trace,.nscene,.nhide')", timeout=15000)
@@ -123,24 +123,24 @@ with sync_playwright() as p:
     # «Съедобное»: знакомая еда
     start('food', 1); pg.wait_for_selector('.put.food .obj', timeout=15000)
     names = pg.evaluate("[...document.querySelectorAll('.put.food .obj')].map(e=>e.getAttribute('aria-label'))")
-    check(len(names) == 2 and any(n in ('банан','яблоко','оладьи','пельмени','манго','вода') for n in names), f'«Съедобное» ур. 1: знакомая еда {names}')
+    check(len(names) == 3 and any(n in ('банан','яблоко','оладьи','пельмени','манго','вода') for n in names), f'«Съедобное» ур. 1: знакомая еда {names}')
     # убранные игры
     check(all(not pg.is_visible(f'.tile[data-game="{g}"]') for g in ('make', 'dogs', 'br', 'syl', 'word')), 'убраны «Сделай как скажу», «Щенки», «Мостик», «Слоги», отдельная «Что это?»')
     # ---- v24
     def opts_n(): return len(pg.query_selector_all('#stage .opt'))
     def wait_opts(): pg.wait_for_function("document.querySelectorAll('#stage .opt').length>0", timeout=15000); pg.wait_for_timeout(300)
     start('want', 1); wait_opts(); pr = pg.inner_text('#prompt')
-    check(opts_n() == 2 and (pr.startswith('Хочу') or pr.startswith('Включи')), f'«Я хочу»: голос просит «{pr}», 2 картинки')
+    check(opts_n() == 3 and (pr.startswith('Хочу') or pr.startswith('Включи')), f'«Я хочу»: голос просит «{pr}», 3 картинки')
     start('want', 4); wait_opts(); check(opts_n() == 6, '«Я хочу» ур. 4: из 6')
     gos = 0
     for _ in range(12):
         start('want', 2); wait_opts(); pr = pg.inner_text('#prompt'); gos += any(w in pr for w in ('бассейн','магазин','гулять','горку','мультик','пианино'))
     check(gos >= 2, f'«Я хочу»: бассейн / магазин / гулять встречаются ({gos} из 12)')
     start('not', 1); wait_opts(); pr = pg.inner_text('#prompt')
-    check(opts_n() == 2 and ' не ' in pr, f'«Что не…?» ур. 1: «{pr}» из 2')
+    check(opts_n() == 3 and ' не ' in pr, f'«Что не…?» ур. 1: «{pr}» из 3')
     start('not', 3); wait_opts(); check(opts_n() == 3, '«Что не…?» ур. 3: из 3')
     start('ib', 1); wait_opts(); pr = pg.inner_text('#prompt')
-    check(opts_n() == 2 and pr in ('Кто стоит?', 'Кто сидит?', 'Кто идёт?', 'Кто бежит?') and len(pg.query_selector_all('#stage svg.fig')) == 2, f'«Идёт, бежит, стоит, сидит» ур. 1: {pr}, 2 человечка')
+    check(opts_n() == 3 and pr in ('Кто стоит?', 'Кто сидит?', 'Кто идёт?', 'Кто бежит?') and len(pg.query_selector_all('#stage svg.fig')) == 3, f'«Идёт, бежит, стоит, сидит» ур. 1: {pr}, 3 человечка')
     start('ib', 2); wait_opts(); check(opts_n() == 3, f'ур. 2: {opts_n()} человечка')
     start('ib', 3); wait_opts(); check(opts_n() == 4, f'ур. 3: {opts_n()} картинки')
     start('world', 5); pg.wait_for_selector('.topic', timeout=15000); n_t = len(pg.query_selector_all('.topic'))
@@ -151,7 +151,7 @@ with sync_playwright() as p:
         start('world', 1); pg.wait_for_timeout(200)
         if pg.query_selector('.topic'): pg.query_selector_all('.topic')[0].click()
         wait_opts(); pos.append(pg.evaluate(f"{R}.G.posH.slice(-1)[0]"))
-    check(len(set(pos)) == 2 and not any(pos[k] == pos[k+1] == pos[k+2] for k in range(len(pos)-2)), f'правильная карточка меняет место: {pos}')
+    check(len(set(pos)) >= 2 and not any(pos[k] == pos[k+1] == pos[k+2] for k in range(len(pos)-2)), f'правильная карточка меняет место: {pos}')
     check(pg.evaluate("window.PG25[0].m>=6&&window.PG25.length>=20&&window.PG25.every(l=>l.holes.length>=1)"), '«Пингвины»: уровни с полыньями от 6 ходов')
     sol=pg.evaluate(f"window.PG25.map(l=>{{const s={R}.pgSolve2(l.p.map(x=>x.slice()),l,400000);return s?s.d:0}})")
     check(all(sol[k]==pg.evaluate(f"window.PG25[{k}].m") for k in range(len(sol))), f'«Пингвины»: все задачи решаются, ходов: {sol}')
@@ -210,15 +210,15 @@ with sync_playwright() as p:
         pg.mouse.up(); pg.wait_for_timeout(3500)
         check(not early and pg.evaluate(f"{R}.G&&{R}.G.i") == i0 + 1, '«Цифры»: цифру можно обвести до самого конца, засчитывается только в конце')
     else: check(False, '«Цифры»: «обведи» не появилось')
-    # бонус: 7 секунд шариков
+    # бонус: 15 секунд шариков (v52)
     pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(600)
     pg.evaluate("document.querySelector('.tile[data-game=\"odd\"]').click()"); pg.wait_for_timeout(1500)
     pg.evaluate(f"{R}.bonusPop();0"); pg.wait_for_timeout(2500)
     nb = len(pg.query_selector_all('.bonus .balloon'))
     if nb: pg.evaluate("document.querySelector('.bonus .balloon').dispatchEvent(new PointerEvent('pointerdown'))"); pg.wait_for_timeout(200)
     fx = len(pg.query_selector_all('.bn-fx'))
-    pg.wait_for_timeout(8000)
-    check(nb > 0 and fx > 0 and not pg.query_selector('.bonus'), f'бонус: шарики 7 секунд ({nb}), из шарика сыплются конфеты ({fx}), потом исчезает')
+    pg.wait_for_timeout(16000)
+    check(nb > 0 and fx > 0 and not pg.query_selector('.bonus'), f'бонус: шарики 15 секунд ({nb}), из шарика сыплются конфеты ({fx}), потом исчезает')
     # шарики: новые игры
     for nm in ('balAni','balCount','balFeed','balDigit'):
         pg.evaluate("document.querySelector('#btn-home').click()"); pg.wait_for_timeout(800)
@@ -370,15 +370,15 @@ with sync_playwright() as p:
           if(hit(...c))return c;
           for(let k=1;k<=8;k++)for(let a=0;a<12;a++){const x=c[0]+Math.cos(a*Math.PI/6)*r.width*k/16,y=c[1]+Math.sin(a*Math.PI/6)*r.height*k/16;if(hit(x,y))return [x,y]}
           return c}"""
-        for lv in (1, 2, 3):
+        for lv in (1, 2, 3, 4, 5):
             okr = okw = 0
             start('body', lv); prev = None
             for r_ in range(3):
                 pg.wait_for_function(f"{R}.G&&{R}.G.round&&{R}.G.round.bodyReady&&{R}.G.round.tStart!=={json.dumps(prev)}", timeout=20000); pg.wait_for_timeout(300)
                 prev = pg.evaluate(f"{R}.G.round.tStart")
                 i0 = pg.evaluate(f"{R}.G.i")
-                tgt = pg.evaluate("document.querySelector('#prompt').textContent.replace('Покажи, где ','').replace('!','').trim()")
-                top = [x for x in ('нога', 'рука', 'живот', 'голова') if x != tgt and not pg.evaluate(f"__ev('bodyHits')('{tgt}','{x}')")]
+                tgt = pg.evaluate(f"{R}.G.round.bodyT")  # v52: у кошки и собаки вопрос «Покажи, где у кошки лапы!»
+                top = [x for x in ('волосы', 'ухо', 'нос', 'глаз', 'хвост', 'лапа', 'нога', 'рука', 'живот', 'голова') if x != tgt and pg.evaluate(f"!!document.querySelector('#stage [data-part=\"{x}\"]')") and not pg.evaluate(f"__ev('bodyHits')('{x}','{tgt}')") and not pg.evaluate(f"__ev('bodyHits')('{tgt}','{x}')")]
                 w0 = pg.evaluate(f"{R}.G.round.wrong")
                 pg.touchscreen.tap(*pg.evaluate(PT, top[0])); pg.wait_for_timeout(300)
                 if pg.evaluate(f"{R}.G.round.wrong") == w0 + 1: okw += 1

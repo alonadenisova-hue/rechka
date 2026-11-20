@@ -149,7 +149,7 @@ async function brRound(){return pzShell('br',{word:'Детали',intro:'Мыш�
 const DOTP={1:[[50,50]],2:[[30,30],[70,70]],3:[[25,25],[50,50],[75,75]],4:[[30,30],[70,30],[30,70],[70,70]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]]};
 const DOTC=['#ff6b5b','#2f8be0','#3cbf7a','#7b61ff','#ffb020'];
 const dotsSvg=(n,c)=>numCard(n,numObj());
-const NUMLV={1:{pool:[1,2,3],k:2,modes:['dots','findall']},2:{pool:[1,2,3],k:2,modes:['dots','dig2dots','findall','peek']},3:{pool:[1,2,3],k:2,modes:['dots','count','dig2dots','fingers','hidden','peek']},
+const NUMLV={1:{pool:[1,2,3],k:3,modes:['dots','findall']},2:{pool:[1,2,3],k:3,modes:['dots','dig2dots','findall','peek']},3:{pool:[1,2,3],k:3,modes:['dots','count','dig2dots','fingers','hidden','peek']},
   4:{pool:[1,2,3,4,5],k:3,modes:['dots','dig2dots','findall','hidden']},5:{pool:[1,2,3,4,5],k:3,modes:['count','same','dig2dots','fingers','peek','hidden']},6:{pool:[1,2,3,4,5],k:3,modes:['match','trace','findall','trace']},
   7:{pool:[1,2,3,4,5],k:3,near:true,modes:['dots','dig2dots','same','match','fingers','findall','hidden','peek','trace']}};
 function numOth(n,L,k){const pool=L.pool.filter(x=>x!==n);if(L.near){const near=pool.filter(x=>Math.abs(x-n)===1);return shuffle(near).concat(shuffle(pool.filter(x=>!near.includes(x)))).slice(0,k)}return shuffle(pool).slice(0,k)}
@@ -203,8 +203,9 @@ async function numRound(lvl){
 async function trSort(R,list,lvl){
   const one=list.length===1;const t0=list[0];
   /* v50 (совет логопеда): одна картинка — выбор из двух, верный ответ то первым, то вторым; третья полоса прячется */
-  let two=null;if(one){const o=pick(['fly','ride','swim'].filter(x=>x!==t0.c));two=rmode('tr2',2)===0?[t0.c,o]:[o,t0.c]}
-  const q=one?cap(t0.n)+' '+TRV[two[0]]+' или '+TRV[two[1]]+'?':'Разложи! Что летит, что едет, что плывёт?';
+  /* v52 (просьба мамы): минимум три варианта — одна картинка, три полосы; в вопросе верный ответ на разных местах */
+  let two=null;if(one){const os=shuffle(['fly','ride','swim'].filter(x=>x!==t0.c));const at=rmode('tr3',3);two=os.slice();two.splice(at,0,t0.c)}
+  const q=one?cap(t0.n)+' '+TRV[two[0]]+', '+TRV[two[1]]+' или '+TRV[two[2]]+'?':'Разложи! Что летит, что едет, что плывёт?';
   if(!await ask(q,one?q+' Отнеси!':'Что летит — на небо. Что едет — на дорогу. Что плывёт — на речку!'))return null;
   R.good=one?cap(t0.n)+' '+TRV[t0.c]+'.':'Всё на месте!';
   const st=$('#stage');st.innerHTML=`<div class="put trs"><div class="trhome"></div><div class="trzs"><div class="tz sky" data-c="fly"><i class="cl a"></i><i class="cl b"></i></div><div class="tz road" data-c="ride"><i class="lane"></i></div><div class="tz sea" data-c="swim"><i class="wv"></i></div></div></div>`;
@@ -246,7 +247,7 @@ async function trRound(lvl){
     await say(pick(PRAISE)+' '+(sortN===1?cap(L[0].n)+' '+TRV[L[0].c]+'!':'Всё на своих местах!'));await wait(700);
     return roundDone(wrong===0,{m:sortN===1?'перенеси':'разложи '+sortN,v:sortN===1?TRV[L[0].c]:'все',n:L.map(x=>x.n).join(',')})}
   const c=cls[rmode('trc',3)];const t=fresh(()=>pick(TRL.filter(x=>x.c===c)),x=>'tr'+x.n);
-  const n=lvl===1?2:lvl===2?3:4;let others;
+  const n=lvl<=2?3:4;let others; /* v52: минимум 3 */
   if(n===2)others=[pick(TRL.filter(x=>x.c!==c))];
   else{const oc=cls.filter(k=>k!==c);others=oc.map(k=>pick(TRL.filter(x=>x.c===k)));if(n===4)others.push(pick(TRL.filter(x=>x.c!==c&&!others.includes(x))))}
   const q='Что '+TRV[c]+'?';if(!await ask(q))return;
@@ -258,7 +259,7 @@ Object.assign(IMG,window.IMG12||{});
 const FAM_Y=[['банан',RPIC['банан']&&RPIC['банан'][0]],['яблоко',RPIC['яблоко']&&RPIC['яблоко'][0]],['оладьи','fd_oladi'],['пельмени','fd_pelmeni'],['манго','fd_mango'],['вода','fd_voda',{ok:'Воду можно пить!',bad:'Нет! Воду можно пить. Неси на стол!'}]]
   .filter(x=>x[1]&&IMG[x[1]]).map(([n,i,o])=>Object.assign({i,n,e:true},o||{}));
 const FAM_N=['мяч','машина','кубик','мишка','шапка','телефон','пульт','кроссовки','книжки','ключ'].filter(n=>RPIC[n]).map(n=>({i:RPIC[n][0],n,e:false}));
-const FOODLV={1:[['fy',1],['fn',1]],2:[['fy',2],['fn',2]],3:[['fy',3],['fn',3]],4:[['y',2],['n',2]],5:[['fy',2],['y',1],['fn',1],['n',2]]};
+const FOODLV={1:[['fy',2],['fn',1]], /* v52: минимум 3 картинки */2:[['fy',2],['fn',2]],3:[['fy',3],['fn',3]],4:[['y',2],['n',2]],5:[['fy',2],['y',1],['fn',1],['n',2]]};
 
 
 /* ---------- v22: «Повторяй за Шариком» — собака чётко проговаривает ритмические ряды логопеда, Лев повторяет */
@@ -320,7 +321,8 @@ async function nesRound(lvl){
   const used=[];
   if(lvl<=2){const v=rmode('nesv',2)===0?'несёт':'держит';const k=lvl===1?1:2;
     const walks=hgPick(NES,k,used).map(nesWalk),holds=hgPick(HOLD,k,used).map(x=>Object.assign({v:'держит'},x));
-    const t=pick(v==='несёт'?walks:holds);const cards=walks.concat(holds);
+    const t=pick(v==='несёт'?walks:holds);let cards=walks.concat(holds);
+    if(lvl===1)cards=cards.concat(v==='несёт'?hgPick(HOLD,1,used).map(x=>Object.assign({v:'держит'},x)):hgPick(NES,1,used).map(nesWalk)); /* v52: третья карточка */
     const q='Кто '+v+'?';if(!await ask(q))return;
     const good=cap(t.s)+' '+v+' '+t.o+(v==='несёт'?' — идёт.':' — стоит.');
     const ok=await choice(shuffle(cards.map(c=>({html:hgCard(c),ok:c===t,key:c.v}))),{question:q,goodText:good,wide:hgWide(cards)});
@@ -337,7 +339,8 @@ async function giveRound(lvl){
   const used=[];const v=rmode('givev',2)===0?'даёт':'держит';
   const hold=n=>hgPick(HOLD,n,used).map(x=>Object.assign({v:'держит'},x)),give=n=>hgPick(GIVE,n,used).map(x=>Object.assign({v:'даёт'},x));
   let cards,t,q;
-  if(lvl<=2){const k=lvl===1?1:2;const hs=hold(k),gs=give(k);cards=hs.concat(gs);t=pick(v==='даёт'?gs:hs);q='Кто '+v+'?'}
+  if(lvl<=2){const k=lvl===1?1:2;const hs=hold(k),gs=give(k);cards=hs.concat(gs);t=pick(v==='даёт'?gs:hs);q='Кто '+v+'?';
+    if(lvl===1)cards=cards.concat(v==='даёт'?hold(1):give(1))} /* v52: третья карточка */
   else if(lvl===3){/* только «даёт»: кто даёт воду? */cards=give(4);t=pick(cards);q='Кто даёт '+t.o+'?'}
   else{const hs=hold(2),gs=give(2);cards=hs.concat(gs);t=pick(v==='даёт'?gs:hs);q='Кто '+t.v+' '+t.o+'?'}
   if(!await ask(q))return;
@@ -397,7 +400,7 @@ const WANT24=[
   {n:'на горку',i:P24('slide'),r:'Пойдём на горку!',go:1},{n:'пианино',ph:'Включи пианино!',i:P24('piano'),r:'Включаю пианино!',go:1},{n:'мультик',ph:'Включи мультик!',i:P24('tv'),r:'Включаю мультик!',go:1}];
 const wph=x=>x.ph||'Хочу '+x.n+'!';
 async function wantRound(lvl){
-  const n=lvl===1?2:lvl===2?3:lvl===3?4:6;
+  const n=lvl<=2?3:lvl===3?4:6; /* v52: минимум 3 варианта */
   /* бассейн, магазин, гулять — часто */
   const pool=rmode('wantgo',5)<2?WANT24.filter(x=>x.go):WANT24.filter(x=>!x.go);
   const t=fresh(()=>pick(pool),x=>'w'+x.n);const others=shuffle(WANT24.filter(x=>x!==t)).slice(0,n-1);
@@ -473,7 +476,7 @@ const NOT_OBJ=[...new Set(D3.cobj.map(o=>o.n))].filter(n=>D3.cobj.filter(o=>o.n=
 const NOT_COL={red:'красного',green:'зелёного',blue:'синего',yellow:'жёлтого',pink:'розового',white:'белого'};
 const NOT_NOM={ёж:'ёжик',мышь:'мышка',заяц:'зайчик'};
 async function notRound(lvl){
-  const n=lvl===1?2:lvl===4?4:3;const kinds=lvl>=3?['ani','obj','col']:['ani','obj'];const kind=kinds[rmode('notk',kinds.length)];
+  const n=lvl===4?4:3;const kinds=lvl>=3?['ani','obj','col']:['ani','obj'];const kind=kinds[rmode('notk',kinds.length)];
   let same=[],other,q,good;
   if(kind==='ani'){const L=NOT_ANI.filter(a=>notPics(a).length>=n-1);const a=fresh(()=>pick(L),x=>'na'+x);same=shuffle(notPics(a)).slice(0,n-1);
     const b=pick(L.filter(x=>x!==a));other=pick(notPics(b));const A=NOT_NOM[a]||a,B=NOT_NOM[b]||b;q='Кто не '+A+'?';good='Это '+B+'. Не '+A+'!'}
@@ -508,7 +511,7 @@ async function worldRound(lvl){
   if(lvl>=4&&rmode('wq',3)===2){const q='Что это?';setPrompt(q);$('#stage').innerHTML=`<div class="solo"><div class="pic">${img(ti)}</div></div>`;R.replay=()=>say(q);
     await say(q);if(R.dead)return;await wait(2500);if(R.dead)return;R.good='Это '+t.n+'.';await say('Это '+t.n+'!');if(R.dead)return;
     if(S.sayit!=='off')await sayIt(cap(t.n),img(ti));return roundDone(true,{n:t.n,m:'назови',x:1})}
-  const n=Math.min([0,2,4,6,6,9][lvl]||4,L.length);let others;
+  const n=Math.min([0,3,4,6,6,9][lvl]||4,L.length);let others;
   if(lvl===4){const grp=(W24SIM[G.topic]||[]).find(g=>g.includes(t.n))||[];others=shuffle(L.filter(x=>x!==t&&grp.includes(x.n))).slice(0,n-1);
     if(others.length<n-1)others=others.concat(shuffle(L.filter(x=>x!==t&&!others.includes(x))).slice(0,n-1-others.length))}
   else others=shuffle(L.filter(x=>x!==t)).slice(0,n-1);
@@ -822,14 +825,15 @@ function mig25(){if((S.ver||0)>=25)return;S.tipOn=false;S.pzL=S.pzL||{};S.pzL.pg
 const ONO_SKIP=['лиса','волк','тигр','енот','сова','индюк'];
 ONO_L=ONO_L.filter(x=>!ONO_SKIP.includes(x.n));
 
-/* ---------- БОНУС: 7 секунд лопаем шарики, из них сыплются конфеты, снежинки, звёзды */
+/* ---------- БОНУС: 15 секунд (v52; было 7) лопаем шарики, из них сыплются конфеты, снежинки, звёзды */
+const BONUS_MS=15000;
 const BONUS_FX=[['🍬','🍭','🍬','🍫'],['❄','❅','❆','❄'],['⭐','✨','🌟','⭐'],['🍓','🍎','🍌','🍒'],['💖','💜','💛','💚']];
 async function bonusPop(){
   const R=G&&G.round;const ov=document.createElement('div');ov.className='bonus';
   ov.innerHTML=`<div class="bn-top"><b>Бонус!</b><span class="bn-cnt">0</span></div><div class="bn-time"><i></i></div><div class="bn-sky"></div>`;document.body.append(ov);
   const sky=ov.querySelector('.bn-sky'),cnt=ov.querySelector('.bn-cnt');let got=0,done=false;
   sfx.up();await say('Бонус! Лопай шарики!');if(!G)return ov.remove();
-  ov.querySelector('.bn-time i').style.animation='bnt 7s linear forwards';
+  ov.querySelector('.bn-time i').style.animation='bnt '+BONUS_MS/1000+'s linear forwards';
   const cols=['#ef4a3d','#2f8be0','#45b649','#ffcf26','#ff8fbf','#9b6bff','#ff9f43','#2ec4b6'];
   const spawn=()=>{if(done)return;const c=pick(cols);const b=document.createElement('button');b.className='balloon bn';b.style.left=(4+Math.random()*80)+'%';
     b.style.animationDuration=(3.6+Math.random()*2)+'s, '+(1.6+Math.random())+'s';b.innerHTML=balloonSvg(c);
@@ -840,7 +844,7 @@ async function bonusPop(){
       tone(880+got*30,0,.08,'triangle',.1)};
     b.addEventListener('animationend',ev=>{if(ev.animationName==='rise')b.remove()});sky.append(b)};
   for(let k=0;k<5;k++)setTimeout(spawn,k*200);const iv=setInterval(spawn,420);
-  await wait(7000);done=true;clearInterval(iv);sky.querySelectorAll('.balloon').forEach(x=>x.classList.add('away'));
+  await wait(BONUS_MS);done=true;clearInterval(iv);sky.querySelectorAll('.balloon').forEach(x=>x.classList.add('away'));
   confetti(120);await say(got?'Ура! '+got+' '+(got%10===1&&got%100!==11?'шарик':[2,3,4].includes(got%10)&&![12,13,14].includes(got%100)?'шарика':'шариков')+'!':'Ура!');
   ov.classList.add('out');await wait(450);ov.remove()}
 
