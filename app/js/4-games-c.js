@@ -235,7 +235,7 @@ async function balRound(lvl){const M=[balOnly,balInside,balAni,balFeed,balCount,
 try{document.body.dataset.bg=String(Math.floor(Math.random()*3))}catch(_){}
 
 /* ===================== v29: «Покажи, где…» — части тела на большом объёмном мальчике =====================
-   Ребёнок нажимает на нужное место. Верно — «Молодец! Это нога!», неверно — «Нет, это не нога, это рука».
+   Ребёнок нажимает на нужное место. Вопрос «Где ноги?». Верно — «Молодец! Это ноги!», неверно — только «Нет.» и вопрос ещё раз.
    Каждая часть тела — отдельная фигура (data-part); у мелких частей (глаз, нос, рот, ухо) есть невидимая
    увеличенная зона нажатия. Рисунок векторный, поэтому чёткий на любом экране. */
 const BODY_LV={1:['голова','рука','нога','живот'],2:['голова','рука','нога','живот','глаз','нос','рот','ухо'],
@@ -246,10 +246,10 @@ const BODY_LV={1:['голова','рука','нога','живот'],2:['гол�
 const BODY_FACE=['глаз','нос','рот','ухо','волосы','брови','щека','зубы','язык'];
 /* животные: с какого уровня какие части */
 const ANI_LV={2:['голова','хвост','лапа','ухо','нос','глаз'],4:['голова','хвост','лапа','ухо','нос','глаз','рот','живот','усы','язык']};
-const ANI_W={лапа:'лапы',ухо:'уши',глаз:'глаза'}; /* как спрашивать: «Покажи, где у кошки лапы!» */
+/* как спрашивать (просьба мамы, ноябрь 2026): коротко «Где глаза?», «Где зубы?»; парные части — во множественном числе */
+const BODY_Q={рука:'руки',нога:'ноги',глаз:'глаза',ухо:'уши',ладошка:'ладошки',колено:'коленки',щека:'щёки',лапа:'лапы',ступня:'ступни'};
 /* мелкая часть входит в крупную: нажал на нос, когда спросили «голову», — это правильно */
 const BODY_UP={глаз:'голова',нос:'голова',рот:'голова',ухо:'голова',волосы:'голова',щека:'голова',брови:'голова',зубы:'рот',язык:'рот',усы:'голова',ладошка:'рука',колено:'нога',ступня:'нога'};
-const BODY_ASK={волосы:'Покажи, где волосы!'};
 function bodyName(part,lvl,list){const L=list||BODY_LV[lvl]||BODY_LV[1];let p=part;while(p&&!L.includes(p))p=BODY_UP[p];return p||null}
 function bodyHits(part,target){let p=part;while(p){if(p===target)return true;p=BODY_UP[p]}return false}
 function boySvg(id='b'){const g=(n,x)=>`url(#${id}${n})`;return `<svg class="boy3d" viewBox="0 0 300 540" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -359,7 +359,7 @@ async function bodyRound(lvl){
   const last=G.bodyLast||[];const pool=list.filter(p=>!last.includes(p));const target=pick(pool.length?pool:list);
   G.bodyLast=last.concat(target).slice(-2);
 
-  const q=asvg?'Покажи, где у '+A.gen+' '+(ANI_W[target]||target)+'!':(BODY_ASK[target]||'Покажи, где '+target+'!');
+  const tw=BODY_Q[target]||target;const q=asvg?'Где у '+A.gen+' '+tw+'?':'Где '+tw+'?';
   if(!await ask(q))return;
   const st=$('#stage');st.innerHTML=html;const svg=st.querySelector('svg');let wrong=0,locked=false;
   if(!asvg&&extra&&(lvl===4||lvl>=5&&BODY_FACE.includes(target)))svg.setAttribute('viewBox','20 8 260 216'); /* лицо крупно */
@@ -374,12 +374,12 @@ async function bodyRound(lvl){
       if(bodyHits(part,target)){locked=true;
         const hit=groupOf(target);flash(hit.length?hit:[el],'ok');svg.querySelectorAll('.hint').forEach(x=>x.classList.remove('hint'));
         sfx.good();confetti(60,e.clientX,e.clientY);
-        await say('Молодец! Это '+target+'!');res(wrong===0);return}
+        await say('Молодец! Это '+tw+'!');res(wrong===0);return}
       /* неверно: называем, что он показал, на уровне частей этого уровня */
       locked=true;wrong++;R.wrong++;(R.picks=R.picks||[]).push(part);
       const nm=bodyName(part,lvl,list)||part;const shown=groupOf(nm);flash(shown.length?shown:[el],'bad',700);
       const badMs=sfx.bad();await wait(Math.min(badMs,400));if(R.dead)return;
-      await say('Нет, это не '+target+', это '+nm+'.');if(R.dead)return;
+      await say('Нет.');if(R.dead)return; /* просьба мамы: при ошибке — только «нет», без «это не…, это…» */
       if(wrong>=2)groupOf(target).forEach(x=>x.classList.add('hint'));
       await say(q);locked=false};
   });
